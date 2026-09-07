@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { View, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, Text } from 'react-native';
+
 import { useTranslation } from 'react-i18next';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -210,13 +211,9 @@ export const RegisterScreen = () => {
 
           <Typography variant="body2" color={THEME_COLORS.TEXT_SECONDARY} style={styles.termsText}>
             {t('auth.register.termsAgreement')}{' '}
-            <Typography variant="body2" weight="MEDIUM" color={THEME_COLORS.PRIMARY}>
-              {t('auth.register.termsOfService')}
-            </Typography>{' '}
+            <Text style={styles.linkText}>{t('auth.register.termsOfService')}</Text>{' '}
             {t('auth.register.and')}{' '}
-            <Typography variant="body2" weight="MEDIUM" color={THEME_COLORS.PRIMARY}>
-              {t('auth.register.privacyPolicy')}
-            </Typography>
+            <Text style={styles.linkText}>{t('auth.register.privacyPolicy')}</Text>
           </Typography>
         </TouchableOpacity>
 
@@ -240,10 +237,10 @@ export const RegisterScreen = () => {
 
       <View style={styles.footer}>
         <Typography variant="body2" color={THEME_COLORS.TEXT_MUTED}>
-          {t('auth.register.hasAccount')}{' '}
+          {t('auth.register.hasAccount')}
         </Typography>
 
-        <TouchableOpacity onPress={handleGoToLogin} activeOpacity={0.7}>
+        <TouchableOpacity onPress={handleGoToLogin} activeOpacity={0.7} style={styles.loginLink}>
           <Typography variant="body2" weight="SEMIBOLD" color={THEME_COLORS.PRIMARY}>
             {t('auth.register.loginNow')}
           </Typography>
@@ -304,6 +301,10 @@ const styles = StyleSheet.create({
     flex: 1,
     lineHeight: 20,
   },
+  linkText: {
+    color: THEME_COLORS.PRIMARY,
+    fontWeight: '500',
+  },
   termsError: {
     marginBottom: SPACING_TOKENS.SM,
     marginLeft: SPACING_TOKENS.MD,
@@ -317,5 +318,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: SPACING_TOKENS.XL,
     marginBottom: SPACING_TOKENS.LG,
+  },
+  loginLink: {
+    marginLeft: 4,
   },
 });

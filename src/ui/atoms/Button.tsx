@@ -68,7 +68,16 @@ export const Button = ({
         <View style={styles.contentRow}>
           {leftIcon ? <View style={styles.leftIconWrapper}>{leftIcon}</View> : null}
 
-          {children ? (
+          {typeof children === 'string' || typeof children === 'number' ? (
+            <Typography
+              variant={size === 'sm' ? 'caption' : size === 'lg' ? 'body1' : 'body2'}
+              weight="SEMIBOLD"
+              color={contentColor}
+              style={textStyle}
+            >
+              {children}
+            </Typography>
+          ) : children ? (
             children
           ) : title ? (
             <Typography

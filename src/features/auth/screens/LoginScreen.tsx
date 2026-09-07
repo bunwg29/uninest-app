@@ -218,10 +218,14 @@ export const LoginScreen = () => {
 
       <View style={styles.footer}>
         <Typography variant="body2" color={THEME_COLORS.TEXT_MUTED}>
-          {t('auth.login.noAccount')}{' '}
+          {t('auth.login.noAccount')}
         </Typography>
 
-        <TouchableOpacity onPress={handleGoToRegister} activeOpacity={0.7}>
+        <TouchableOpacity
+          onPress={handleGoToRegister}
+          activeOpacity={0.7}
+          style={styles.registerLink}
+        >
           <Typography variant="body2" weight="SEMIBOLD" color={THEME_COLORS.PRIMARY}>
             {t('auth.login.registerNow')}
           </Typography>
@@ -289,5 +293,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: SPACING_TOKENS.XL,
     marginBottom: SPACING_TOKENS.LG,
+  },
+  registerLink: {
+    marginLeft: 4,
   },
 });

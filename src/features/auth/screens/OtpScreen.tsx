@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
-import { View, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, Text } from 'react-native';
+
 import { useTranslation } from 'react-i18next';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -167,9 +168,9 @@ export const OtpScreen = () => {
         {countdown > 0 ? (
           <Typography variant="body2" color={THEME_COLORS.TEXT_MUTED}>
             {t('auth.otp.notReceived')}{' '}
-            <Typography variant="body2" weight="SEMIBOLD" color={THEME_COLORS.PRIMARY}>
+            <Text style={styles.resendTimerText}>
               {t('auth.otp.resendIn', { time: formatCountdown(countdown) })}
-            </Typography>
+            </Text>
           </Typography>
         ) : (
           <TouchableOpacity onPress={handleResend} disabled={isResending} activeOpacity={0.7}>
@@ -263,6 +264,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginVertical: SPACING_TOKENS.MD,
   },
+  resendTimerText: {
+    color: THEME_COLORS.PRIMARY,
+    fontWeight: '600',
+  },
+
   noticeBox: {
     flexDirection: 'row',
     alignItems: 'flex-start',
