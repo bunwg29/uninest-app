@@ -1,0 +1,16 @@
+export const THEME_COLORS = {
+  PRIMARY: '#2563EB',
+  PRIMARY_DARK: '#1D4ED8',
+  PRIMARY_LIGHT: '#60A5FA',
+  SECONDARY: '#10B981',
+  BACKGROUND: '#F9FAFB',
+  SURFACE: '#FFFFFF',
+  TEXT_PRIMARY: '#111827',
+  TEXT_MUTED: '#6B7280',
+  BORDER: '#E5E7EB',
+  ERROR: '#EF4444',
+  WARNING: '#F59E0B',
+  SUCCESS: '#10B981',
+} as const;
+
+export type ThemeColors = typeof THEME_COLORS;

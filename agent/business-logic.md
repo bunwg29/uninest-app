@@ -1,0 +1,52 @@
+# UniNest - Business Logic & Domain Specs
+
+## 1. Core Purpose & Actors
+- **Product**: Cross-platform student rental mobile app (UniNest).
+- **Actors & Roles**:
+  - `student`: Search/filter rooms, spatial distance to campus, compare (max 4), booking view/hold, 1-1 chat, forum, review (verified), sandbox payment.
+  - `landlord`: Manage listings (create/edit/hide/delete), manage booking requests, 1-1 chat, view basic stats, buy Premium package.
+  - `admin`: Moderation queue (pending listings), report resolution, ban/unban users, audit log.
+
+## 2. Key Modules & Lifecycle Flows
+- **Auth & Profile (`FR-AUTH`)**:
+  - Register/Login via email or phone + OTP.
+  - JWT (Access + Refresh token in SecureStore). RBAC enforced at API guard.
+- **Listing Management (`FR-LISTING`, `FR-MANAGE`)**:
+  - Landlord creates listing -> status defaults to `pending` -> Admin approves -> `active`.
+  - Media: Upload to Cloudflare R2 via presigned URL. Soft delete: 90 days retention.
+- **Search & Compare (`FR-SEARCH`, `FR-COMPARE`)**:
+  - Spatial radius via PostGIS (`ST_DWithin`) around university.
+  - Multi-filter: Price range, room type, amenities, distance. Sort: price, newest, nearest.
+  - Compare matrix: Up to 4 listings simultaneously (client-side state only).
+- **Booking / Holding (`FR-BOOKING`)**:
+  - 2 Types: `viewing` (visit appointment) and `held` (room hold request).
+  - Statuses: `pending` -> `confirmed` / `rejected` / `cancelled`.
+  - Auto-expire: Expires automatically after 24h if landlord does not respond (BullMQ).
+- **Realtime Chat (`FR-CHAT`)**:
+  - 1-1 conversation bound to a listing. WebSocket connection.
+  - Media attachment via R2 presigned URLs. Push notification when recipient is offline.
+- **Community Forum (`FR-FORUM`)**:
+  - Categories (roommate search, neighborhood tips, Q&A).
+  - Client & backend profanity filter before publish. Auto-hide when report threshold reached.
+- **Verified Review (`FR-REVIEW`)**:
+  - 1 student reviews 1 listing 1 time (1-5 stars on cleanliness, security, landlord, price).
+  - Landlord can reply publicly once.
+- **Notification Center (`FR-NOTIFY`)**:
+  - In-app list + Push notifications (FCM). Channels: booking, chat, listing updates, forum.
+- **Payment Sandbox (`FR-PAYMENT`, `FR-PREMIUM`)**:
+  - VNPay / MoMo Sandbox for deposits & landlord Premium boost.
+  - Webhook + query reconciliation. NEVER store card numbers or CVV.
+- **AI Capabilities (`FR-AICHAT`, `FR-AIRECOMM`)**:
+  - AI Chatbot: RAG pipeline over active listings via `pgvector` embeddings. Must cite real listing links.
+  - AI Recommendation: Implicit user tracking (view, search, save) -> user vector -> personalized home feed.
+
+## 3. Strict Out of Scope (DO NOT BUILD)
+- Legally binding electronic contracts / digital signatures.
+- Real production payment processing (sandbox only).
+- Complex AI duplicate / fraud detection algorithms.
+- In-depth accounting / bookkeeping tools for landlords.
+
+## 4. Non-Functional Constraints (SLOs)
+- Search P95 <= 1.5s (>= 5,000 listings).
+- Detail page load <= 2s on 4G. Chat latency <= 1s. Push noti <= 10s.
+- HTTPS/TLS 1.2+ mandatory. Passwords hashed with bcrypt/argon2.
