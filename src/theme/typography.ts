@@ -1,12 +1,44 @@
 export const TYPOGRAPHY_TOKENS = {
+  FONT_FAMILY: {
+    REGULAR: 'System',
+    MEDIUM: 'System',
+    SEMIBOLD: 'System',
+    BOLD: 'System',
+  },
+
   FONT_SIZES: {
+    TINY: 10,
+    CAPTION_SM: 11,
     XS: 12,
+    CAPTION: 12,
+    SUB: 13,
     SM: 14,
+    BODY2: 14,
+    BODY1: 15,
     BASE: 16,
+    H4: 16,
     LG: 18,
+    H3: 18,
     XL: 20,
+    H2: 20,
     XXL: 24,
+    H1: 24,
     TITLE: 30,
+    DISPLAY: 32,
+  },
+
+  LINE_HEIGHTS: {
+    TINY: 14,
+    CAPTION: 16,
+    SUB: 20,
+    BODY2: 20,
+    BODY1: 22,
+    BASE: 24,
+    H4: 24,
+    H3: 26,
+    H2: 28,
+    H1: 32,
+    TITLE: 38,
   },
 
   FONT_WEIGHTS: {
