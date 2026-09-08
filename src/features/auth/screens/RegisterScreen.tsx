@@ -7,7 +7,6 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { User, Phone, Mail, Lock, CheckSquare, Square } from 'lucide-react-native';
 import { THEME_COLORS, SPACING_TOKENS, BORDER_RADIUS_TOKENS } from '@theme';
 import { Badge, Button, Input, ScreenContainer, Typography } from '@ui';
-import { useToast } from '@hooks';
 import type { AuthStackParamList } from '@navigation';
 import { useAuth } from '../hooks';
 import { registerSchema, type RegisterFormValues } from '../validations';
@@ -18,8 +17,7 @@ type RegisterRouteProp = RouteProp<AuthStackParamList, 'Register'>;
 export const RegisterScreen = () => {
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<RegisterRouteProp>();
-  const { register, role: currentRole, isLoading, error } = useAuth();
-  const toast = useToast();
+  const { role: currentRole, error } = useAuth();
 
   const [isTermsAccepted, setIsTermsAccepted] = useState(false);
 
@@ -48,26 +46,14 @@ export const RegisterScreen = () => {
     setValue('termsAccepted', nextState as true, { shouldValidate: true });
   };
 
-  const onSubmit = async (values: RegisterFormValues) => {
-    try {
-      await register({
-        fullName: values.fullName.trim(),
-        phoneNumber: values.phoneNumber.trim(),
-        email: values.email.trim(),
-        password: values.password,
-        role,
-      });
-
-      toast.success(`Mã xác thực đã được gửi tới ${values.phoneNumber.trim()}`);
-
-      navigation.navigate('OtpVerification', {
-        target: values.phoneNumber.trim(),
-        flow: 'register',
-        role,
-      });
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Đã có lỗi xảy ra');
-    }
+  const onSubmit = (values: RegisterFormValues) => {
+    navigation.navigate('RegisterAddress', {
+      fullName: values.fullName.trim(),
+      phoneNumber: values.phoneNumber.trim(),
+      email: values.email.trim(),
+      password: values.password,
+      role,
+    });
   };
 
   const handleGoToLogin = () => {
@@ -203,7 +189,6 @@ export const RegisterScreen = () => {
           variant="primary"
           size="lg"
           fullWidth
-          isLoading={isLoading}
           onPress={handleSubmit(onSubmit)}
           style={styles.submitButton}
         >

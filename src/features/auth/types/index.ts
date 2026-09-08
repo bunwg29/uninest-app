@@ -8,6 +8,10 @@ export interface AuthUser {
   role: UserRole;
   avatarUrl?: string;
   isVerified: boolean;
+  provinceCode?: string;
+  wardCode?: string;
+  streetAddress?: string;
+  fullAddress?: string;
 }
 
 export interface AuthTokens {
@@ -33,6 +37,9 @@ export interface RegisterPayload {
   email?: string;
   password: string;
   role?: UserRole;
+  provinceCode?: string;
+  wardCode?: string;
+  streetAddress?: string;
 }
 
 export interface VerifyOtpPayload {

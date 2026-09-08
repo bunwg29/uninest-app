@@ -19,6 +19,10 @@ interface BackendUser {
   roleId: number;
   avatarUrl?: string | null;
   isVerified: boolean;
+  provinceCode?: string | null;
+  wardCode?: string | null;
+  streetAddress?: string | null;
+  fullAddress?: string | null;
 }
 
 interface BackendAuthResult {
@@ -58,6 +62,10 @@ const mapBackendUser = (user: BackendUser): AuthUser => {
     role,
     avatarUrl: user.avatarUrl || undefined,
     isVerified: user.isVerified,
+    provinceCode: user.provinceCode || undefined,
+    wardCode: user.wardCode || undefined,
+    streetAddress: user.streetAddress || undefined,
+    fullAddress: user.fullAddress || undefined,
   };
 };
 
@@ -97,6 +105,9 @@ export const authService = {
       email,
       password: payload.password,
       roleId,
+      provinceCode: payload.provinceCode || undefined,
+      wardCode: payload.wardCode || undefined,
+      streetAddress: payload.streetAddress?.trim() || undefined,
     });
 
     const result = unwrapData<{ message: string }>(response.data);

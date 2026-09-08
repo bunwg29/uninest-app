@@ -6,6 +6,7 @@ import {
   RoleSelectionScreen,
   LoginScreen,
   RegisterScreen,
+  RegisterAddressScreen,
   OtpScreen,
   ForgotPasswordScreen,
   ResetPasswordScreen,
@@ -51,6 +52,15 @@ export const AuthNavigator = () => {
         options={{
           headerTitle: '',
           headerBackTitle: 'Đăng nhập',
+        }}
+      />
+
+      <Stack.Screen
+        name="RegisterAddress"
+        component={RegisterAddressScreen}
+        options={{
+          headerTitle: '',
+          headerBackTitle: 'Thông tin cơ bản',
         }}
       />
 

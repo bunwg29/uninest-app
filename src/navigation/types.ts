@@ -6,6 +6,13 @@ export type AuthStackParamList = {
   RoleSelection: undefined;
   Login: undefined;
   Register: { role?: UserRole } | undefined;
+  RegisterAddress: {
+    fullName: string;
+    phoneNumber: string;
+    email: string;
+    password: string;
+    role: UserRole;
+  };
   OtpVerification: {
     target: string;
     flow?: 'register' | 'forgot_password';

@@ -3,6 +3,7 @@ export * from './OnboardingScreen';
 export * from './RoleSelectionScreen';
 export * from './LoginScreen';
 export * from './RegisterScreen';
+export * from './RegisterAddressScreen';
 export * from './OtpScreen';
 export * from './ForgotPasswordScreen';
 export * from './ResetPasswordScreen';
