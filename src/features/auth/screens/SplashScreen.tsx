@@ -1,13 +1,14 @@
 import { useEffect } from 'react';
-import { View, StyleSheet, ActivityIndicator } from 'react-native';
+import { View, StyleSheet, ActivityIndicator, Image } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { Building2 } from 'lucide-react-native';
 import { THEME_COLORS, SPACING_TOKENS, BORDER_RADIUS_TOKENS } from '@theme';
 import { tokenStorage, APP_CONFIG } from '@core';
 import { Typography } from '@ui';
 import type { AuthStackParamList, RootStackParamList } from '@navigation';
 import { useAuth } from '../hooks';
+
+const APP_LOGO = require('../../../../assets/logo.png');
 
 type NavigationProp = NativeStackNavigationProp<AuthStackParamList & RootStackParamList>;
 
@@ -55,8 +56,12 @@ export const SplashScreen = () => {
   return (
     <View style={styles.container}>
       <View style={styles.content}>
-        <View style={styles.logoBadge}>
-          <Building2 size={44} color={THEME_COLORS.SURFACE} />
+        <View style={styles.logoContainer}>
+          <Image
+            source={APP_LOGO}
+            style={styles.logoImage}
+            resizeMode="cover"
+          />
         </View>
 
         <Typography
@@ -70,13 +75,12 @@ export const SplashScreen = () => {
 
         <View style={styles.tagWrapper}>
           <Typography variant="caption" weight="SEMIBOLD" color={THEME_COLORS.PRIMARY}>
-            Nền tảng thuê trọ sinh viên số 1 Student Housing
+            Nền tảng thuê trọ sinh viên số 1
           </Typography>
         </View>
 
         <Typography variant="body1" color={THEME_COLORS.TEXT_SECONDARY} style={styles.slogan}>
-          Tìm phòng trọ, căn hộ, bạn cùng phòng dễ dàng và an toàn Tìm trọ sinh viên — nhanh, gần
-          trường, minh bạch giá
+          Tìm phòng trọ, căn hộ và bạn cùng phòng dễ dàng, an toàn và minh bạch giá
         </Typography>
 
         <View style={styles.loadingContainer}>
@@ -112,19 +116,24 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     width: '100%',
   },
-  logoBadge: {
-    width: 88,
-    height: 88,
-    borderRadius: BORDER_RADIUS_TOKENS.LG,
-    backgroundColor: THEME_COLORS.PRIMARY,
+  logoContainer: {
+    width: 96,
+    height: 96,
+    borderRadius: 22,
+    backgroundColor: THEME_COLORS.SURFACE,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: SPACING_TOKENS.MD,
     shadowColor: THEME_COLORS.PRIMARY,
     shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.25,
-    shadowRadius: 10,
-    elevation: 8,
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 6,
+    overflow: 'hidden',
+  },
+  logoImage: {
+    width: '100%',
+    height: '100%',
   },
   appName: {
     fontSize: 32,

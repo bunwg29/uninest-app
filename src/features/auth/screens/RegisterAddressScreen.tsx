@@ -1,11 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import {
-  View,
-  StyleSheet,
-  TouchableOpacity,
-  FlatList,
-  ActivityIndicator,
-} from 'react-native';
+import { View, StyleSheet, TouchableOpacity, FlatList, ActivityIndicator } from 'react-native';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { MapPin, ChevronDown, Search, Check } from 'lucide-react-native';
@@ -48,22 +42,34 @@ export const RegisterAddressScreen = () => {
   const [isLoadingWards, setIsLoadingWards] = useState(false);
 
   useEffect(() => {
+    let isMounted = true;
+
     const fetchProvinces = async () => {
       try {
         setIsLoadingProvinces(true);
 
         const data = await locationsService.getProvinces();
 
-        setProvinces(data);
+        if (isMounted) {
+          setProvinces(data);
+        }
       } catch {
-        toast.error('Không thể tải danh sách tỉnh/thành phố');
+        if (isMounted) {
+          toast.error('Không thể tải danh sách tỉnh/thành phố');
+        }
       } finally {
-        setIsLoadingProvinces(false);
+        if (isMounted) {
+          setIsLoadingProvinces(false);
+        }
       }
     };
 
     void fetchProvinces();
-  }, [toast]);
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const handleSelectProvince = async (province: LocationProvince) => {
     setSelectedProvince(province);
@@ -108,9 +114,7 @@ export const RegisterAddressScreen = () => {
     const keyword = provinceSearch.toLowerCase().trim();
 
     return provinces.filter(
-      (p) =>
-        p.name.toLowerCase().includes(keyword) ||
-        p.fullName.toLowerCase().includes(keyword),
+      (p) => p.name.toLowerCase().includes(keyword) || p.fullName.toLowerCase().includes(keyword)
     );
   }, [provinces, provinceSearch]);
 
@@ -122,18 +126,14 @@ export const RegisterAddressScreen = () => {
     const keyword = wardSearch.toLowerCase().trim();
 
     return wards.filter(
-      (w) =>
-        w.name.toLowerCase().includes(keyword) ||
-        w.fullName.toLowerCase().includes(keyword),
+      (w) => w.name.toLowerCase().includes(keyword) || w.fullName.toLowerCase().includes(keyword)
     );
   }, [wards, wardSearch]);
 
   const fullAddressPreview = useMemo(() => {
-    const parts = [
-      streetAddress.trim(),
-      selectedWard?.fullName,
-      selectedProvince?.fullName,
-    ].filter(Boolean);
+    const parts = [streetAddress.trim(), selectedWard?.fullName, selectedProvince?.fullName].filter(
+      Boolean
+    );
 
     return parts.join(', ');
   }, [streetAddress, selectedWard, selectedProvince]);
@@ -204,19 +204,22 @@ export const RegisterAddressScreen = () => {
       <View style={styles.form}>
         <View style={styles.fieldWrapper}>
           <Typography variant="caption" weight="MEDIUM" style={styles.label}>
-            Tỉnh / Thành phố <Typography variant="caption" color={THEME_COLORS.ERROR}>*</Typography>
+            Tỉnh / Thành phố{' '}
+            <Typography variant="caption" color={THEME_COLORS.ERROR}>
+              *
+            </Typography>
           </Typography>
 
           <TouchableOpacity
-            style={[
-              styles.selectorTrigger,
-              !selectedProvince && styles.selectorPlaceholder,
-            ]}
+            style={[styles.selectorTrigger, !selectedProvince && styles.selectorPlaceholder]}
             onPress={() => setIsProvinceModalVisible(true)}
             activeOpacity={0.7}
           >
             <View style={styles.triggerLeft}>
-              <MapPin size={18} color={selectedProvince ? THEME_COLORS.PRIMARY : THEME_COLORS.TEXT_PLACEHOLDER} />
+              <MapPin
+                size={18}
+                color={selectedProvince ? THEME_COLORS.PRIMARY : THEME_COLORS.TEXT_PLACEHOLDER}
+              />
 
               <Typography
                 variant="body1"
@@ -233,7 +236,10 @@ export const RegisterAddressScreen = () => {
 
         <View style={styles.fieldWrapper}>
           <Typography variant="caption" weight="MEDIUM" style={styles.label}>
-            Phường / Xã <Typography variant="caption" color={THEME_COLORS.ERROR}>*</Typography>
+            Phường / Xã{' '}
+            <Typography variant="caption" color={THEME_COLORS.ERROR}>
+              *
+            </Typography>
           </Typography>
 
           <TouchableOpacity
@@ -246,7 +252,10 @@ export const RegisterAddressScreen = () => {
             activeOpacity={selectedProvince ? 0.7 : 1}
           >
             <View style={styles.triggerLeft}>
-              <MapPin size={18} color={selectedWard ? THEME_COLORS.PRIMARY : THEME_COLORS.TEXT_PLACEHOLDER} />
+              <MapPin
+                size={18}
+                color={selectedWard ? THEME_COLORS.PRIMARY : THEME_COLORS.TEXT_PLACEHOLDER}
+              />
 
               <Typography
                 variant="body1"
@@ -254,16 +263,16 @@ export const RegisterAddressScreen = () => {
                   !selectedProvince
                     ? THEME_COLORS.TEXT_MUTED
                     : selectedWard
-                    ? THEME_COLORS.TEXT_PRIMARY
-                    : THEME_COLORS.TEXT_PLACEHOLDER
+                      ? THEME_COLORS.TEXT_PRIMARY
+                      : THEME_COLORS.TEXT_PLACEHOLDER
                 }
                 style={styles.triggerText}
               >
                 {!selectedProvince
                   ? 'Vui lòng chọn Tỉnh/Thành trước'
                   : selectedWard
-                  ? selectedWard.fullName
-                  : 'Chọn Phường / Xã'}
+                    ? selectedWard.fullName
+                    : 'Chọn Phường / Xã'}
               </Typography>
             </View>
 
@@ -289,12 +298,21 @@ export const RegisterAddressScreen = () => {
             <View style={styles.previewHeader}>
               <MapPin size={16} color={THEME_COLORS.PRIMARY} />
 
-              <Typography variant="caption" weight="SEMIBOLD" color={THEME_COLORS.PRIMARY} style={styles.previewTitle}>
+              <Typography
+                variant="caption"
+                weight="SEMIBOLD"
+                color={THEME_COLORS.PRIMARY}
+                style={styles.previewTitle}
+              >
                 Địa chỉ đầy đủ
               </Typography>
             </View>
 
-            <Typography variant="body2" color={THEME_COLORS.TEXT_PRIMARY} style={styles.previewText}>
+            <Typography
+              variant="body2"
+              color={THEME_COLORS.TEXT_PRIMARY}
+              style={styles.previewText}
+            >
               {fullAddressPreview}
             </Typography>
           </View>

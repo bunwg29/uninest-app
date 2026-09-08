@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
 import { useUIStore, ToastConfig } from '@core';
 
 export const useToast = () => {
@@ -44,12 +44,15 @@ export const useToast = () => {
     [showToast]
   );
 
-  return {
-    show,
-    hide,
-    success,
-    error,
-    warning,
-    info,
-  };
+  return useMemo(
+    () => ({
+      show,
+      hide,
+      success,
+      error,
+      warning,
+      info,
+    }),
+    [show, hide, success, error, warning, info]
+  );
 };
