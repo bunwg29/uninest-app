@@ -57,11 +57,7 @@ export const SplashScreen = () => {
     <View style={styles.container}>
       <View style={styles.content}>
         <View style={styles.logoContainer}>
-          <Image
-            source={APP_LOGO}
-            style={styles.logoImage}
-            resizeMode="cover"
-          />
+          <Image source={APP_LOGO} style={styles.logoImage} resizeMode="cover" />
         </View>
 
         <Typography
