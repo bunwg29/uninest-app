@@ -2,10 +2,7 @@ import { z } from 'zod';
 
 export type LoginIdentifierType = 'phone' | 'email';
 
-export const createLoginSchema = (
-  type: LoginIdentifierType,
-  t: (key: string) => string
-) => {
+export const createLoginSchema = (type: LoginIdentifierType, t: (key: string) => string) => {
   return z.object({
     identifier:
       type === 'phone'
@@ -55,9 +52,7 @@ export const createForgotPasswordSchema = (t: (key: string) => string) => {
   });
 };
 
-export type ForgotPasswordFormValues = z.infer<
-  ReturnType<typeof createForgotPasswordSchema>
->;
+export type ForgotPasswordFormValues = z.infer<ReturnType<typeof createForgotPasswordSchema>>;
 
 export const createResetPasswordSchema = (t: (key: string) => string) => {
   return z
@@ -75,7 +70,4 @@ export const createResetPasswordSchema = (t: (key: string) => string) => {
     });
 };
 
-export type ResetPasswordFormValues = z.infer<
-  ReturnType<typeof createResetPasswordSchema>
->;
-
+export type ResetPasswordFormValues = z.infer<ReturnType<typeof createResetPasswordSchema>>;

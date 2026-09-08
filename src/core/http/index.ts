@@ -75,10 +75,20 @@ apiClient.interceptors.response.use(
   async (error: AxiosError<ApiErrorResponse>) => {
     const originalRequest = error.config as CustomAxiosRequestConfig | undefined;
 
+    const requestUrl = originalRequest?.url || '';
+    const isAuthBypassUrl =
+      requestUrl.includes('/auth/login') ||
+      requestUrl.includes('/auth/register') ||
+      requestUrl.includes('/auth/otp') ||
+      requestUrl.includes('/auth/refresh-token') ||
+      requestUrl.includes('/auth/forgot-password') ||
+      requestUrl.includes('/auth/reset-password');
+
     if (
       originalRequest &&
       error.response?.status === HTTP_STATUS_CODES.UNAUTHORIZED &&
-      !originalRequest._retry
+      !originalRequest._retry &&
+      !isAuthBypassUrl
     ) {
       if (isRefreshing) {
         return new Promise((resolve, reject) => {
@@ -143,18 +153,25 @@ apiClient.interceptors.response.use(
       }
     }
 
-    const errorData = error.response?.data;
-    const rawMessages = errorData?.messages;
+    const errorData = error.response?.data as
+      (ApiErrorResponse & { message?: string | string[] }) | undefined;
+    const rawMessages = errorData?.messages ?? errorData?.message;
     const message =
-      (Array.isArray(rawMessages) ? rawMessages.join(', ') : rawMessages) ||
+      (Array.isArray(rawMessages)
+        ? rawMessages.join(', ')
+        : typeof rawMessages === 'string'
+          ? rawMessages
+          : null) ||
       error.message ||
       'An unexpected network error occurred';
 
     const statusCode =
-      errorData?.statusCode || error.response?.status || HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR;
+      (typeof errorData?.statusCode === 'number' ? errorData.statusCode : null) ||
+      error.response?.status ||
+      HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR;
 
-    return Promise.reject(
-      new AppError(message, statusCode, errorData?.error ?? undefined, errorData)
-    );
+    const errorType = typeof errorData?.error === 'string' ? errorData.error : undefined;
+
+    return Promise.reject(new AppError(message, statusCode, errorType, errorData));
   }
 );

@@ -44,4 +44,3 @@ const styles = StyleSheet.create({
     elevation: 9999,
   },
 });
-
