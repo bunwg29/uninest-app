@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { View, StyleSheet } from 'react-native';
-import { useTranslation } from 'react-i18next';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Check, Circle, Lock } from 'lucide-react-native';
@@ -9,13 +8,12 @@ import { Button, Input, ScreenContainer, Typography } from '@ui';
 import { useToast } from '@hooks';
 import type { AuthStackParamList } from '@navigation';
 import { authService } from '../services';
-import { createResetPasswordSchema } from '../validations';
+import { resetPasswordSchema } from '../validations';
 
 type NavigationProp = NativeStackNavigationProp<AuthStackParamList>;
 type ResetRouteProp = RouteProp<AuthStackParamList, 'ResetPassword'>;
 
 export const ResetPasswordScreen = () => {
-  const { t } = useTranslation();
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<ResetRouteProp>();
   const toast = useToast();
@@ -37,11 +35,10 @@ export const ResetPasswordScreen = () => {
   const isAllValid = hasMinLength && hasDigit && hasUppercase && isMatch;
 
   const handleSubmit = async () => {
-    const schema = createResetPasswordSchema(t);
-    const result = schema.safeParse({ newPassword, confirmPassword });
+    const result = resetPasswordSchema.safeParse({ newPassword, confirmPassword });
 
     if (!result.success) {
-      const msg = result.error.errors[0]?.message || t('common.error');
+      const msg = result.error.errors[0]?.message || 'Đã có lỗi xảy ra. Vui lòng thử lại.';
 
       setErrorMessage(msg);
       toast.error(msg);
@@ -59,14 +56,14 @@ export const ResetPasswordScreen = () => {
         newPassword,
       });
 
-      toast.success(t('auth.resetPassword.title') + ' thành công!');
+      toast.success('Đặt mật khẩu mới thành công!');
 
       navigation.reset({
         index: 0,
         routes: [{ name: 'Login' }],
       });
     } catch (err) {
-      const msg = err instanceof Error ? err.message : t('common.error');
+      const msg = err instanceof Error ? err.message : 'Đã có lỗi xảy ra. Vui lòng thử lại.';
 
       setErrorMessage(msg);
       toast.error(msg);
@@ -79,11 +76,11 @@ export const ResetPasswordScreen = () => {
     <ScreenContainer scrollable style={styles.container}>
       <View style={styles.header}>
         <Typography variant="h1" weight="BOLD" style={styles.title}>
-          {t('auth.resetPassword.title')}
+          Đặt mật khẩu mới
         </Typography>
 
         <Typography variant="body1" color={THEME_COLORS.TEXT_SECONDARY} style={styles.subtitle}>
-          {t('auth.resetPassword.subtitle')}
+          Mật khẩu mới phải khác mật khẩu đã sử dụng gần đây.
         </Typography>
       </View>
 
@@ -97,8 +94,8 @@ export const ResetPasswordScreen = () => {
 
       <View style={styles.form}>
         <Input
-          label={t('auth.resetPassword.newPasswordLabel')}
-          placeholder={t('auth.resetPassword.passwordPlaceholder')}
+          label="Mật khẩu mới"
+          placeholder="Tối thiểu 8 ký tự"
           isPassword
           autoCapitalize="none"
           leftIcon={<Lock size={18} color={THEME_COLORS.TEXT_PLACEHOLDER} />}
@@ -134,9 +131,7 @@ export const ResetPasswordScreen = () => {
             color={passedCount >= 2 ? THEME_COLORS.SUCCESS : THEME_COLORS.WARNING}
             style={styles.strengthText}
           >
-            {passedCount >= 3
-              ? t('auth.resetPassword.strengthStrong')
-              : t('auth.resetPassword.strengthMedium')}
+            {passedCount >= 3 ? 'Mạnh' : 'Trung bình'}
           </Typography>
         </View>
 
@@ -153,7 +148,7 @@ export const ResetPasswordScreen = () => {
               color={hasMinLength ? THEME_COLORS.SUCCESS : THEME_COLORS.TEXT_MUTED}
               style={styles.checkText}
             >
-              {t('auth.resetPassword.ruleMinLength')}
+              Tối thiểu 8 ký tự
             </Typography>
           </View>
 
@@ -169,7 +164,7 @@ export const ResetPasswordScreen = () => {
               color={hasDigit ? THEME_COLORS.SUCCESS : THEME_COLORS.TEXT_MUTED}
               style={styles.checkText}
             >
-              {t('auth.resetPassword.ruleDigit')}
+              Có ít nhất một chữ số
             </Typography>
           </View>
 
@@ -185,14 +180,14 @@ export const ResetPasswordScreen = () => {
               color={hasUppercase ? THEME_COLORS.SUCCESS : THEME_COLORS.TEXT_MUTED}
               style={styles.checkText}
             >
-              {t('auth.resetPassword.ruleUppercase')}
+              Có ít nhất một chữ in hoa
             </Typography>
           </View>
         </View>
 
         <Input
-          label={t('auth.resetPassword.confirmPasswordLabel')}
-          placeholder={t('auth.resetPassword.passwordPlaceholder')}
+          label="Xác nhận mật khẩu"
+          placeholder="Nhập lại mật khẩu mới"
           isPassword
           autoCapitalize="none"
           leftIcon={<Lock size={18} color={THEME_COLORS.TEXT_PLACEHOLDER} />}
@@ -213,7 +208,7 @@ export const ResetPasswordScreen = () => {
               color={isMatch ? THEME_COLORS.SUCCESS : THEME_COLORS.ERROR}
               style={styles.checkText}
             >
-              {t('auth.resetPassword.ruleMatch')}
+              Mật khẩu xác nhận khớp
             </Typography>
           </View>
         ) : null}
@@ -227,7 +222,7 @@ export const ResetPasswordScreen = () => {
           onPress={handleSubmit}
           style={styles.submitButton}
         >
-          {t('auth.resetPassword.submit')}
+          Đặt lại mật khẩu
         </Button>
       </View>
     </ScreenContainer>

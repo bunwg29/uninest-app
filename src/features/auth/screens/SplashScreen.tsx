@@ -1,6 +1,5 @@
 import { useEffect } from 'react';
 import { View, StyleSheet, ActivityIndicator } from 'react-native';
-import { useTranslation } from 'react-i18next';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Building2 } from 'lucide-react-native';
@@ -13,7 +12,6 @@ import { useAuth } from '../hooks';
 type NavigationProp = NativeStackNavigationProp<AuthStackParamList & RootStackParamList>;
 
 export const SplashScreen = () => {
-  const { t } = useTranslation();
   const navigation = useNavigation<NavigationProp>();
   const { isAuthenticated, isInitialized, initialize } = useAuth();
 
@@ -61,26 +59,26 @@ export const SplashScreen = () => {
 
         <View style={styles.tagWrapper}>
           <Typography variant="caption" weight="SEMIBOLD" color={THEME_COLORS.PRIMARY}>
-            {t('auth.splash.tagline')}
+            Nền tảng thuê trọ sinh viên số 1
           </Typography>
         </View>
 
         <Typography variant="body1" color={THEME_COLORS.TEXT_SECONDARY} style={styles.slogan}>
-          {t('auth.splash.slogan')}
+          Tìm phòng trọ, căn hộ, bạn cùng phòng dễ dàng và an toàn
         </Typography>
 
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="small" color={THEME_COLORS.PRIMARY} />
 
           <Typography variant="caption" color={THEME_COLORS.TEXT_MUTED} style={styles.loadingText}>
-            {t('auth.splash.checkingSession')}
+            Đang kiểm tra phiên đăng nhập...
           </Typography>
         </View>
       </View>
 
       <View style={styles.footer}>
         <Typography variant="caption" color={THEME_COLORS.TEXT_MUTED}>
-          {t('auth.splash.version', { version: APP_CONFIG.VERSION })}
+          {`Phiên bản ${APP_CONFIG.VERSION}`}
         </Typography>
       </View>
     </View>

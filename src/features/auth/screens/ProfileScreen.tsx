@@ -1,5 +1,4 @@
 import { View, StyleSheet } from 'react-native';
-import { useTranslation } from 'react-i18next';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { LogOut } from 'lucide-react-native';
@@ -12,7 +11,6 @@ import { useAuth } from '../hooks';
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 export const ProfileScreen = () => {
-  const { t } = useTranslation();
   const navigation = useNavigation<NavigationProp>();
   const { user, isAuthenticated, logout } = useAuth();
   const toast = useToast();
@@ -35,7 +33,7 @@ export const ProfileScreen = () => {
   return (
     <ScreenContainer style={styles.container}>
       <Typography variant="h2" weight="BOLD" style={styles.headerTitle}>
-        {t('navigation.profile')}
+        Tài khoản
       </Typography>
 
       {isAuthenticated && user ? (
@@ -56,11 +54,7 @@ export const ProfileScreen = () => {
                 <Badge
                   variant={user.role === 'landlord' ? 'holding' : 'available'}
                   size="sm"
-                  label={
-                    user.role === 'landlord'
-                      ? t('auth.role.landlordTitle')
-                      : t('auth.role.studentTitle')
-                  }
+                  label={user.role === 'landlord' ? 'Chủ trọ' : 'Sinh viên'}
                 />
               </View>
             </View>
@@ -74,7 +68,7 @@ export const ProfileScreen = () => {
             onPress={handleLogout}
             style={styles.logoutButton}
           >
-            {t('navigation.login') === 'Đăng nhập' ? 'Đăng xuất' : 'Logout'}
+            Đăng xuất
           </Button>
         </View>
       ) : (
@@ -84,11 +78,11 @@ export const ProfileScreen = () => {
             color={THEME_COLORS.TEXT_MUTED}
             style={styles.notLoggedInText}
           >
-            {t('auth.login.subtitle')}
+            Đăng nhập để xem thông tin tài khoản và quản lý hợp đồng
           </Typography>
 
           <Button variant="primary" size="lg" fullWidth onPress={handleGoToLogin}>
-            {t('navigation.login')}
+            Đăng nhập
           </Button>
         </View>
       )}

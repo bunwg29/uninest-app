@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { View, StyleSheet, TouchableOpacity, Text } from 'react-native';
 
-import { useTranslation } from 'react-i18next';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { AlertCircle, AlertTriangle, ShieldCheck } from 'lucide-react-native';
@@ -19,7 +18,6 @@ type OtpRouteProp = RouteProp<AuthStackParamList, 'OtpVerification'>;
 const COUNTDOWN_SECONDS = 60;
 
 export const OtpScreen = () => {
-  const { t } = useTranslation();
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<OtpRouteProp>();
   const { verifyOtp, isLoading, error: storeError, clearError } = useAuth();
@@ -69,7 +67,7 @@ export const OtpScreen = () => {
       setCountdown(COUNTDOWN_SECONDS);
       toast.info('Mã xác thực mới đã được gửi!');
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : t('common.error'));
+      toast.error(err instanceof Error ? err.message : 'Đã có lỗi xảy ra. Vui lòng thử lại.');
     } finally {
       setIsResending(false);
     }
@@ -108,12 +106,12 @@ export const OtpScreen = () => {
         routes: [{ name: 'Main' }],
       });
     } catch (err) {
-      const msg = err instanceof Error ? err.message : t('common.error');
+      const msg = err instanceof Error ? err.message : 'Đã có lỗi xảy ra. Vui lòng thử lại.';
 
       setErrorMessage(msg);
       toast.error(msg);
     }
-  }, [code, isLoading, clearError, flow, target, role, verifyOtp, navigation, toast, t]);
+  }, [code, isLoading, clearError, flow, target, role, verifyOtp, navigation, toast]);
 
   const handleChangePhone = () => {
     clearError();
@@ -127,16 +125,16 @@ export const OtpScreen = () => {
       <View style={styles.header}>
         <View style={styles.stepBadge}>
           <Typography variant="caption" weight="SEMIBOLD" color={THEME_COLORS.PRIMARY}>
-            {t('auth.otp.step')}
+            Bước 2 / 2
           </Typography>
         </View>
 
         <Typography variant="h1" weight="BOLD" style={styles.title}>
-          {t('auth.otp.title')}
+          Nhập mã xác thực
         </Typography>
 
         <Typography variant="body1" color={THEME_COLORS.TEXT_SECONDARY} style={styles.subtitle}>
-          {t('auth.otp.subtitle', { target })}
+          {`Mã gồm 6 số vừa được gửi tới ${target}`}
         </Typography>
       </View>
 
@@ -169,7 +167,7 @@ export const OtpScreen = () => {
           <AlertTriangle size={18} color={THEME_COLORS.WARNING} style={styles.alertIcon} />
 
           <Typography variant="caption" color={THEME_COLORS.WARNING} style={styles.warningText}>
-            {t('auth.otp.errorExpiredCode')}
+            Mã xác thực đã hết hạn. Vui lòng gửi lại mã mới.
           </Typography>
         </View>
       ) : null}
@@ -177,15 +175,15 @@ export const OtpScreen = () => {
       <View style={styles.resendSection}>
         {countdown > 0 ? (
           <Typography variant="body2" color={THEME_COLORS.TEXT_MUTED}>
-            {t('auth.otp.notReceived')}{' '}
+            Chưa nhận được mã?{' '}
             <Text style={styles.resendTimerText}>
-              {t('auth.otp.resendIn', { time: formatCountdown(countdown) })}
+              {`Gửi lại sau ${formatCountdown(countdown)}`}
             </Text>
           </Typography>
         ) : (
           <TouchableOpacity onPress={handleResend} disabled={isResending} activeOpacity={0.7}>
             <Typography variant="body2" weight="SEMIBOLD" color={THEME_COLORS.PRIMARY}>
-              {t('auth.otp.resendAction')}
+              Gửi lại mã
             </Typography>
           </TouchableOpacity>
         )}
@@ -195,7 +193,7 @@ export const OtpScreen = () => {
         <ShieldCheck size={18} color={THEME_COLORS.TEXT_MUTED} style={styles.noticeIcon} />
 
         <Typography variant="caption" color={THEME_COLORS.TEXT_MUTED} style={styles.noticeText}>
-          {t('auth.otp.notice')}
+          Mã OTP có hiệu lực trong 5 phút. Không chia sẻ mã này cho bất kỳ ai.
         </Typography>
       </View>
 
@@ -209,7 +207,7 @@ export const OtpScreen = () => {
           onPress={handleConfirm}
           style={styles.confirmButton}
         >
-          {t('auth.otp.confirm')}
+          Xác nhận
         </Button>
 
         <TouchableOpacity
@@ -218,7 +216,7 @@ export const OtpScreen = () => {
           activeOpacity={0.7}
         >
           <Typography variant="body2" weight="SEMIBOLD" color={THEME_COLORS.TEXT_SECONDARY}>
-            {t('auth.otp.changePhone')}
+            Đổi số điện thoại khác
           </Typography>
         </TouchableOpacity>
       </View>

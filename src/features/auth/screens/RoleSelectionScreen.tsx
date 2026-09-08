@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { View, StyleSheet } from 'react-native';
-import { useTranslation } from 'react-i18next';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Info } from 'lucide-react-native';
@@ -14,7 +13,6 @@ import type { UserRole } from '../types';
 type NavigationProp = NativeStackNavigationProp<AuthStackParamList>;
 
 export const RoleSelectionScreen = () => {
-  const { t } = useTranslation();
   const navigation = useNavigation<NavigationProp>();
   const { selectRole } = useAuth();
 
@@ -30,27 +28,27 @@ export const RoleSelectionScreen = () => {
     <ScreenContainer scrollable style={styles.container}>
       <View style={styles.header}>
         <Typography variant="h1" weight="BOLD" style={styles.title}>
-          {t('auth.role.title')}
+          Bạn dùng app với vai trò nào?
         </Typography>
 
         <Typography variant="body1" color={THEME_COLORS.TEXT_SECONDARY} style={styles.subtitle}>
-          {t('auth.role.subtitle')}
+          Chọn đúng vai trò giúp UniNest cá nhân hoá trải nghiệm của bạn.
         </Typography>
       </View>
 
       <View style={styles.cardList}>
         <RoleCard
           role="student"
-          title={t('auth.role.studentTitle')}
-          description={t('auth.role.studentDesc')}
+          title="Tôi là sinh viên"
+          description="Tìm phòng trọ, bạn cùng phòng ghép và quản lý hợp đồng thuê"
           isSelected={selectedRole === 'student'}
           onSelect={(role) => setSelectedRole(role)}
         />
 
         <RoleCard
           role="landlord"
-          title={t('auth.role.landlordTitle')}
-          description={t('auth.role.landlordDesc')}
+          title="Tôi là chủ trọ"
+          description="Đăng tin cho thuê, quản lý phòng và tiếp cận hàng nghìn sinh viên"
           isSelected={selectedRole === 'landlord'}
           onSelect={(role) => setSelectedRole(role)}
         />
@@ -60,13 +58,13 @@ export const RoleSelectionScreen = () => {
         <Info size={18} color={THEME_COLORS.TEXT_MUTED} style={styles.noticeIcon} />
 
         <Typography variant="caption" color={THEME_COLORS.TEXT_MUTED} style={styles.noticeText}>
-          {t('auth.role.landlordNotice')}
+          Chủ nhà cần xác thực CCCD/giấy phép kinh doanh trước khi đăng tin.
         </Typography>
       </View>
 
       <View style={styles.actionContainer}>
         <Button variant="primary" size="lg" fullWidth onPress={handleContinue}>
-          {t('auth.role.continue')}
+          Tiếp tục
         </Button>
       </View>
     </ScreenContainer>

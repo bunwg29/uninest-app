@@ -1,5 +1,4 @@
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { useTranslation } from 'react-i18next';
 import { THEME_COLORS } from '@theme';
 import type { AuthStackParamList } from '../types';
 import {
@@ -14,8 +13,6 @@ import {
 const Stack = createNativeStackNavigator<AuthStackParamList>();
 
 export const AuthNavigator = () => {
-  const { t } = useTranslation();
-
   return (
     <Stack.Navigator
       initialRouteName="RoleSelection"
@@ -37,7 +34,7 @@ export const AuthNavigator = () => {
         component={LoginScreen}
         options={{
           headerTitle: '',
-          headerBackTitle: t('navigation.roleSelection'),
+          headerBackTitle: 'Chọn vai trò',
         }}
       />
 
@@ -46,7 +43,7 @@ export const AuthNavigator = () => {
         component={RegisterScreen}
         options={{
           headerTitle: '',
-          headerBackTitle: t('navigation.login'),
+          headerBackTitle: 'Đăng nhập',
         }}
       />
 
@@ -55,7 +52,7 @@ export const AuthNavigator = () => {
         component={OtpScreen}
         options={{
           headerTitle: '',
-          headerBackTitle: t('navigation.register'),
+          headerBackTitle: 'Đăng ký',
         }}
       />
 
@@ -64,7 +61,7 @@ export const AuthNavigator = () => {
         component={ForgotPasswordScreen}
         options={{
           headerTitle: '',
-          headerBackTitle: t('navigation.login'),
+          headerBackTitle: 'Đăng nhập',
         }}
       />
 
@@ -73,7 +70,7 @@ export const AuthNavigator = () => {
         component={ResetPasswordScreen}
         options={{
           headerTitle: '',
-          headerBackTitle: t('navigation.forgotPassword'),
+          headerBackTitle: 'Quên mật khẩu',
         }}
       />
     </Stack.Navigator>

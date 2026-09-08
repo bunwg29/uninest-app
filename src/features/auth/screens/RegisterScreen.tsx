@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { View, StyleSheet, TouchableOpacity, Text } from 'react-native';
-import { useTranslation } from 'react-i18next';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useForm, Controller } from 'react-hook-form';
@@ -11,13 +10,12 @@ import { Badge, Button, Input, ScreenContainer, Typography } from '@ui';
 import { useToast } from '@hooks';
 import type { AuthStackParamList } from '@navigation';
 import { useAuth } from '../hooks';
-import { createRegisterSchema, type RegisterFormValues } from '../validations';
+import { registerSchema, type RegisterFormValues } from '../validations';
 
 type NavigationProp = NativeStackNavigationProp<AuthStackParamList>;
 type RegisterRouteProp = RouteProp<AuthStackParamList, 'Register'>;
 
 export const RegisterScreen = () => {
-  const { t } = useTranslation();
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<RegisterRouteProp>();
   const { register, role: currentRole, isLoading, error } = useAuth();
@@ -33,7 +31,7 @@ export const RegisterScreen = () => {
     setValue,
     formState: { errors },
   } = useForm<RegisterFormValues>({
-    resolver: zodResolver(createRegisterSchema(t)),
+    resolver: zodResolver(registerSchema),
     defaultValues: {
       fullName: '',
       phoneNumber: '',
@@ -60,7 +58,7 @@ export const RegisterScreen = () => {
         role,
       });
 
-      toast.success(t('auth.otp.subtitle', { target: values.phoneNumber.trim() }));
+      toast.success(`Mã xác thực đã được gửi tới ${values.phoneNumber.trim()}`);
 
       navigation.navigate('OtpVerification', {
         target: values.phoneNumber.trim(),
@@ -68,7 +66,7 @@ export const RegisterScreen = () => {
         role,
       });
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : t('common.error'));
+      toast.error(err instanceof Error ? err.message : 'Đã có lỗi xảy ra');
     }
   };
 
@@ -81,16 +79,16 @@ export const RegisterScreen = () => {
       <View style={styles.header}>
         <View style={styles.stepBadge}>
           <Typography variant="caption" weight="SEMIBOLD" color={THEME_COLORS.PRIMARY}>
-            {t('auth.register.step')}
+            Bước 1 / 2
           </Typography>
         </View>
 
         <Typography variant="h1" weight="BOLD" style={styles.title}>
-          {t('auth.register.title')}
+          Tạo tài khoản
         </Typography>
 
         <Typography variant="body1" color={THEME_COLORS.TEXT_SECONDARY}>
-          {t('auth.register.subtitle')}
+          Chỉ mất chưa tới một phút.
         </Typography>
       </View>
 
@@ -108,8 +106,8 @@ export const RegisterScreen = () => {
           name="fullName"
           render={({ field: { onChange, onBlur, value } }) => (
             <Input
-              label={t('auth.register.fullNameLabel')}
-              placeholder={t('auth.register.fullNamePlaceholder')}
+              label="Họ và tên"
+              placeholder="Nguyễn Xuân Hoài"
               autoCapitalize="words"
               leftIcon={<User size={18} color={THEME_COLORS.TEXT_PLACEHOLDER} />}
               value={value}
@@ -126,8 +124,8 @@ export const RegisterScreen = () => {
             name="phoneNumber"
             render={({ field: { onChange, onBlur, value } }) => (
               <Input
-                label={t('auth.register.phoneLabel')}
-                placeholder={t('auth.register.phonePlaceholder')}
+                label="Số điện thoại"
+                placeholder="0905 123 456"
                 keyboardType="phone-pad"
                 leftIcon={<Phone size={18} color={THEME_COLORS.TEXT_PLACEHOLDER} />}
                 value={value}
@@ -139,7 +137,7 @@ export const RegisterScreen = () => {
           />
 
           <View style={styles.phoneBadgeContainer}>
-            <Badge variant="available" size="sm" label={t('auth.register.phoneBadge')} />
+            <Badge variant="available" size="sm" label="Sẽ nhận OTP" />
           </View>
         </View>
 
@@ -148,8 +146,8 @@ export const RegisterScreen = () => {
           name="email"
           render={({ field: { onChange, onBlur, value } }) => (
             <Input
-              label={t('auth.register.emailLabel')}
-              placeholder={t('auth.register.emailPlaceholder')}
+              label="Email"
+              placeholder="nguyenvana@gmail.com"
               keyboardType="email-address"
               autoCapitalize="none"
               leftIcon={<Mail size={18} color={THEME_COLORS.TEXT_PLACEHOLDER} />}
@@ -166,12 +164,12 @@ export const RegisterScreen = () => {
           name="password"
           render={({ field: { onChange, onBlur, value } }) => (
             <Input
-              label={t('auth.register.passwordLabel')}
-              placeholder={t('auth.register.passwordPlaceholder')}
+              label="Mật khẩu"
+              placeholder="••••••••"
               isPassword
               autoCapitalize="none"
               leftIcon={<Lock size={18} color={THEME_COLORS.TEXT_PLACEHOLDER} />}
-              helperText={t('auth.register.passwordHint')}
+              helperText="Tối thiểu 8 ký tự, có cả chữ và số"
               value={value}
               onChangeText={onChange}
               onBlur={onBlur}
@@ -190,10 +188,8 @@ export const RegisterScreen = () => {
           </View>
 
           <Typography variant="body2" color={THEME_COLORS.TEXT_SECONDARY} style={styles.termsText}>
-            {t('auth.register.termsAgreement')}{' '}
-            <Text style={styles.linkText}>{t('auth.register.termsOfService')}</Text>{' '}
-            {t('auth.register.and')}{' '}
-            <Text style={styles.linkText}>{t('auth.register.privacyPolicy')}</Text>
+            Tôi đồng ý với <Text style={styles.linkText}>Điều khoản sử dụng</Text> và{' '}
+            <Text style={styles.linkText}>Chính sách quyền riêng tư của UniNest.</Text>
           </Typography>
         </TouchableOpacity>
 
@@ -211,18 +207,18 @@ export const RegisterScreen = () => {
           onPress={handleSubmit(onSubmit)}
           style={styles.submitButton}
         >
-          {t('auth.register.submit')}
+          Tiếp tục
         </Button>
       </View>
 
       <View style={styles.footer}>
         <Typography variant="body2" color={THEME_COLORS.TEXT_MUTED}>
-          {t('auth.register.hasAccount')}
+          Đã có tài khoản?
         </Typography>
 
         <TouchableOpacity onPress={handleGoToLogin} activeOpacity={0.7} style={styles.loginLink}>
           <Typography variant="body2" weight="SEMIBOLD" color={THEME_COLORS.PRIMARY}>
-            {t('auth.register.loginNow')}
+            Đăng nhập
           </Typography>
         </TouchableOpacity>
       </View>

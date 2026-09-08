@@ -1,5 +1,4 @@
 import { TouchableOpacity, View, StyleSheet } from 'react-native';
-import { useTranslation } from 'react-i18next';
 import Svg, { Path } from 'react-native-svg';
 import { THEME_COLORS, BORDER_RADIUS_TOKENS, SPACING_TOKENS } from '@theme';
 import { Typography } from '@ui';
@@ -45,8 +44,6 @@ export const SocialAuthButtons = ({
   onApplePress,
   disabled = false,
 }: SocialAuthButtonsProps) => {
-  const { t } = useTranslation();
-
   return (
     <View style={styles.container}>
       <TouchableOpacity
@@ -58,7 +55,7 @@ export const SocialAuthButtons = ({
         <GoogleIcon />
 
         <Typography variant="body2" weight="MEDIUM" style={styles.buttonText}>
-          {t('auth.login.continueGoogle')}
+          Tiếp tục với Google
         </Typography>
       </TouchableOpacity>
 
@@ -71,7 +68,7 @@ export const SocialAuthButtons = ({
         <AppleIcon />
 
         <Typography variant="body2" weight="MEDIUM" style={styles.buttonText}>
-          {t('auth.login.continueApple')}
+          Tiếp tục với Apple
         </Typography>
       </TouchableOpacity>
     </View>

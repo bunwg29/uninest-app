@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { View, StyleSheet, TouchableOpacity } from 'react-native';
-import { useTranslation } from 'react-i18next';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useForm, Controller } from 'react-hook-form';
@@ -17,7 +16,6 @@ import { createLoginSchema, type LoginFormValues, type LoginIdentifierType } fro
 type NavigationProp = NativeStackNavigationProp<AuthStackParamList & RootStackParamList>;
 
 export const LoginScreen = () => {
-  const { t } = useTranslation();
   const navigation = useNavigation<NavigationProp>();
   const { login, isLoading, error, clearError } = useAuth();
   const toast = useToast();
@@ -30,7 +28,7 @@ export const LoginScreen = () => {
     reset,
     formState: { errors },
   } = useForm<LoginFormValues>({
-    resolver: zodResolver(createLoginSchema(loginType, t)),
+    resolver: zodResolver(createLoginSchema(loginType)),
     defaultValues: {
       identifier: '',
       password: '',
@@ -51,14 +49,14 @@ export const LoginScreen = () => {
         type: loginType,
       });
 
-      toast.success(t('auth.login.title') + ' thành công!');
+      toast.success('Đăng nhập thành công!');
 
       navigation.reset({
         index: 0,
         routes: [{ name: 'Main' }],
       });
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : t('common.error'));
+      toast.error(err instanceof Error ? err.message : 'Đã có lỗi xảy ra');
     }
   };
 
@@ -76,11 +74,11 @@ export const LoginScreen = () => {
     <ScreenContainer scrollable style={styles.container}>
       <View style={styles.header}>
         <Typography variant="h1" weight="BOLD" style={styles.title}>
-          {t('auth.login.title')}
+          Đăng nhập
         </Typography>
 
         <Typography variant="body1" color={THEME_COLORS.TEXT_SECONDARY}>
-          {t('auth.login.subtitle')}
+          Chào mừng bạn quay lại UniNest.
         </Typography>
       </View>
 
@@ -95,7 +93,7 @@ export const LoginScreen = () => {
             weight={loginType === 'phone' ? 'SEMIBOLD' : 'MEDIUM'}
             color={loginType === 'phone' ? THEME_COLORS.PRIMARY : THEME_COLORS.TEXT_MUTED}
           >
-            {t('auth.login.tabPhone')}
+            Số điện thoại
           </Typography>
         </TouchableOpacity>
 
@@ -109,7 +107,7 @@ export const LoginScreen = () => {
             weight={loginType === 'email' ? 'SEMIBOLD' : 'MEDIUM'}
             color={loginType === 'email' ? THEME_COLORS.PRIMARY : THEME_COLORS.TEXT_MUTED}
           >
-            {t('auth.login.tabEmail')}
+            Email
           </Typography>
         </TouchableOpacity>
       </View>
@@ -128,14 +126,8 @@ export const LoginScreen = () => {
           name="identifier"
           render={({ field: { onChange, onBlur, value } }) => (
             <Input
-              label={
-                loginType === 'phone' ? t('auth.login.phoneLabel') : t('auth.login.emailLabel')
-              }
-              placeholder={
-                loginType === 'phone'
-                  ? t('auth.login.phonePlaceholder')
-                  : t('auth.login.emailPlaceholder')
-              }
+              label={loginType === 'phone' ? 'Số điện thoại' : 'Email'}
+              placeholder={loginType === 'phone' ? '0905 123 456' : 'example@gmail.com'}
               keyboardType={loginType === 'phone' ? 'phone-pad' : 'email-address'}
               autoCapitalize="none"
               leftIcon={
@@ -158,8 +150,8 @@ export const LoginScreen = () => {
           name="password"
           render={({ field: { onChange, onBlur, value } }) => (
             <Input
-              label={t('auth.login.passwordLabel')}
-              placeholder={t('auth.login.passwordPlaceholder')}
+              label="Mật khẩu"
+              placeholder="••••••••"
               isPassword
               autoCapitalize="none"
               leftIcon={<Lock size={18} color={THEME_COLORS.TEXT_PLACEHOLDER} />}
@@ -177,7 +169,7 @@ export const LoginScreen = () => {
           activeOpacity={0.7}
         >
           <Typography variant="body2" weight="MEDIUM" color={THEME_COLORS.PRIMARY}>
-            {t('auth.login.forgotPassword')}
+            Quên mật khẩu?
           </Typography>
         </TouchableOpacity>
 
@@ -189,11 +181,11 @@ export const LoginScreen = () => {
           onPress={handleSubmit(onSubmit)}
           style={styles.submitButton}
         >
-          {t('auth.login.submit')}
+          Đăng nhập
         </Button>
       </View>
 
-      <Divider label={t('auth.login.orDivider')} style={styles.divider} />
+      <Divider label="hoặc tiếp tục với" style={styles.divider} />
 
       <SocialAuthButtons
         onGooglePress={() => toast.info('Đăng nhập Google đang phát triển')}
@@ -202,7 +194,7 @@ export const LoginScreen = () => {
 
       <View style={styles.footer}>
         <Typography variant="body2" color={THEME_COLORS.TEXT_MUTED}>
-          {t('auth.login.noAccount')}
+          Chưa có tài khoản?
         </Typography>
 
         <TouchableOpacity
@@ -211,7 +203,7 @@ export const LoginScreen = () => {
           style={styles.registerLink}
         >
           <Typography variant="body2" weight="SEMIBOLD" color={THEME_COLORS.PRIMARY}>
-            {t('auth.login.registerNow')}
+            Đăng ký
           </Typography>
         </TouchableOpacity>
       </View>

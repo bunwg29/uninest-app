@@ -2,72 +2,66 @@ import { z } from 'zod';
 
 export type LoginIdentifierType = 'phone' | 'email';
 
-export const createLoginSchema = (type: LoginIdentifierType, t: (key: string) => string) => {
+export const createLoginSchema = (type: LoginIdentifierType) => {
   return z.object({
     identifier:
       type === 'phone'
         ? z
             .string()
-            .min(1, t('auth.validation.phoneRequired'))
-            .regex(/^[0-9]{10}$/, t('auth.validation.phoneInvalid'))
-        : z
-            .string()
-            .min(1, t('auth.validation.emailRequired'))
-            .email(t('auth.validation.emailInvalid')),
-    password: z.string().min(1, t('auth.validation.passwordRequired')),
+            .min(1, 'Vui lòng nhập số điện thoại')
+            .regex(/^[0-9]{10}$/, 'Số điện thoại không hợp lệ (10 chữ số)')
+        : z.string().min(1, 'Vui lòng nhập email').email('Email không đúng định dạng'),
+    password: z.string().min(1, 'Vui lòng nhập mật khẩu'),
   });
 };
 
 export type LoginFormValues = z.infer<ReturnType<typeof createLoginSchema>>;
 
-export const createRegisterSchema = (t: (key: string) => string) => {
-  return z.object({
-    fullName: z.string().min(2, t('auth.validation.fullNameRequired')),
-    phoneNumber: z
+export const registerSchema = z.object({
+  fullName: z.string().min(2, 'Vui lòng nhập họ và tên'),
+  phoneNumber: z
+    .string()
+    .min(1, 'Vui lòng nhập số điện thoại')
+    .regex(/^[0-9]{10}$/, 'Số điện thoại không hợp lệ (10 chữ số)'),
+  email: z.string().min(1, 'Vui lòng nhập email').email('Email không đúng định dạng'),
+  password: z
+    .string()
+    .min(8, 'Mật khẩu phải có tối thiểu 8 ký tự')
+    .regex(/^(?=.*[A-Za-z])(?=.*\d)/, 'Mật khẩu phải chứa cả chữ cái và số'),
+  termsAccepted: z.boolean().refine((val) => val === true, {
+    message: 'Bạn cần đồng ý với điều khoản sử dụng',
+  }),
+});
+
+export const createRegisterSchema = () => registerSchema;
+
+export type RegisterFormValues = z.infer<typeof registerSchema>;
+
+export const forgotPasswordSchema = z.object({
+  phoneNumber: z
+    .string()
+    .min(1, 'Vui lòng nhập số điện thoại')
+    .regex(/^[0-9]{10}$/, 'Số điện thoại không hợp lệ (10 chữ số)'),
+});
+
+export const createForgotPasswordSchema = () => forgotPasswordSchema;
+
+export type ForgotPasswordFormValues = z.infer<typeof forgotPasswordSchema>;
+
+export const resetPasswordSchema = z
+  .object({
+    newPassword: z
       .string()
-      .min(1, t('auth.validation.phoneRequired'))
-      .regex(/^[0-9]{10}$/, t('auth.validation.phoneInvalid')),
-    email: z
-      .string()
-      .min(1, t('auth.validation.emailRequired'))
-      .email(t('auth.validation.emailInvalid')),
-    password: z
-      .string()
-      .min(8, t('auth.validation.passwordMinLength'))
-      .regex(/^(?=.*[A-Za-z])(?=.*\d)/, t('auth.validation.passwordPattern')),
-    termsAccepted: z.boolean().refine((val) => val === true, {
-      message: t('auth.validation.termsRequired'),
-    }),
+      .min(8, 'Mật khẩu phải có tối thiểu 8 ký tự')
+      .regex(/[0-9]/, 'Có ít nhất một chữ số')
+      .regex(/[A-Z]/, 'Có ít nhất một chữ in hoa'),
+    confirmPassword: z.string().min(1, 'Vui lòng nhập lại mật khẩu'),
+  })
+  .refine((data) => data.newPassword === data.confirmPassword, {
+    message: 'Hai mật khẩu không khớp nhau',
+    path: ['confirmPassword'],
   });
-};
 
-export type RegisterFormValues = z.infer<ReturnType<typeof createRegisterSchema>>;
+export const createResetPasswordSchema = () => resetPasswordSchema;
 
-export const createForgotPasswordSchema = (t: (key: string) => string) => {
-  return z.object({
-    phoneNumber: z
-      .string()
-      .min(1, t('auth.validation.phoneRequired'))
-      .regex(/^[0-9]{10}$/, t('auth.validation.phoneInvalid')),
-  });
-};
-
-export type ForgotPasswordFormValues = z.infer<ReturnType<typeof createForgotPasswordSchema>>;
-
-export const createResetPasswordSchema = (t: (key: string) => string) => {
-  return z
-    .object({
-      newPassword: z
-        .string()
-        .min(8, t('auth.validation.passwordMinLength'))
-        .regex(/[0-9]/, t('auth.resetPassword.ruleDigit'))
-        .regex(/[A-Z]/, t('auth.resetPassword.ruleUppercase')),
-      confirmPassword: z.string().min(1, t('auth.validation.passwordRequired')),
-    })
-    .refine((data) => data.newPassword === data.confirmPassword, {
-      message: t('auth.validation.passwordsMustMatch'),
-      path: ['confirmPassword'],
-    });
-};
-
-export type ResetPasswordFormValues = z.infer<ReturnType<typeof createResetPasswordSchema>>;
+export type ResetPasswordFormValues = z.infer<typeof resetPasswordSchema>;

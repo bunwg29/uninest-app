@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { View, StyleSheet, TouchableOpacity } from 'react-native';
-import { useTranslation } from 'react-i18next';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { KeyRound, Phone } from 'lucide-react-native';
@@ -9,12 +8,11 @@ import { Button, Input, ScreenContainer, Typography } from '@ui';
 import { useToast } from '@hooks';
 import type { AuthStackParamList } from '@navigation';
 import { authService } from '../services';
-import { createForgotPasswordSchema } from '../validations';
+import { forgotPasswordSchema } from '../validations';
 
 type NavigationProp = NativeStackNavigationProp<AuthStackParamList>;
 
 export const ForgotPasswordScreen = () => {
-  const { t } = useTranslation();
   const navigation = useNavigation<NavigationProp>();
   const toast = useToast();
 
@@ -24,11 +22,10 @@ export const ForgotPasswordScreen = () => {
 
   const handleSubmit = async () => {
     const cleanPhone = phoneNumber.trim();
-    const schema = createForgotPasswordSchema(t);
-    const result = schema.safeParse({ phoneNumber: cleanPhone });
+    const result = forgotPasswordSchema.safeParse({ phoneNumber: cleanPhone });
 
     if (!result.success) {
-      setErrorMessage(result.error.errors[0]?.message || t('auth.validation.phoneInvalid'));
+      setErrorMessage(result.error.errors[0]?.message || 'Số điện thoại không hợp lệ');
 
       return;
     }
@@ -39,14 +36,14 @@ export const ForgotPasswordScreen = () => {
     try {
       await authService.forgotPassword({ phoneNumber: cleanPhone });
 
-      toast.success(t('auth.otp.subtitle', { target: cleanPhone }));
+      toast.success(`Mã gồm 6 số vừa được gửi tới ${cleanPhone}`);
 
       navigation.navigate('OtpVerification', {
         target: cleanPhone,
         flow: 'forgot_password',
       });
     } catch (err) {
-      const msg = err instanceof Error ? err.message : t('common.error');
+      const msg = err instanceof Error ? err.message : 'Đã có lỗi xảy ra. Vui lòng thử lại.';
 
       setErrorMessage(msg);
       toast.error(msg);
@@ -67,20 +64,20 @@ export const ForgotPasswordScreen = () => {
         </View>
 
         <Typography variant="h1" weight="BOLD" style={styles.title}>
-          {t('auth.forgotPassword.title')}
+          Quên mật khẩu?
         </Typography>
 
         <Typography variant="body1" color={THEME_COLORS.TEXT_SECONDARY} style={styles.subtitle}>
-          {t('auth.forgotPassword.subtitle')}
+          Nhập số điện thoại đã đăng ký để nhận mã xác thực đặt lại mật khẩu.
         </Typography>
 
         <View style={styles.form}>
           <Input
-            label={t('auth.forgotPassword.phoneLabel')}
-            placeholder={t('auth.forgotPassword.phonePlaceholder')}
+            label="Số điện thoại"
+            placeholder="0912 345 678"
             keyboardType="phone-pad"
             leftIcon={<Phone size={18} color={THEME_COLORS.TEXT_PLACEHOLDER} />}
-            helperText={t('auth.forgotPassword.phoneHint')}
+            helperText="Mã OTP 6 số sẽ được gửi qua SMS/Zalo"
             value={phoneNumber}
             onChangeText={(text) => {
               setPhoneNumber(text);
@@ -98,7 +95,7 @@ export const ForgotPasswordScreen = () => {
             onPress={handleSubmit}
             style={styles.submitButton}
           >
-            {t('auth.forgotPassword.submit')}
+            Gửi mã xác thực
           </Button>
 
           <TouchableOpacity
@@ -107,7 +104,7 @@ export const ForgotPasswordScreen = () => {
             activeOpacity={0.7}
           >
             <Typography variant="body2" weight="SEMIBOLD" color={THEME_COLORS.TEXT_MUTED}>
-              {t('auth.forgotPassword.backToLogin')}
+              Quay lại đăng nhập
             </Typography>
           </TouchableOpacity>
         </View>
