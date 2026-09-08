@@ -1,13 +1,10 @@
 import { View, Text, StyleSheet } from 'react-native';
-import { useTranslation } from 'react-i18next';
 import { THEME_COLORS } from '@theme';
 
 export const MessagesScreen = () => {
-  const { t } = useTranslation();
-
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>{t('navigation.messages')}</Text>
+      <Text style={styles.title}>Tin nhắn</Text>
     </View>
   );
 };

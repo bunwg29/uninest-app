@@ -1,5 +1,4 @@
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { useTranslation } from 'react-i18next';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { THEME_COLORS, SPACING_TOKENS } from '@theme';
@@ -8,7 +7,6 @@ import type { RootStackParamList } from '@navigation';
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 export const ProfileScreen = () => {
-  const { t } = useTranslation();
   const navigation = useNavigation<NavigationProp>();
 
   const handleNavigateToAuth = () => {
@@ -17,10 +15,10 @@ export const ProfileScreen = () => {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>{t('navigation.profile')}</Text>
+      <Text style={styles.title}>Tài khoản</Text>
 
       <TouchableOpacity style={styles.button} onPress={handleNavigateToAuth}>
-        <Text style={styles.buttonText}>{t('navigation.login')}</Text>
+        <Text style={styles.buttonText}>Đăng nhập</Text>
       </TouchableOpacity>
     </View>
   );
