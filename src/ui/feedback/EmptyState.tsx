@@ -1,7 +1,6 @@
 import type { ReactNode } from 'react';
 import { View, StyleSheet, ViewStyle, StyleProp } from 'react-native';
 import { Inbox } from 'lucide-react-native';
-import { useTranslation } from 'react-i18next';
 import { THEME_COLORS, SPACING_TOKENS, BORDER_RADIUS_TOKENS } from '@theme';
 import { Typography } from '../atoms/Typography';
 import { Button } from '../atoms/Button';
@@ -23,10 +22,8 @@ export const EmptyState = ({
   onAction,
   style,
 }: EmptyStateProps) => {
-  const { t } = useTranslation();
-
-  const resolvedTitle = title || t('ui.emptyTitle');
-  const resolvedDescription = description || t('ui.emptyDescription');
+  const resolvedTitle = title || 'Không có dữ liệu';
+  const resolvedDescription = description || 'Hiện chưa có mục nào để hiển thị.';
 
   return (
     <View style={[styles.container, style]}>

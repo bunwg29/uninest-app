@@ -9,7 +9,6 @@ import {
   StyleProp,
 } from 'react-native';
 import { X } from 'lucide-react-native';
-import { useTranslation } from 'react-i18next';
 import { THEME_COLORS, BORDER_RADIUS_TOKENS, SPACING_TOKENS } from '@theme';
 import { Typography } from '../atoms/Typography';
 import { Button, ButtonVariant } from '../atoms/Button';
@@ -43,16 +42,14 @@ export const Modal = ({
   style,
   dismissible = true,
 }: ModalProps) => {
-  const { t } = useTranslation();
-
   const handleBackdropPress = () => {
     if (dismissible) {
       onClose();
     }
   };
 
-  const resolvedConfirmText = confirmText || (onConfirm ? t('ui.confirm') : undefined);
-  const resolvedCancelText = cancelText || (onConfirm ? t('ui.cancel') : undefined);
+  const resolvedConfirmText = confirmText || (onConfirm ? 'Xác nhận' : undefined);
+  const resolvedCancelText = cancelText || (onConfirm ? 'Hủy' : undefined);
 
   return (
     <RNModal visible={isVisible} transparent animationType="fade" onRequestClose={onClose}>

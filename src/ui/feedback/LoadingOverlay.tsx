@@ -1,5 +1,4 @@
 import { View, ActivityIndicator, StyleSheet, ViewStyle, StyleProp } from 'react-native';
-import { useTranslation } from 'react-i18next';
 import { THEME_COLORS, BORDER_RADIUS_TOKENS, SPACING_TOKENS } from '@theme';
 import { Typography } from '../atoms/Typography';
 
@@ -10,8 +9,7 @@ export interface LoadingOverlayProps {
 }
 
 export const LoadingOverlay = ({ message, isFullScreen = false, style }: LoadingOverlayProps) => {
-  const { t } = useTranslation();
-  const resolvedMessage = message || t('common.loading');
+  const resolvedMessage = message || 'Đang tải...';
 
   if (isFullScreen) {
     return (
