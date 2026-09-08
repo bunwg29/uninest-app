@@ -1,14 +1,11 @@
 import { View, Text, StyleSheet } from 'react-native';
-import { useTranslation } from 'react-i18next';
 import { THEME_COLORS } from '@theme';
 
 export const HomeScreen = () => {
-  const { t } = useTranslation();
-
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>{t('navigation.home')}</Text>
-      <Text style={styles.subtitle}>{t('common.appName')}</Text>
+      <Text style={styles.title}>Trang chủ</Text>
+      <Text style={styles.subtitle}>UniNest</Text>
     </View>
   );
 };

@@ -1,6 +1,5 @@
 import { View, Image, TouchableOpacity, StyleSheet, ViewStyle, StyleProp } from 'react-native';
 import { Star, Heart, MapPin } from 'lucide-react-native';
-import { useTranslation } from 'react-i18next';
 import { THEME_COLORS, BORDER_RADIUS_TOKENS, SPACING_TOKENS } from '@theme';
 import { Typography } from '../atoms/Typography';
 import { Badge, BadgeVariant } from '../atoms/Badge';
@@ -45,8 +44,6 @@ export const ListingCard = ({
   style,
   variant = 'vertical',
 }: ListingCardProps) => {
-  const { t } = useTranslation();
-
   const formattedPrice = `${price.toLocaleString('vi-VN')}đ`;
   const formattedDistance = formatDistance(distanceMeters, targetCampusName);
   const isHorizontal = variant === 'horizontal';
@@ -55,11 +52,7 @@ export const ListingCard = ({
     status === 'holding' ? 'holding' : status === 'featured' ? 'featured' : 'available';
 
   const statusLabel =
-    status === 'holding'
-      ? t('ui.holding')
-      : status === 'featured'
-        ? t('ui.featured')
-        : t('ui.available');
+    status === 'holding' ? 'Đang giữ chỗ' : status === 'featured' ? 'Nổi bật' : 'Còn trống';
 
   return (
     <TouchableOpacity
@@ -99,7 +92,7 @@ export const ListingCard = ({
 
         {matchPercentage ? (
           <View style={styles.matchBadgeWrapper}>
-            <Badge label={`${t('ui.match')} ${matchPercentage}%`} variant="match" size="sm" />
+            <Badge label={`Phù hợp ${matchPercentage}%`} variant="match" size="sm" />
           </View>
         ) : null}
       </View>
@@ -110,7 +103,7 @@ export const ListingCard = ({
             {formattedPrice}
           </Typography>
           <Typography variant="caption" colorKey="TEXT_MUTED" style={styles.perMonthText}>
-            {t('ui.perMonth')}
+            /tháng
           </Typography>
         </View>
 
@@ -146,7 +139,7 @@ export const ListingCard = ({
         >
           {[
             areaSquareMeters ? `${areaSquareMeters} m²` : null,
-            capacity ? `${capacity} ${t('common.appName') ? 'người' : ''}` : null,
+            capacity ? `${capacity} người` : null,
             formattedDistance,
           ]
             .filter(Boolean)
@@ -166,7 +159,7 @@ export const ListingCard = ({
             </Typography>
             {reviewCount !== undefined ? (
               <Typography variant="caption" colorKey="TEXT_PLACEHOLDER">
-                ({reviewCount} {t('ui.reviews')})
+                ({reviewCount} đánh giá)
               </Typography>
             ) : null}
           </View>
