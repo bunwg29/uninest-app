@@ -2,6 +2,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { THEME_COLORS } from '@theme';
 import type { AuthStackParamList } from '../types';
 import {
+  OnboardingScreen,
   RoleSelectionScreen,
   LoginScreen,
   RegisterScreen,
@@ -23,6 +24,12 @@ export const AuthNavigator = () => {
         headerShadowVisible: false,
       }}
     >
+      <Stack.Screen
+        name="Onboarding"
+        component={OnboardingScreen}
+        options={{ headerShown: false }}
+      />
+
       <Stack.Screen
         name="RoleSelection"
         component={RoleSelectionScreen}

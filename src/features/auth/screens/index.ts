@@ -1,4 +1,5 @@
 export * from './SplashScreen';
+export * from './OnboardingScreen';
 export * from './RoleSelectionScreen';
 export * from './LoginScreen';
 export * from './RegisterScreen';

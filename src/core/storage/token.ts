@@ -7,6 +7,7 @@ const STORAGE_KEYS = {
   USER_PROFILE: 'uninest_user_profile',
   USER_ROLE: 'uninest_user_role',
   DEVICE_ID: 'uninest_device_id',
+  ONBOARDING_COMPLETED: 'uninest_onboarding_completed',
 } as const;
 
 let memoryFallback: Record<string, string> = {};
@@ -141,5 +142,15 @@ export const tokenStorage = {
 
   async setDeviceId(deviceId: string): Promise<void> {
     await secureSetItem(STORAGE_KEYS.DEVICE_ID, deviceId);
+  },
+
+  async getOnboardingCompleted(): Promise<boolean> {
+    const val = await secureGetItem(STORAGE_KEYS.ONBOARDING_COMPLETED);
+
+    return val === 'true';
+  },
+
+  async setOnboardingCompleted(completed: boolean): Promise<void> {
+    await secureSetItem(STORAGE_KEYS.ONBOARDING_COMPLETED, completed ? 'true' : 'false');
   },
 };

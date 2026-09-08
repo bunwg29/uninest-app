@@ -2,6 +2,7 @@ import type { NavigatorScreenParams } from '@react-navigation/native';
 import type { UserRole } from '@features/auth';
 
 export type AuthStackParamList = {
+  Onboarding: undefined;
   RoleSelection: undefined;
   Login: undefined;
   Register: { role?: UserRole } | undefined;

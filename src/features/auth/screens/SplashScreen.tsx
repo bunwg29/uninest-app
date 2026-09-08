@@ -4,7 +4,7 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Building2 } from 'lucide-react-native';
 import { THEME_COLORS, SPACING_TOKENS, BORDER_RADIUS_TOKENS } from '@theme';
-import { APP_CONFIG } from '@core';
+import { tokenStorage, APP_CONFIG } from '@core';
 import { Typography } from '@ui';
 import type { AuthStackParamList, RootStackParamList } from '@navigation';
 import { useAuth } from '../hooks';
@@ -24,11 +24,22 @@ export const SplashScreen = () => {
       return;
     }
 
-    const timer = setTimeout(() => {
+    const timer = setTimeout(async () => {
       if (isAuthenticated) {
         navigation.reset({
           index: 0,
           routes: [{ name: 'Main' }],
+        });
+
+        return;
+      }
+
+      const hasOnboarded = await tokenStorage.getOnboardingCompleted();
+
+      if (!hasOnboarded) {
+        navigation.reset({
+          index: 0,
+          routes: [{ name: 'Auth', params: { screen: 'Onboarding' } }],
         });
       } else {
         navigation.reset({
@@ -36,7 +47,7 @@ export const SplashScreen = () => {
           routes: [{ name: 'Auth', params: { screen: 'RoleSelection' } }],
         });
       }
-    }, 800);
+    }, 1500);
 
     return () => clearTimeout(timer);
   }, [isInitialized, isAuthenticated, navigation]);
@@ -59,12 +70,13 @@ export const SplashScreen = () => {
 
         <View style={styles.tagWrapper}>
           <Typography variant="caption" weight="SEMIBOLD" color={THEME_COLORS.PRIMARY}>
-            Nền tảng thuê trọ sinh viên số 1
+            Nền tảng thuê trọ sinh viên số 1 Student Housing
           </Typography>
         </View>
 
         <Typography variant="body1" color={THEME_COLORS.TEXT_SECONDARY} style={styles.slogan}>
-          Tìm phòng trọ, căn hộ, bạn cùng phòng dễ dàng và an toàn
+          Tìm phòng trọ, căn hộ, bạn cùng phòng dễ dàng và an toàn Tìm trọ sinh viên — nhanh, gần
+          trường, minh bạch giá
         </Typography>
 
         <View style={styles.loadingContainer}>
