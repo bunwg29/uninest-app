@@ -6,6 +6,7 @@ const STORAGE_KEYS = {
   REFRESH_TOKEN: 'uninest_refresh_token',
   USER_PROFILE: 'uninest_user_profile',
   USER_ROLE: 'uninest_user_role',
+  DEVICE_ID: 'uninest_device_id',
 } as const;
 
 let memoryFallback: Record<string, string> = {};
@@ -132,5 +133,13 @@ export const tokenStorage = {
 
   async setRole(role: string): Promise<void> {
     await secureSetItem(STORAGE_KEYS.USER_ROLE, role);
+  },
+
+  async getDeviceId(): Promise<string | null> {
+    return secureGetItem(STORAGE_KEYS.DEVICE_ID);
+  },
+
+  async setDeviceId(deviceId: string): Promise<void> {
+    await secureSetItem(STORAGE_KEYS.DEVICE_ID, deviceId);
   },
 };
