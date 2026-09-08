@@ -5,45 +5,24 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
 import { Phone, Mail, Lock } from 'lucide-react-native';
 import { THEME_COLORS, SPACING_TOKENS, BORDER_RADIUS_TOKENS } from '@theme';
 import { Button, Divider, Input, ScreenContainer, Typography } from '@ui';
+import { useToast } from '@hooks';
 import type { AuthStackParamList, RootStackParamList } from '@navigation';
 import { SocialAuthButtons } from '../components';
 import { useAuth } from '../hooks';
+import { createLoginSchema, type LoginFormValues, type LoginIdentifierType } from '../validations';
 
 type NavigationProp = NativeStackNavigationProp<AuthStackParamList & RootStackParamList>;
-
-type LoginType = 'phone' | 'email';
-
-const createLoginSchema = (type: LoginType, t: (key: string) => string) => {
-  return z.object({
-    identifier:
-      type === 'phone'
-        ? z
-            .string()
-            .min(1, t('auth.validation.phoneRequired'))
-            .regex(/^[0-9]{10}$/, t('auth.validation.phoneInvalid'))
-        : z
-            .string()
-            .min(1, t('auth.validation.emailRequired'))
-            .email(t('auth.validation.emailInvalid')),
-    password: z.string().min(1, t('auth.validation.passwordRequired')),
-  });
-};
-
-type LoginFormValues = {
-  identifier: string;
-  password: string;
-};
 
 export const LoginScreen = () => {
   const { t } = useTranslation();
   const navigation = useNavigation<NavigationProp>();
   const { login, isLoading, error, clearError } = useAuth();
+  const toast = useToast();
 
-  const [loginType, setLoginType] = useState<LoginType>('phone');
+  const [loginType, setLoginType] = useState<LoginIdentifierType>('phone');
 
   const {
     control,
@@ -58,7 +37,7 @@ export const LoginScreen = () => {
     },
   });
 
-  const handleTabChange = (type: LoginType) => {
+  const handleTabChange = (type: LoginIdentifierType) => {
     setLoginType(type);
     clearError();
     reset({ identifier: '', password: '' });
@@ -72,12 +51,14 @@ export const LoginScreen = () => {
         type: loginType,
       });
 
+      toast.success(t('auth.login.title') + ' thành công!');
+
       navigation.reset({
         index: 0,
         routes: [{ name: 'Main' }],
       });
-    } catch {
-      // Error handled in store
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : t('common.error'));
     }
   };
 
@@ -214,7 +195,10 @@ export const LoginScreen = () => {
 
       <Divider label={t('auth.login.orDivider')} style={styles.divider} />
 
-      <SocialAuthButtons />
+      <SocialAuthButtons
+        onGooglePress={() => toast.info('Đăng nhập Google đang phát triển')}
+        onApplePress={() => toast.info('Đăng nhập Apple đang phát triển')}
+      />
 
       <View style={styles.footer}>
         <Typography variant="body2" color={THEME_COLORS.TEXT_MUTED}>

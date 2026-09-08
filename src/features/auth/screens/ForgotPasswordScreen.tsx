@@ -6,14 +6,17 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { KeyRound, Phone } from 'lucide-react-native';
 import { THEME_COLORS, SPACING_TOKENS, BORDER_RADIUS_TOKENS } from '@theme';
 import { Button, Input, ScreenContainer, Typography } from '@ui';
+import { useToast } from '@hooks';
 import type { AuthStackParamList } from '@navigation';
 import { authService } from '../services';
+import { createForgotPasswordSchema } from '../validations';
 
 type NavigationProp = NativeStackNavigationProp<AuthStackParamList>;
 
 export const ForgotPasswordScreen = () => {
   const { t } = useTranslation();
   const navigation = useNavigation<NavigationProp>();
+  const toast = useToast();
 
   const [phoneNumber, setPhoneNumber] = useState('');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -21,15 +24,11 @@ export const ForgotPasswordScreen = () => {
 
   const handleSubmit = async () => {
     const cleanPhone = phoneNumber.trim();
+    const schema = createForgotPasswordSchema(t);
+    const result = schema.safeParse({ phoneNumber: cleanPhone });
 
-    if (!cleanPhone) {
-      setErrorMessage(t('auth.validation.phoneRequired'));
-
-      return;
-    }
-
-    if (!/^[0-9]{10}$/.test(cleanPhone)) {
-      setErrorMessage(t('auth.validation.phoneInvalid'));
+    if (!result.success) {
+      setErrorMessage(result.error.errors[0]?.message || t('auth.validation.phoneInvalid'));
 
       return;
     }
@@ -40,12 +39,15 @@ export const ForgotPasswordScreen = () => {
     try {
       await authService.forgotPassword({ phoneNumber: cleanPhone });
 
+      toast.success(t('auth.otp.subtitle', { target: cleanPhone }));
+
       navigation.navigate('OtpVerification', {
         target: cleanPhone,
         flow: 'forgot_password',
       });
     } catch {
       setErrorMessage(t('common.error'));
+      toast.error(t('common.error'));
     } finally {
       setIsLoading(false);
     }

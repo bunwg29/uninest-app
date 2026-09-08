@@ -5,6 +5,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { LogOut } from 'lucide-react-native';
 import { THEME_COLORS, SPACING_TOKENS, BORDER_RADIUS_TOKENS } from '@theme';
 import { Avatar, Badge, Button, ScreenContainer, Typography } from '@ui';
+import { useToast } from '@hooks';
 import type { RootStackParamList } from '@navigation';
 import { useAuth } from '../hooks';
 
@@ -14,9 +15,12 @@ export const ProfileScreen = () => {
   const { t } = useTranslation();
   const navigation = useNavigation<NavigationProp>();
   const { user, isAuthenticated, logout } = useAuth();
+  const toast = useToast();
 
   const handleLogout = async () => {
     await logout();
+
+    toast.info('Đã đăng xuất thành công');
 
     navigation.reset({
       index: 0,

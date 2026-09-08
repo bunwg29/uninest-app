@@ -7,6 +7,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { AlertCircle, AlertTriangle, ShieldCheck } from 'lucide-react-native';
 import { THEME_COLORS, SPACING_TOKENS, BORDER_RADIUS_TOKENS } from '@theme';
 import { Button, ScreenContainer, Typography } from '@ui';
+import { useToast } from '@hooks';
 import type { AuthStackParamList, RootStackParamList } from '@navigation';
 import { OtpInput } from '../components';
 import { useAuth } from '../hooks';
@@ -22,6 +23,7 @@ export const OtpScreen = () => {
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<OtpRouteProp>();
   const { verifyOtp, isLoading, error: storeError, clearError } = useAuth();
+  const toast = useToast();
 
   const target = route.params?.target || '0905 123 456';
   const flow = route.params?.flow || 'register';
@@ -65,8 +67,9 @@ export const OtpScreen = () => {
     try {
       await authService.resendOtp(target);
       setCountdown(COUNTDOWN_SECONDS);
+      toast.info('Mã xác thực mới đã được gửi!');
     } catch {
-      // Handled
+      toast.error(t('common.error'));
     } finally {
       setIsResending(false);
     }
@@ -81,6 +84,8 @@ export const OtpScreen = () => {
 
     try {
       if (flow === 'forgot_password') {
+        toast.success('Mã OTP xác thực thành công!');
+
         navigation.navigate('ResetPassword', {
           target,
           otpCode: code,
@@ -96,14 +101,31 @@ export const OtpScreen = () => {
         role,
       });
 
+      toast.success('Xác thực tài khoản thành công!');
+
       navigation.reset({
         index: 0,
         routes: [{ name: 'Main' }],
       });
     } catch {
-      setRemainingAttempts((prev) => (prev === null ? 2 : Math.max(0, prev - 1)));
+      const attempts = remainingAttempts === null ? 2 : Math.max(0, remainingAttempts - 1);
+
+      setRemainingAttempts(attempts);
+      toast.error(t('auth.otp.errorInvalidCode', { count: attempts }));
     }
-  }, [code, isLoading, clearError, flow, target, role, verifyOtp, navigation]);
+  }, [
+    code,
+    isLoading,
+    clearError,
+    flow,
+    target,
+    role,
+    verifyOtp,
+    navigation,
+    toast,
+    t,
+    remainingAttempts,
+  ]);
 
   const handleChangePhone = () => {
     clearError();

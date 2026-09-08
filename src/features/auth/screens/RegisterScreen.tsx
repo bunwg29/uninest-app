@@ -1,49 +1,27 @@
 import { useState } from 'react';
 import { View, StyleSheet, TouchableOpacity, Text } from 'react-native';
-
 import { useTranslation } from 'react-i18next';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
 import { User, Phone, Mail, Lock, CheckSquare, Square } from 'lucide-react-native';
 import { THEME_COLORS, SPACING_TOKENS, BORDER_RADIUS_TOKENS } from '@theme';
 import { Badge, Button, Input, ScreenContainer, Typography } from '@ui';
+import { useToast } from '@hooks';
 import type { AuthStackParamList } from '@navigation';
 import { useAuth } from '../hooks';
+import { createRegisterSchema, type RegisterFormValues } from '../validations';
 
 type NavigationProp = NativeStackNavigationProp<AuthStackParamList>;
 type RegisterRouteProp = RouteProp<AuthStackParamList, 'Register'>;
-
-const createRegisterSchema = (t: (key: string) => string) => {
-  return z.object({
-    fullName: z.string().min(2, t('auth.validation.fullNameRequired')),
-    phoneNumber: z
-      .string()
-      .min(1, t('auth.validation.phoneRequired'))
-      .regex(/^[0-9]{10}$/, t('auth.validation.phoneInvalid')),
-    email: z
-      .string()
-      .min(1, t('auth.validation.emailRequired'))
-      .email(t('auth.validation.emailInvalid')),
-    password: z
-      .string()
-      .min(8, t('auth.validation.passwordMinLength'))
-      .regex(/^(?=.*[A-Za-z])(?=.*\d)/, t('auth.validation.passwordPattern')),
-    termsAccepted: z.boolean().refine((val) => val === true, {
-      message: t('auth.validation.termsRequired'),
-    }),
-  });
-};
-
-type RegisterFormValues = z.infer<ReturnType<typeof createRegisterSchema>>;
 
 export const RegisterScreen = () => {
   const { t } = useTranslation();
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<RegisterRouteProp>();
   const { register, role: currentRole, isLoading, error } = useAuth();
+  const toast = useToast();
 
   const [isTermsAccepted, setIsTermsAccepted] = useState(false);
 
@@ -82,13 +60,15 @@ export const RegisterScreen = () => {
         role,
       });
 
+      toast.success(t('auth.otp.subtitle', { target: values.phoneNumber.trim() }));
+
       navigation.navigate('OtpVerification', {
         target: values.phoneNumber.trim(),
         flow: 'register',
         role,
       });
-    } catch {
-      // Error handled in store
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : t('common.error'));
     }
   };
 

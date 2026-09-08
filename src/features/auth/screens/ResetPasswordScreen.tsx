@@ -6,8 +6,10 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Check, Circle, Lock } from 'lucide-react-native';
 import { THEME_COLORS, SPACING_TOKENS, BORDER_RADIUS_TOKENS } from '@theme';
 import { Button, Input, ScreenContainer, Typography } from '@ui';
+import { useToast } from '@hooks';
 import type { AuthStackParamList } from '@navigation';
 import { authService } from '../services';
+import { createResetPasswordSchema } from '../validations';
 
 type NavigationProp = NativeStackNavigationProp<AuthStackParamList>;
 type ResetRouteProp = RouteProp<AuthStackParamList, 'ResetPassword'>;
@@ -16,6 +18,7 @@ export const ResetPasswordScreen = () => {
   const { t } = useTranslation();
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<ResetRouteProp>();
+  const toast = useToast();
 
   const target = route.params?.target || '';
   const otpCode = route.params?.otpCode || '';
@@ -34,10 +37,14 @@ export const ResetPasswordScreen = () => {
   const isAllValid = hasMinLength && hasDigit && hasUppercase && isMatch;
 
   const handleSubmit = async () => {
-    if (!isAllValid) {
-      if (!isMatch) {
-        setErrorMessage(t('auth.validation.passwordsMustMatch'));
-      }
+    const schema = createResetPasswordSchema(t);
+    const result = schema.safeParse({ newPassword, confirmPassword });
+
+    if (!result.success) {
+      const msg = result.error.errors[0]?.message || t('common.error');
+
+      setErrorMessage(msg);
+      toast.error(msg);
 
       return;
     }
@@ -52,12 +59,15 @@ export const ResetPasswordScreen = () => {
         newPassword,
       });
 
+      toast.success(t('auth.resetPassword.title') + ' thành công!');
+
       navigation.reset({
         index: 0,
         routes: [{ name: 'Login' }],
       });
     } catch {
       setErrorMessage(t('common.error'));
+      toast.error(t('common.error'));
     } finally {
       setIsLoading(false);
     }
