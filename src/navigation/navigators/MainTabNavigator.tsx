@@ -1,5 +1,4 @@
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { useTranslation } from 'react-i18next';
 import { Home, Search, MessageSquare, Users, User } from 'lucide-react-native';
 import { THEME_COLORS } from '@theme';
 import type { MainTabParamList } from '../types';
@@ -14,8 +13,6 @@ const Tab = createBottomTabNavigator<MainTabParamList>();
 const TAB_ICON_SIZE = 22;
 
 export const MainTabNavigator = () => {
-  const { t } = useTranslation();
-
   return (
     <Tab.Navigator
       initialRouteName="Home"
@@ -34,7 +31,7 @@ export const MainTabNavigator = () => {
         name="Home"
         component={HomeScreen}
         options={{
-          title: t('navigation.home'),
+          title: 'Trang chủ',
           tabBarIcon: ({ color }) => <Home size={TAB_ICON_SIZE} color={color} />,
         }}
       />
@@ -43,7 +40,7 @@ export const MainTabNavigator = () => {
         name="Search"
         component={SearchScreen}
         options={{
-          title: t('navigation.search'),
+          title: 'Tìm kiếm',
           tabBarIcon: ({ color }) => <Search size={TAB_ICON_SIZE} color={color} />,
         }}
       />
@@ -52,7 +49,7 @@ export const MainTabNavigator = () => {
         name="Messages"
         component={MessagesScreen}
         options={{
-          title: t('navigation.messages'),
+          title: 'Tin nhắn',
           tabBarIcon: ({ color }) => <MessageSquare size={TAB_ICON_SIZE} color={color} />,
         }}
       />
@@ -61,7 +58,7 @@ export const MainTabNavigator = () => {
         name="Community"
         component={CommunityScreen}
         options={{
-          title: t('navigation.community'),
+          title: 'Cộng đồng',
           tabBarIcon: ({ color }) => <Users size={TAB_ICON_SIZE} color={color} />,
         }}
       />
@@ -70,7 +67,7 @@ export const MainTabNavigator = () => {
         name="Profile"
         component={ProfileScreen}
         options={{
-          title: t('navigation.profile'),
+          title: 'Tài khoản',
           tabBarIcon: ({ color }) => <User size={TAB_ICON_SIZE} color={color} />,
         }}
       />

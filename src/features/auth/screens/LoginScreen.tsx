@@ -1,5 +1,4 @@
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { useTranslation } from 'react-i18next';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { THEME_COLORS, SPACING_TOKENS } from '@theme';
@@ -8,7 +7,6 @@ import type { AuthStackParamList, RootStackParamList } from '@navigation';
 type NavigationProp = NativeStackNavigationProp<AuthStackParamList & RootStackParamList>;
 
 export const LoginScreen = () => {
-  const { t } = useTranslation();
   const navigation = useNavigation<NavigationProp>();
 
   const handleGoToRegister = () => {
@@ -25,18 +23,18 @@ export const LoginScreen = () => {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>{t('navigation.login')}</Text>
+      <Text style={styles.title}>Đăng nhập</Text>
 
       <TouchableOpacity style={styles.primaryButton} onPress={handleGoToMain}>
-        <Text style={styles.primaryButtonText}>{t('navigation.home')}</Text>
+        <Text style={styles.primaryButtonText}>Trang chủ</Text>
       </TouchableOpacity>
 
       <TouchableOpacity style={styles.secondaryButton} onPress={handleGoToRegister}>
-        <Text style={styles.secondaryButtonText}>{t('navigation.register')}</Text>
+        <Text style={styles.secondaryButtonText}>Đăng ký</Text>
       </TouchableOpacity>
 
       <TouchableOpacity style={styles.secondaryButton} onPress={handleGoToOtp}>
-        <Text style={styles.secondaryButtonText}>{t('navigation.otp')}</Text>
+        <Text style={styles.secondaryButtonText}>Xác thực OTP</Text>
       </TouchableOpacity>
     </View>
   );

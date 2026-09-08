@@ -13,10 +13,12 @@ async function getStorageItem(key: string): Promise<string | null> {
       if (typeof window !== 'undefined' && window.localStorage) {
         return window.localStorage.getItem(key);
       }
+
       return memoryStorage.get(key) ?? null;
     }
 
     const available = await SecureStore.isAvailableAsync();
+
     if (!available) {
       return memoryStorage.get(key) ?? null;
     }
@@ -32,15 +34,20 @@ async function setStorageItem(key: string, value: string): Promise<void> {
     if (Platform.OS === 'web') {
       if (typeof window !== 'undefined' && window.localStorage) {
         window.localStorage.setItem(key, value);
+
         return;
       }
+
       memoryStorage.set(key, value);
+
       return;
     }
 
     const available = await SecureStore.isAvailableAsync();
+
     if (!available) {
       memoryStorage.set(key, value);
+
       return;
     }
 
@@ -55,15 +62,20 @@ async function deleteStorageItem(key: string): Promise<void> {
     if (Platform.OS === 'web') {
       if (typeof window !== 'undefined' && window.localStorage) {
         window.localStorage.removeItem(key);
+
         return;
       }
+
       memoryStorage.delete(key);
+
       return;
     }
 
     const available = await SecureStore.isAvailableAsync();
+
     if (!available) {
       memoryStorage.delete(key);
+
       return;
     }
 
