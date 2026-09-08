@@ -1,101 +1,156 @@
 import * as SecureStore from 'expo-secure-store';
 import { Platform } from 'react-native';
 
-const ACCESS_TOKEN_KEY = 'uninest_access_token';
-const REFRESH_TOKEN_KEY = 'uninest_refresh_token';
+const STORAGE_KEYS = {
+  ACCESS_TOKEN: 'uninest_access_token',
+  REFRESH_TOKEN: 'uninest_refresh_token',
+  USER_PROFILE: 'uninest_user_profile',
+  USER_ROLE: 'uninest_user_role',
+  DEVICE_ID: 'uninest_device_id',
+  ONBOARDING_COMPLETED: 'uninest_onboarding_completed',
+} as const;
 
-// In-memory fallback for environments where SecureStore is unavailable
-const memoryStorage = new Map<string, string>();
+let memoryFallback: Record<string, string> = {};
 
-async function getStorageItem(key: string): Promise<string | null> {
-  try {
-    if (Platform.OS === 'web') {
-      if (typeof window !== 'undefined' && window.localStorage) {
-        return window.localStorage.getItem(key);
-      }
-
-      return memoryStorage.get(key) ?? null;
-    }
-
-    const available = await SecureStore.isAvailableAsync();
-
-    if (!available) {
-      return memoryStorage.get(key) ?? null;
-    }
-
-    return await SecureStore.getItemAsync(key);
-  } catch {
-    return memoryStorage.get(key) ?? null;
+const isSecureStoreAvailable = async (): Promise<boolean> => {
+  if (Platform.OS === 'web') {
+    return false;
   }
-}
 
-async function setStorageItem(key: string, value: string): Promise<void> {
   try {
-    if (Platform.OS === 'web') {
-      if (typeof window !== 'undefined' && window.localStorage) {
-        window.localStorage.setItem(key, value);
-
-        return;
-      }
-
-      memoryStorage.set(key, value);
-
-      return;
-    }
-
-    const available = await SecureStore.isAvailableAsync();
-
-    if (!available) {
-      memoryStorage.set(key, value);
-
-      return;
-    }
-
-    await SecureStore.setItemAsync(key, value);
+    return await SecureStore.isAvailableAsync();
   } catch {
-    memoryStorage.set(key, value);
+    return false;
   }
-}
+};
 
-async function deleteStorageItem(key: string): Promise<void> {
+const secureGetItem = async (key: string): Promise<string | null> => {
   try {
-    if (Platform.OS === 'web') {
-      if (typeof window !== 'undefined' && window.localStorage) {
-        window.localStorage.removeItem(key);
+    const isAvailable = await isSecureStoreAvailable();
 
-        return;
-      }
-
-      memoryStorage.delete(key);
-
-      return;
+    if (isAvailable) {
+      return await SecureStore.getItemAsync(key);
     }
 
-    const available = await SecureStore.isAvailableAsync();
-
-    if (!available) {
-      memoryStorage.delete(key);
-
-      return;
-    }
-
-    await SecureStore.deleteItemAsync(key);
+    return memoryFallback[key] ?? null;
   } catch {
-    memoryStorage.delete(key);
+    return memoryFallback[key] ?? null;
   }
+};
+
+const secureSetItem = async (key: string, value: string): Promise<void> => {
+  try {
+    const isAvailable = await isSecureStoreAvailable();
+
+    if (isAvailable) {
+      await SecureStore.setItemAsync(key, value);
+
+      return;
+    }
+
+    memoryFallback[key] = value;
+  } catch {
+    memoryFallback[key] = value;
+  }
+};
+
+const secureDeleteItem = async (key: string): Promise<void> => {
+  try {
+    const isAvailable = await isSecureStoreAvailable();
+
+    if (isAvailable) {
+      await SecureStore.deleteItemAsync(key);
+
+      return;
+    }
+
+    delete memoryFallback[key];
+  } catch {
+    delete memoryFallback[key];
+  }
+};
+
+export interface StoredTokens {
+  accessToken: string;
+  refreshToken: string;
 }
 
 export const tokenStorage = {
-  getAccessToken: (): Promise<string | null> => getStorageItem(ACCESS_TOKEN_KEY),
-  setAccessToken: (token: string): Promise<void> => setStorageItem(ACCESS_TOKEN_KEY, token),
-  removeAccessToken: (): Promise<void> => deleteStorageItem(ACCESS_TOKEN_KEY),
+  async getAccessToken(): Promise<string | null> {
+    return secureGetItem(STORAGE_KEYS.ACCESS_TOKEN);
+  },
 
-  getRefreshToken: (): Promise<string | null> => getStorageItem(REFRESH_TOKEN_KEY),
-  setRefreshToken: (token: string): Promise<void> => setStorageItem(REFRESH_TOKEN_KEY, token),
-  removeRefreshToken: (): Promise<void> => deleteStorageItem(REFRESH_TOKEN_KEY),
+  async setAccessToken(token: string): Promise<void> {
+    await secureSetItem(STORAGE_KEYS.ACCESS_TOKEN, token);
+  },
 
-  clearAllTokens: async (): Promise<void> => {
-    await deleteStorageItem(ACCESS_TOKEN_KEY);
-    await deleteStorageItem(REFRESH_TOKEN_KEY);
+  async getRefreshToken(): Promise<string | null> {
+    return secureGetItem(STORAGE_KEYS.REFRESH_TOKEN);
+  },
+
+  async setRefreshToken(token: string): Promise<void> {
+    await secureSetItem(STORAGE_KEYS.REFRESH_TOKEN, token);
+  },
+
+  async setTokens(tokens: StoredTokens): Promise<void> {
+    await Promise.all([
+      secureSetItem(STORAGE_KEYS.ACCESS_TOKEN, tokens.accessToken),
+      secureSetItem(STORAGE_KEYS.REFRESH_TOKEN, tokens.refreshToken),
+    ]);
+  },
+
+  async clearTokens(): Promise<void> {
+    await Promise.all([
+      secureDeleteItem(STORAGE_KEYS.ACCESS_TOKEN),
+      secureDeleteItem(STORAGE_KEYS.REFRESH_TOKEN),
+      secureDeleteItem(STORAGE_KEYS.USER_PROFILE),
+      secureDeleteItem(STORAGE_KEYS.USER_ROLE),
+    ]);
+
+    memoryFallback = {};
+  },
+
+  async getUser<T = unknown>(): Promise<T | null> {
+    const raw = await secureGetItem(STORAGE_KEYS.USER_PROFILE);
+
+    if (!raw) {
+      return null;
+    }
+
+    try {
+      return JSON.parse(raw) as T;
+    } catch {
+      return null;
+    }
+  },
+
+  async setUser<T = unknown>(user: T): Promise<void> {
+    await secureSetItem(STORAGE_KEYS.USER_PROFILE, JSON.stringify(user));
+  },
+
+  async getRole(): Promise<string | null> {
+    return secureGetItem(STORAGE_KEYS.USER_ROLE);
+  },
+
+  async setRole(role: string): Promise<void> {
+    await secureSetItem(STORAGE_KEYS.USER_ROLE, role);
+  },
+
+  async getDeviceId(): Promise<string | null> {
+    return secureGetItem(STORAGE_KEYS.DEVICE_ID);
+  },
+
+  async setDeviceId(deviceId: string): Promise<void> {
+    await secureSetItem(STORAGE_KEYS.DEVICE_ID, deviceId);
+  },
+
+  async getOnboardingCompleted(): Promise<boolean> {
+    const val = await secureGetItem(STORAGE_KEYS.ONBOARDING_COMPLETED);
+
+    return val === 'true';
+  },
+
+  async setOnboardingCompleted(completed: boolean): Promise<void> {
+    await secureSetItem(STORAGE_KEYS.ONBOARDING_COMPLETED, completed ? 'true' : 'false');
   },
 };

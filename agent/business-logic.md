@@ -8,9 +8,17 @@
   - `admin`: Moderation queue (pending listings), report resolution, ban/unban users, audit log.
 
 ## 2. Key Modules & Lifecycle Flows
+- **Language**: 100% Tiếng Việt thuần trên toàn bộ giao diện (Pure Vietnamese, không dùng đa ngôn ngữ/i18n).
 - **Auth & Profile (`FR-AUTH`)**:
   - Register/Login via email or phone + OTP.
   - JWT (Access + Refresh token in SecureStore). RBAC enforced at API guard.
+  - Chọn vai trò ban đầu (`RoleSelection`): Sinh viên (`student`) hoặc Chủ trọ (`landlord`).
+  - Đăng nhập linh hoạt: Hỗ trợ Số điện thoại hoặc Email kèm Mật khẩu.
+  - Định danh thiết bị: Tự động phát hiện `deviceId` và `deviceName` gửi kèm `LoginPayload` để backend lưu vết session thiết bị.
+  - Quản lý phiên & Token: Lưu `accessToken`, `refreshToken`, `user`, `role` an toàn trong `expo-secure-store`.
+  - Đăng xuất (`logout`): Gửi refresh token và deviceId lên server để thu hồi (`is_revoked = true`), dọn sạch SecureStore và reset stack về màn hình Login.
+  - Xác thực OTP (`OtpVerification`): Nhập mã 6 chữ số, thời hạn 5 phút, bộ đếm ngược 60 giây cho phép gửi lại mã hoặc đổi số điện thoại.
+  - Quên mật khẩu & Đặt lại mật khẩu (`ForgotPassword`, `ResetPassword`): Nhập SĐT -> Nhập OTP -> Đặt mật khẩu mới (tối thiểu 8 ký tự, có chữ số và chữ hoa). Schema Zod tiếng Việt đồng bộ.
 - **Listing Management (`FR-LISTING`, `FR-MANAGE`)**:
   - Landlord creates listing -> status defaults to `pending` -> Admin approves -> `active`.
   - Media: Upload to Cloudflare R2 via presigned URL. Soft delete: 90 days retention.

@@ -2,7 +2,7 @@ import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { QUERY_CLIENT } from '@core';
-import { ErrorBoundary } from '@ui';
+import { ErrorBoundary, GlobalToast } from '@ui';
 import { RootNavigator } from '@navigation';
 
 export default function App() {
@@ -11,6 +11,7 @@ export default function App() {
       <SafeAreaProvider>
         <QueryClientProvider client={QUERY_CLIENT}>
           <RootNavigator />
+          <GlobalToast />
           <StatusBar style="auto" />
         </QueryClientProvider>
       </SafeAreaProvider>

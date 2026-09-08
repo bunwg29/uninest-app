@@ -1,86 +1,276 @@
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { useState } from 'react';
+import { View, StyleSheet, TouchableOpacity } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { THEME_COLORS, SPACING_TOKENS } from '@theme';
+import { useForm, Controller } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { Phone, Mail, Lock } from 'lucide-react-native';
+import { THEME_COLORS, SPACING_TOKENS, BORDER_RADIUS_TOKENS } from '@theme';
+import { Button, Divider, Input, ScreenContainer, Typography } from '@ui';
+import { useToast } from '@hooks';
 import type { AuthStackParamList, RootStackParamList } from '@navigation';
+import { SocialAuthButtons } from '../components';
+import { useAuth } from '../hooks';
+import { createLoginSchema, type LoginFormValues, type LoginIdentifierType } from '../validations';
 
 type NavigationProp = NativeStackNavigationProp<AuthStackParamList & RootStackParamList>;
 
 export const LoginScreen = () => {
   const navigation = useNavigation<NavigationProp>();
+  const { login, isLoading, error, clearError } = useAuth();
+  const toast = useToast();
+
+  const [loginType, setLoginType] = useState<LoginIdentifierType>('phone');
+
+  const {
+    control,
+    handleSubmit,
+    reset,
+    formState: { errors },
+  } = useForm<LoginFormValues>({
+    resolver: zodResolver(createLoginSchema(loginType)),
+    defaultValues: {
+      identifier: '',
+      password: '',
+    },
+  });
+
+  const handleTabChange = (type: LoginIdentifierType) => {
+    setLoginType(type);
+    clearError();
+    reset({ identifier: '', password: '' });
+  };
+
+  const onSubmit = async (values: LoginFormValues) => {
+    try {
+      await login({
+        identifier: values.identifier.trim(),
+        password: values.password,
+        type: loginType,
+      });
+
+      toast.success('Đăng nhập thành công!');
+
+      navigation.reset({
+        index: 0,
+        routes: [{ name: 'Main' }],
+      });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Đã có lỗi xảy ra');
+    }
+  };
 
   const handleGoToRegister = () => {
+    clearError();
     navigation.navigate('Register');
   };
 
-  const handleGoToOtp = () => {
-    navigation.navigate('OtpVerification', { target: '0901234567' });
-  };
-
-  const handleGoToMain = () => {
-    navigation.navigate('Main', { screen: 'Home' });
+  const handleGoToForgotPassword = () => {
+    clearError();
+    navigation.navigate('ForgotPassword');
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Đăng nhập</Text>
+    <ScreenContainer scrollable style={styles.container}>
+      <View style={styles.header}>
+        <Typography variant="h1" weight="BOLD" style={styles.title}>
+          Đăng nhập
+        </Typography>
 
-      <TouchableOpacity style={styles.primaryButton} onPress={handleGoToMain}>
-        <Text style={styles.primaryButtonText}>Trang chủ</Text>
-      </TouchableOpacity>
+        <Typography variant="body1" color={THEME_COLORS.TEXT_SECONDARY}>
+          Chào mừng bạn quay lại UniNest.
+        </Typography>
+      </View>
 
-      <TouchableOpacity style={styles.secondaryButton} onPress={handleGoToRegister}>
-        <Text style={styles.secondaryButtonText}>Đăng ký</Text>
-      </TouchableOpacity>
+      <View style={styles.tabContainer}>
+        <TouchableOpacity
+          style={[styles.tabButton, loginType === 'phone' && styles.tabButtonActive]}
+          onPress={() => handleTabChange('phone')}
+          activeOpacity={0.7}
+        >
+          <Typography
+            variant="body2"
+            weight={loginType === 'phone' ? 'SEMIBOLD' : 'MEDIUM'}
+            color={loginType === 'phone' ? THEME_COLORS.PRIMARY : THEME_COLORS.TEXT_MUTED}
+          >
+            Số điện thoại
+          </Typography>
+        </TouchableOpacity>
 
-      <TouchableOpacity style={styles.secondaryButton} onPress={handleGoToOtp}>
-        <Text style={styles.secondaryButtonText}>Xác thực OTP</Text>
-      </TouchableOpacity>
-    </View>
+        <TouchableOpacity
+          style={[styles.tabButton, loginType === 'email' && styles.tabButtonActive]}
+          onPress={() => handleTabChange('email')}
+          activeOpacity={0.7}
+        >
+          <Typography
+            variant="body2"
+            weight={loginType === 'email' ? 'SEMIBOLD' : 'MEDIUM'}
+            color={loginType === 'email' ? THEME_COLORS.PRIMARY : THEME_COLORS.TEXT_MUTED}
+          >
+            Email
+          </Typography>
+        </TouchableOpacity>
+      </View>
+
+      {error ? (
+        <View style={styles.errorBanner}>
+          <Typography variant="caption" color={THEME_COLORS.ERROR}>
+            {error}
+          </Typography>
+        </View>
+      ) : null}
+
+      <View style={styles.form}>
+        <Controller
+          control={control}
+          name="identifier"
+          render={({ field: { onChange, onBlur, value } }) => (
+            <Input
+              label={loginType === 'phone' ? 'Số điện thoại' : 'Email'}
+              placeholder={loginType === 'phone' ? '0905 123 456' : 'example@gmail.com'}
+              keyboardType={loginType === 'phone' ? 'phone-pad' : 'email-address'}
+              autoCapitalize="none"
+              leftIcon={
+                loginType === 'phone' ? (
+                  <Phone size={18} color={THEME_COLORS.TEXT_PLACEHOLDER} />
+                ) : (
+                  <Mail size={18} color={THEME_COLORS.TEXT_PLACEHOLDER} />
+                )
+              }
+              value={value}
+              onChangeText={onChange}
+              onBlur={onBlur}
+              errorMessage={errors.identifier?.message}
+            />
+          )}
+        />
+
+        <Controller
+          control={control}
+          name="password"
+          render={({ field: { onChange, onBlur, value } }) => (
+            <Input
+              label="Mật khẩu"
+              placeholder="••••••••"
+              isPassword
+              autoCapitalize="none"
+              leftIcon={<Lock size={18} color={THEME_COLORS.TEXT_PLACEHOLDER} />}
+              value={value}
+              onChangeText={onChange}
+              onBlur={onBlur}
+              errorMessage={errors.password?.message}
+            />
+          )}
+        />
+
+        <TouchableOpacity
+          style={styles.forgotPasswordButton}
+          onPress={handleGoToForgotPassword}
+          activeOpacity={0.7}
+        >
+          <Typography variant="body2" weight="MEDIUM" color={THEME_COLORS.PRIMARY}>
+            Quên mật khẩu?
+          </Typography>
+        </TouchableOpacity>
+
+        <Button
+          variant="primary"
+          size="lg"
+          fullWidth
+          isLoading={isLoading}
+          onPress={handleSubmit(onSubmit)}
+          style={styles.submitButton}
+        >
+          Đăng nhập
+        </Button>
+      </View>
+
+      <Divider label="hoặc tiếp tục với" style={styles.divider} />
+
+      <SocialAuthButtons
+        onGooglePress={() => toast.info('Đăng nhập Google đang phát triển')}
+        onApplePress={() => toast.info('Đăng nhập Apple đang phát triển')}
+      />
+
+      <View style={styles.footer}>
+        <Typography variant="body2" color={THEME_COLORS.TEXT_MUTED}>
+          Chưa có tài khoản?
+        </Typography>
+
+        <TouchableOpacity
+          onPress={handleGoToRegister}
+          activeOpacity={0.7}
+          style={styles.registerLink}
+        >
+          <Typography variant="body2" weight="SEMIBOLD" color={THEME_COLORS.PRIMARY}>
+            Đăng ký
+          </Typography>
+        </TouchableOpacity>
+      </View>
+    </ScreenContainer>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: THEME_COLORS.BACKGROUND,
-    padding: SPACING_TOKENS.MD,
+    paddingHorizontal: SPACING_TOKENS.LG,
+    paddingVertical: SPACING_TOKENS.MD,
   },
-  title: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: THEME_COLORS.TEXT_PRIMARY,
+  header: {
+    marginTop: SPACING_TOKENS.MD,
     marginBottom: SPACING_TOKENS.LG,
   },
-  primaryButton: {
-    backgroundColor: THEME_COLORS.PRIMARY,
-    paddingHorizontal: SPACING_TOKENS.LG,
+  title: {
+    marginBottom: SPACING_TOKENS.XS,
+  },
+  tabContainer: {
+    flexDirection: 'row',
+    backgroundColor: THEME_COLORS.SURFACE_MUTED,
+    borderRadius: BORDER_RADIUS_TOKENS.MD,
+    padding: 4,
+    marginBottom: SPACING_TOKENS.LG,
+  },
+  tabButton: {
+    flex: 1,
     paddingVertical: SPACING_TOKENS.SM,
-    borderRadius: 8,
-    marginBottom: SPACING_TOKENS.SM,
-    minWidth: 200,
     alignItems: 'center',
+    borderRadius: BORDER_RADIUS_TOKENS.SM,
   },
-  primaryButtonText: {
-    color: THEME_COLORS.SURFACE,
-    fontWeight: '600',
-    fontSize: 16,
+  tabButtonActive: {
+    backgroundColor: THEME_COLORS.SURFACE,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
   },
-  secondaryButton: {
-    paddingHorizontal: SPACING_TOKENS.LG,
-    paddingVertical: SPACING_TOKENS.SM,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: THEME_COLORS.BORDER,
-    marginBottom: SPACING_TOKENS.SM,
-    minWidth: 200,
+  errorBanner: {
+    backgroundColor: THEME_COLORS.ERROR_LIGHT,
+    borderRadius: BORDER_RADIUS_TOKENS.MD,
+    padding: SPACING_TOKENS.SM,
+    marginBottom: SPACING_TOKENS.MD,
+  },
+  form: {
+    width: '100%',
+  },
+  forgotPasswordButton: {
+    alignSelf: 'flex-end',
+    marginVertical: SPACING_TOKENS.XS,
+  },
+  submitButton: {
+    marginTop: SPACING_TOKENS.MD,
+  },
+  divider: {
+    marginVertical: SPACING_TOKENS.LG,
+  },
+  footer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
     alignItems: 'center',
+    marginTop: SPACING_TOKENS.XL,
+    marginBottom: SPACING_TOKENS.LG,
   },
-  secondaryButtonText: {
-    color: THEME_COLORS.TEXT_PRIMARY,
-    fontWeight: '500',
-    fontSize: 14,
+  registerLink: {
+    marginLeft: 4,
   },
 });
