@@ -9,8 +9,10 @@ Mọi AI coding assistant và thành viên dự án phải tuân thủ nghiêm n
 
 ## Bước 1: Kiểm tra Ràng buộc, Ranh giới & Ràng buộc Bắt buộc
 - Đọc [**`agent/rules.md`**](./rules.md):
+  - **KIỂM TRA NHÁNH GIT PHỤ TRÁCH**: Xác định file/tính năng sắp sửa thuộc trách nhiệm của nhánh Git nào (`feat/sp1-mobile-shell`, `feat/sp1-ui-components`, `feat/sp1-mobile-auth-screens`, ...). Luôn checkout đúng nhánh trước khi sửa đổi.
   - **SỬ DỤNG PACKAGE SẴN CÓ**: Chỉ code trong các package `@features/*` và base packages sẵn có. Trừ khi là tính năng mới hoàn toàn chưa có package tương ứng thì mới tạo package mới.
   - **BẮT BUỘC ĐA NGÔN NGỮ**: Không viết chuỗi cứng vào code; chuẩn bị sẵn key cho cả `vi` và `en`.
+  - **100% TIẾNG VIỆT THUẦN**: Toàn bộ chuỗi giao diện, thông báo lỗi, placeholder viết trực tiếp bằng Tiếng Việt. Tuyệt đối không dùng thư viện `i18n` hay hook `useTranslation()`.
   - **HẰNG SỐ IN HOA**: Mọi hằng số mới phải viết kiểu `UPPER_SNAKE_CASE`.
   - **KHÔNG COMMENT BỪA BÃI**: Để code tự tường minh, không comment giải thích các dòng code hiển nhiên.
   - **KHOẢNG CÁCH DÒNG LOGIC**: Luôn có dòng trống phân cách giữa các block biến, hàm, if/else, return.
@@ -31,6 +33,7 @@ Mọi AI coding assistant và thành viên dự án phải tuân thủ nghiêm n
   - `types/`: Type definitions của tính năng.
   - `index.ts`: Re-export các thành phần public của tính năng.
 - Luôn sử dụng alias import (`@features/...`, `@core`, `@theme`, `@i18n`, `@ui`, `@hooks`, `@navigation`).
+- Luôn sử dụng alias import (`@features/...`, `@core`, `@theme`, `@ui`, `@hooks`, `@navigation`).
 
 ## Bước 4: Kiểm thử Tính năng
 - Kiểm tra render luồng nghiệp vụ chính, các trạng thái loading, empty, error handling.
@@ -50,4 +53,8 @@ npm run format:check
 - Nếu tính năng bổ sung trạng thái, thực thể hoặc logic mới, cập nhật vào `agent/business-logic.md`.
 
 ## Bước 7: Báo cáo cho Người dùng
+## Bước 7: Commit Chuẩn & Báo cáo cho Người dùng
+- Kiểm tra `git status` đảm bảo chỉ chứa các file thuộc đúng phạm vi trách nhiệm của nhánh hiện tại.
+- Tạo commit với message chuẩn Conventional Commits kèm mã Task ID (ví dụ: `refactor(auth): remove i18n dependency (TSK-SP1-03)`).
+- Chờ người dùng cho phép ("Allow") trước khi commit hoặc push.
 - Tóm tắt ngắn gọn các việc đã làm, danh sách file thay đổi (có markdown link trực tiếp), và kết quả kiểm tra type/lint.

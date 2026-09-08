@@ -6,6 +6,7 @@
 - **Dự án làm theo team với kiến trúc module hóa (Screaming Architecture)**.
 - **Ưu tiên tuyệt đối các package đã define sẵn**: Mọi AI và thành viên trong nhóm phải kiểm tra và chỉ được triển khai code bên trong các package đã định nghĩa sẵn:
   - **Base Packages**: `@core`, `@theme`, `@ui`, `@i18n`, `@hooks`, `@navigation`.
+  - **Base Packages**: `@core`, `@theme`, `@ui`, `@hooks`, `@navigation`.
   - **Predefined Feature Packages**:
     `@features/auth`, `@features/listings`, `@features/search`, `@features/comparison`,
     `@features/booking`, `@features/chat`, `@features/forum`, `@features/reviews`,
@@ -21,6 +22,10 @@
 - Khi thêm key mới, BẮT BUỘC định nghĩa đồng bộ cả hai file ngôn ngữ:
   - `src/i18n/locales/vi/index.ts` (Tiếng Việt)
   - `src/i18n/locales/en/index.ts` (Tiếng Anh)
+### [MANDATE-2] 100% TIẾNG VIỆT THUẦN (PURE VIETNAMESE - KHÔNG DÙNG i18n)
+- **Hệ thống đa ngôn ngữ đã bị gỡ bỏ hoàn toàn**: Tuyệt đối không import hoặc sử dụng `i18n`, `react-i18next`, `@i18n` hay hook `useTranslation()`.
+- **100% chuỗi văn bản giao diện viết trực tiếp bằng Tiếng Việt**: Toàn bộ tiêu đề màn hình, nhãn nút bấm, placeholder ô nhập liệu, helper text, thông báo toast và cảnh báo lỗi đều phải viết bằng Tiếng Việt tự nhiên, thân thiện và chuẩn văn phong sinh viên/chủ trọ Việt Nam.
+- **Validation Schema tĩnh**: Toàn bộ schema validation Zod (`authValidation.ts`, ...) định nghĩa trực tiếp chuỗi lỗi bằng Tiếng Việt, không dùng hàm bao bọc hay truyền hàm `t`.
 
 ### [MANDATE-3] HẰNG SỐ PHẢI ĐẶT TÊN IN HOA (UPPER_SNAKE_CASE)
 - Mọi biến đại diện cho hằng số (config, status code, theme tokens, keys) **BẮT BUỘC PHẢI VIẾT IN HOA TOÀN BỘ**.
@@ -45,6 +50,17 @@
   - Giữa các câu lệnh điều kiện, luồng xử lý (`if`, `switch`, `try-catch`, `for`).
   - Trước câu lệnh `return` hoặc khối JSX render.
 - ESLint rule `padding-line-between-statements` và Prettier sẽ tự động hỗ trợ định dạng khoảng cách chuẩn mực này.
+
+### [MANDATE-7] QUY TẮC PHÂN NHÁNH GIT & TRÁCH NHIỆM MÃ NGUỒN (BRANCH RESPONSIBILITY)
+- **Phát triển theo cấu trúc phân nhánh tính năng (Feature Branching)**: Dự án tổ chức thành các nhánh độc lập theo từng trách nhiệm:
+  - `feat/sp1-mobile-shell`: Cấu trúc khung app, Root/Tab navigator, router, cấu hình chung.
+  - `feat/sp1-ui-components`: Các component dùng chung thuộc `@ui` (atoms, molecules, feedback, layout).
+  - `feat/sp1-mobile-auth-screens`: Màn hình và logic xác thực thuộc `@features/auth`.
+- **Trách nhiệm mã nguồn theo nhánh**: Khi thực hiện thay đổi, **BẮT BUỘC** xác định file thay đổi thuộc phạm vi nhánh nào:
+  - Phải checkout sang đúng nhánh đó để thực hiện code, kiểm tra và commit.
+  - Không thay đổi các file thuộc trách nhiệm của nhánh khác trên nhánh hiện tại.
+  - Kế thừa và đồng bộ: Nhánh downstream merge từ nhánh upstream theo thứ tự (`shell` -> `ui-components` -> `auth-screens`). Kiểm tra `npm run lint` & `npm run typecheck` đạt 0 lỗi trước khi push lên `origin`.
+- **Format commit message chuẩn Conventional Commits**: `<type>(<scope>): <mô tả ngắn> (<TASK-ID>)` (ví dụ: `refactor(auth): remove i18n dependency (TSK-SP1-03)`).
 
 ---
 
@@ -79,6 +95,7 @@
 - **StyleSheet Object**: Luôn đặt tên biến là `styles` (ví dụ: `const styles = StyleSheet.create({ ... })`).
 - **Navigation Param List**: `<TênStack>ParamList` (ví dụ: `RootStackParamList`, `MainTabParamList`).
 - **Path Imports**: Luôn dùng alias `@core`, `@ui`, `@theme`, `@i18n`, `@hooks`, `@navigation`, `@features/...`. Không dùng relative path vượt quá 1 cấp (`../../`).
+- **Path Imports**: Luôn dùng alias `@core`, `@ui`, `@theme`, `@hooks`, `@navigation`, `@features/...`. Không dùng relative path vượt quá 1 cấp (`../../`).
 - **Zero Unused Imports & Variables**: Tuyệt đối không để lại import thừa hoặc biến không dùng. Hệ thống tự động chặn ở cả 2 tầng: ESLint (`unused-imports/no-unused-imports: error`) và TypeScript (`noUnusedLocals: true`). Chạy `npm run lint:fix` để tự động dọn sạch import thừa.
 
 ---

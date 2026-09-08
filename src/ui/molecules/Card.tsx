@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { View, TouchableOpacity, StyleSheet, ViewStyle, StyleProp } from 'react-native';
 import { THEME_COLORS, BORDER_RADIUS_TOKENS, SPACING_TOKENS } from '@theme';
+import { Typography } from '../atoms/Typography';
 
 export type CardPadding = 'none' | 'sm' | 'md' | 'lg';
 
@@ -29,15 +30,22 @@ export const Card = ({
     style,
   ];
 
+  const renderedChildren =
+    typeof children === 'string' || typeof children === 'number' ? (
+      <Typography>{children}</Typography>
+    ) : (
+      children
+    );
+
   if (onPress) {
     return (
       <TouchableOpacity style={containerStyles} onPress={onPress} activeOpacity={0.85}>
-        {children}
+        {renderedChildren}
       </TouchableOpacity>
     );
   }
 
-  return <View style={containerStyles}>{children}</View>;
+  return <View style={containerStyles}>{renderedChildren}</View>;
 };
 
 const PADDING_STYLES = StyleSheet.create({
