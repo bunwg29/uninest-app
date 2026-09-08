@@ -2,7 +2,6 @@ import axios, { AxiosError } from 'axios';
 import { API_CONFIG } from '../config';
 import { HTTP_STATUS_CODES } from '../constants';
 import { ApiErrorResponse } from '../types';
-import { tokenStorage } from '../storage/token';
 
 export class AppError extends Error {
   public readonly statusCode: number;
@@ -30,16 +29,6 @@ export const apiClient = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
-});
-
-apiClient.interceptors.request.use(async (config) => {
-  const token = await tokenStorage.getAccessToken();
-
-  if (token && config.headers) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-
-  return config;
 });
 
 apiClient.interceptors.response.use(
