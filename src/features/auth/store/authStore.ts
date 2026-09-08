@@ -157,13 +157,18 @@ export const useAuthStore = create<AuthState>((set, get) => {
     },
 
     async logout() {
-      await tokenStorage.clearTokens();
+      try {
+        await authService.logout();
+      } catch {
+      } finally {
+        await tokenStorage.clearTokens();
 
-      set({
-        user: null,
-        isAuthenticated: false,
-        error: null,
-      });
+        set({
+          user: null,
+          isAuthenticated: false,
+          error: null,
+        });
+      }
     },
 
     clearError() {

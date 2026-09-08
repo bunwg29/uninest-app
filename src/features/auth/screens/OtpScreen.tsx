@@ -32,7 +32,7 @@ export const OtpScreen = () => {
   const [code, setCode] = useState('');
   const [countdown, setCountdown] = useState(COUNTDOWN_SECONDS);
   const [isResending, setIsResending] = useState(false);
-  const [remainingAttempts, setRemainingAttempts] = useState<number | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [hasExpired, setHasExpired] = useState(false);
 
   useEffect(() => {
@@ -61,15 +61,15 @@ export const OtpScreen = () => {
 
     setIsResending(true);
     clearError();
-    setRemainingAttempts(null);
+    setErrorMessage(null);
     setHasExpired(false);
 
     try {
       await authService.resendOtp(target);
       setCountdown(COUNTDOWN_SECONDS);
       toast.info('Mã xác thực mới đã được gửi!');
-    } catch {
-      toast.error(t('common.error'));
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : t('common.error'));
     } finally {
       setIsResending(false);
     }
@@ -107,32 +107,20 @@ export const OtpScreen = () => {
         index: 0,
         routes: [{ name: 'Main' }],
       });
-    } catch {
-      const attempts = remainingAttempts === null ? 2 : Math.max(0, remainingAttempts - 1);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : t('common.error');
 
-      setRemainingAttempts(attempts);
-      toast.error(t('auth.otp.errorInvalidCode', { count: attempts }));
+      setErrorMessage(msg);
+      toast.error(msg);
     }
-  }, [
-    code,
-    isLoading,
-    clearError,
-    flow,
-    target,
-    role,
-    verifyOtp,
-    navigation,
-    toast,
-    t,
-    remainingAttempts,
-  ]);
+  }, [code, isLoading, clearError, flow, target, role, verifyOtp, navigation, toast, t]);
 
   const handleChangePhone = () => {
     clearError();
     navigation.goBack();
   };
 
-  const hasError = Boolean(storeError || remainingAttempts !== null || hasExpired);
+  const hasError = Boolean(storeError || errorMessage || hasExpired);
 
   return (
     <ScreenContainer scrollable style={styles.container}>
@@ -158,20 +146,20 @@ export const OtpScreen = () => {
         onCodeChange={(newCode) => {
           setCode(newCode);
 
-          if (remainingAttempts !== null) {
-            setRemainingAttempts(null);
+          if (errorMessage) {
+            setErrorMessage(null);
             clearError();
           }
         }}
         hasError={hasError}
       />
 
-      {remainingAttempts !== null ? (
+      {errorMessage ? (
         <View style={styles.errorRow}>
           <AlertCircle size={16} color={THEME_COLORS.ERROR} style={styles.alertIcon} />
 
           <Typography variant="body2" weight="MEDIUM" color={THEME_COLORS.ERROR}>
-            {t('auth.otp.errorInvalidCode', { count: remainingAttempts })}
+            {errorMessage}
           </Typography>
         </View>
       ) : null}

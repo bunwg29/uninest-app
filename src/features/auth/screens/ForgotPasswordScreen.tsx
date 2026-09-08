@@ -45,9 +45,11 @@ export const ForgotPasswordScreen = () => {
         target: cleanPhone,
         flow: 'forgot_password',
       });
-    } catch {
-      setErrorMessage(t('common.error'));
-      toast.error(t('common.error'));
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : t('common.error');
+
+      setErrorMessage(msg);
+      toast.error(msg);
     } finally {
       setIsLoading(false);
     }

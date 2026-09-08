@@ -1,4 +1,4 @@
-import { apiClient } from '@core';
+import { apiClient, tokenStorage, getDeviceInfo } from '@core';
 import type {
   AuthResponse,
   AuthTokens,
@@ -11,172 +11,184 @@ import type {
   VerifyOtpPayload,
 } from '../types';
 
-const isNetworkOrNotFoundError = (error: unknown): boolean => {
-  if (typeof error === 'object' && error !== null && 'statusCode' in error) {
-    const statusCode = (error as { statusCode: number }).statusCode;
+interface BackendUser {
+  id: string;
+  fullName: string;
+  phone?: string | null;
+  email?: string | null;
+  roleId: number;
+  avatarUrl?: string | null;
+  isVerified: boolean;
+}
 
-    return statusCode === 404 || statusCode === 500 || statusCode === 0;
+interface BackendAuthResult {
+  accessToken: string;
+  refreshToken: string;
+  expiresIn?: number;
+  user: BackendUser;
+}
+
+const unwrapData = <T>(payload: unknown): T => {
+  if (
+    typeof payload === 'object' &&
+    payload !== null &&
+    'data' in payload &&
+    (payload as { status?: boolean }).status !== undefined
+  ) {
+    return (payload as { data: T }).data;
   }
 
-  return true;
+  return payload as T;
 };
 
-const createMockUser = (
-  phoneNumber: string,
-  fullName: string = 'Nguyễn Xuân Hoài',
-  role: UserRole = 'student'
-): AuthUser => ({
-  id: 'user_mock_001',
-  fullName,
-  phoneNumber,
-  email: 'nguyenvana@gmail.com',
-  role,
-  avatarUrl: undefined,
-  isVerified: true,
-});
+const mapBackendUser = (user: BackendUser): AuthUser => {
+  let role: UserRole = 'student';
 
-const createMockTokens = (): AuthTokens => ({
-  accessToken: 'mock_jwt_access_token_' + Date.now(),
-  refreshToken: 'mock_jwt_refresh_token_' + Date.now(),
-  expiresIn: 3600,
+  if (user.roleId === 1) {
+    role = 'landlord';
+  } else if (user.roleId === 2) {
+    role = 'admin';
+  }
+
+  return {
+    id: user.id,
+    fullName: user.fullName,
+    phoneNumber: user.phone || '',
+    email: user.email || undefined,
+    role,
+    avatarUrl: user.avatarUrl || undefined,
+    isVerified: user.isVerified,
+  };
+};
+
+const mapBackendTokens = (result: BackendAuthResult): AuthTokens => ({
+  accessToken: result.accessToken,
+  refreshToken: result.refreshToken,
+  expiresIn: result.expiresIn,
 });
 
 export const authService = {
   async login(payload: LoginPayload): Promise<AuthResponse> {
-    try {
-      const response = await apiClient.post<AuthResponse>('/auth/login', payload);
+    const { deviceName, deviceId } = await getDeviceInfo();
 
-      return response.data;
-    } catch (error) {
-      if (isNetworkOrNotFoundError(error)) {
-        return {
-          user: createMockUser(
-            payload.identifier.includes('@') ? '0905123456' : payload.identifier,
-            'Nguyễn Xuân Hoài',
-            'student'
-          ),
-          tokens: createMockTokens(),
-        };
-      }
+    const response = await apiClient.post('/auth/login', {
+      identifier: payload.identifier.trim(),
+      password: payload.password,
+      deviceName,
+      deviceId,
+    });
 
-      throw error;
-    }
+    const result = unwrapData<BackendAuthResult>(response.data);
+
+    return {
+      user: mapBackendUser(result.user),
+      tokens: mapBackendTokens(result),
+    };
   },
 
   async register(payload: RegisterPayload): Promise<{ success: boolean; message: string }> {
-    try {
-      const response = await apiClient.post<{ success: boolean; message: string }>(
-        '/auth/register',
-        payload
-      );
+    const roleId = payload.role === 'landlord' ? 1 : 0;
+    const phone = payload.phoneNumber ? payload.phoneNumber.trim() : null;
+    const email = payload.email ? payload.email.trim() : null;
 
-      return response.data;
-    } catch (error) {
-      if (isNetworkOrNotFoundError(error)) {
-        return {
-          success: true,
-          message: 'OTP sent successfully',
-        };
-      }
+    const response = await apiClient.post('/auth/register', {
+      fullName: payload.fullName.trim(),
+      phone,
+      email,
+      password: payload.password,
+      roleId,
+    });
 
-      throw error;
-    }
+    const result = unwrapData<{ message: string }>(response.data);
+
+    return {
+      success: true,
+      message: result.message || 'Đăng ký tài khoản thành công',
+    };
   },
 
   async verifyOtp(payload: VerifyOtpPayload): Promise<AuthResponse> {
-    try {
-      const response = await apiClient.post<AuthResponse>('/auth/verify-otp', payload);
+    const type = payload.flow === 'forgot_password' ? 'FORGOT_PASSWORD' : 'REGISTER';
+    const { deviceName, deviceId } = await getDeviceInfo();
 
-      return response.data;
-    } catch (error) {
-      if (isNetworkOrNotFoundError(error)) {
-        if (payload.otpCode !== '123456' && payload.otpCode.length === 6) {
-          // If code is not 123456 and equal to 000000, trigger error to demo invalid OTP state
-          if (payload.otpCode === '000000') {
-            const err = new Error('Invalid OTP');
+    const response = await apiClient.post('/auth/otp/verify', {
+      identifier: payload.phoneNumber.trim(),
+      code: payload.otpCode.trim(),
+      type,
+      deviceName,
+      deviceId,
+    });
 
-            (err as unknown as { statusCode: number }).statusCode = 400;
-            throw err;
-          }
-        }
+    const result = unwrapData<BackendAuthResult>(response.data);
 
-        return {
-          user: createMockUser(payload.phoneNumber, 'Nguyễn Xuân Hoài', payload.role || 'student'),
-          tokens: createMockTokens(),
-        };
-      }
-
-      throw error;
-    }
+    return {
+      user: mapBackendUser(result.user),
+      tokens: mapBackendTokens(result),
+    };
   },
 
-  async resendOtp(phoneNumber: string): Promise<{ success: boolean; message: string }> {
-    try {
-      const response = await apiClient.post<{ success: boolean; message: string }>(
-        '/auth/resend-otp',
-        { phoneNumber }
-      );
+  async resendOtp(
+    phoneNumber: string,
+    type: 'REGISTER' | 'LOGIN' | 'FORGOT_PASSWORD' = 'REGISTER'
+  ): Promise<{ success: boolean; message: string }> {
+    const response = await apiClient.post('/auth/otp/send', {
+      identifier: phoneNumber.trim(),
+      type,
+    });
 
-      return response.data;
-    } catch (error) {
-      if (isNetworkOrNotFoundError(error)) {
-        return {
-          success: true,
-          message: 'OTP resent successfully',
-        };
-      }
+    const result = unwrapData<{ message: string }>(response.data);
 
-      throw error;
-    }
+    return {
+      success: true,
+      message: result.message || 'Mã xác thực đã được gửi lại',
+    };
   },
 
   async forgotPassword(
     payload: ForgotPasswordPayload
   ): Promise<{ success: boolean; message: string }> {
-    try {
-      const response = await apiClient.post<{ success: boolean; message: string }>(
-        '/auth/forgot-password',
-        payload
-      );
+    const response = await apiClient.post('/auth/forgot-password', {
+      identifier: payload.phoneNumber.trim(),
+    });
 
-      return response.data;
-    } catch (error) {
-      if (isNetworkOrNotFoundError(error)) {
-        return {
-          success: true,
-          message: 'Reset instructions sent',
-        };
-      }
+    const result = unwrapData<{ message: string }>(response.data);
 
-      throw error;
-    }
+    return {
+      success: true,
+      message: result.message || 'Mã OTP khôi phục mật khẩu đã được gửi',
+    };
   },
 
   async resetPassword(payload: ResetPasswordPayload): Promise<{ success: boolean }> {
-    try {
-      const response = await apiClient.post<{ success: boolean }>('/auth/reset-password', payload);
+    await apiClient.post('/auth/reset-password', {
+      identifier: payload.phoneNumber.trim(),
+      code: payload.otpCode.trim(),
+      newPassword: payload.newPassword,
+    });
 
-      return response.data;
-    } catch (error) {
-      if (isNetworkOrNotFoundError(error)) {
-        return { success: true };
-      }
-
-      throw error;
-    }
+    return { success: true };
   },
 
   async getProfile(): Promise<AuthUser> {
-    try {
-      const response = await apiClient.get<AuthUser>('/auth/me');
+    const response = await apiClient.get('/auth/me');
+    const result = unwrapData<BackendUser>(response.data);
 
-      return response.data;
-    } catch (error) {
-      if (isNetworkOrNotFoundError(error)) {
-        return createMockUser('0905123456');
+    return mapBackendUser(result);
+  },
+
+  async logout(): Promise<void> {
+    const refreshToken = await tokenStorage.getRefreshToken();
+    const deviceId = await tokenStorage.getDeviceId();
+
+    if (refreshToken) {
+      try {
+        await apiClient.post('/auth/logout', {
+          refreshToken,
+          deviceId: deviceId || undefined,
+        });
+      } catch {
+        // ignore logout errors
       }
-
-      throw error;
     }
   },
 };
