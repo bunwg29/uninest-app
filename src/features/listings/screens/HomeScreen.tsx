@@ -18,6 +18,7 @@ import {
 } from 'lucide-react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BORDER_RADIUS_TOKENS, SPACING_TOKENS, THEME_COLORS } from '@theme';
 import { Typography } from '@ui';
 import { useLandlordDashboard, useLandlordListings } from '../hooks';
@@ -25,6 +26,7 @@ import type { MainTabParamList } from '@navigation';
 
 export const HomeScreen = () => {
   const navigation = useNavigation<BottomTabNavigationProp<MainTabParamList>>();
+  const insets = useSafeAreaInsets();
   const dashboardQuery = useLandlordDashboard();
   const listingsQuery = useLandlordListings('published');
   const dashboard = dashboardQuery.data;
@@ -50,7 +52,7 @@ export const HomeScreen = () => {
         />
       }
     >
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: insets.top + SPACING_TOKENS.SM }]}>
         <View style={styles.avatar}>
           <Typography variant="h3" weight="BOLD" color={THEME_COLORS.WARNING}>
             {getInitials(dashboard?.profile.fullName)}

@@ -21,6 +21,7 @@ import {
   X,
 } from 'lucide-react-native';
 import { THEME_COLORS, BORDER_RADIUS_TOKENS, SPACING_TOKENS } from '@theme';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLandlordListingMutation, useLandlordListings } from '../hooks';
 import type { LandlordListing, LandlordListingStatus } from '../types';
 import { Badge, Button, EmptyState, Modal, SkeletonBox, Typography } from '@ui';
@@ -61,6 +62,7 @@ type ListingAction = {
 };
 
 export const LandlordListingsScreen = () => {
+  const insets = useSafeAreaInsets();
   const [activeStatus, setActiveStatus] = useState<LandlordListingStatus>('published');
   const [selectedListing, setSelectedListing] = useState<LandlordListing | null>(null);
   const [confirmAction, setConfirmAction] = useState<'hide' | 'delete' | null>(null);
@@ -98,7 +100,7 @@ export const LandlordListingsScreen = () => {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: insets.top + SPACING_TOKENS.SM }]}>
         <Typography variant="h1" weight="BOLD">
           Tin đăng
         </Typography>
