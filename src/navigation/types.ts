@@ -23,11 +23,11 @@ export type AuthStackParamList = {
 };
 
 export type MainTabParamList = {
-  Home: undefined;
-  Search: undefined;
+  Overview: undefined;
+  Listings: undefined;
+  CreateListing: undefined;
+  Appointments: undefined;
   Messages: undefined;
-  Community: undefined;
-  Profile: undefined;
 };
 
 export type RootStackParamList = {
