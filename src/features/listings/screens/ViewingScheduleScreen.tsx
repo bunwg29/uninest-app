@@ -1,0 +1,265 @@
+import { useCallback } from 'react';
+import { View, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { CalendarDays } from 'lucide-react-native';
+import { THEME_COLORS, SPACING_TOKENS, BORDER_RADIUS_TOKENS } from '@theme';
+import { Button, Typography, HeaderBar, ScreenContainer } from '@ui';
+import type { ListingPostStackParamList } from '@navigation';
+import { useListingPostStore } from '../store/listingPostStore';
+import { LISTING_FORM_STEPS, DAYS_OF_WEEK, VIEWING_SLOT_LABELS } from '../types/constants';
+import type { DayKey, ViewingSchedule, ViewingSlot } from '../types';
+
+type NavigationProp = NativeStackNavigationProp<ListingPostStackParamList>;
+
+const TOTAL_STEPS = LISTING_FORM_STEPS.length;
+
+type SlotKey = keyof ViewingSlot;
+
+export const ViewingScheduleScreen = () => {
+  const navigation = useNavigation<NavigationProp>();
+  const { viewingSchedule, setViewingSchedule } = useListingPostStore();
+
+  const handleToggleSlot = useCallback(
+    (day: DayKey, slot: SlotKey) => {
+      const updated: ViewingSchedule = {
+        ...viewingSchedule,
+        [day]: {
+          ...viewingSchedule[day],
+          [slot]: !viewingSchedule[day][slot],
+        },
+      };
+
+      setViewingSchedule(updated);
+    },
+    [viewingSchedule, setViewingSchedule]
+  );
+
+  const handleContinue = useCallback(() => {
+    navigation.navigate('ListingPostPreview');
+  }, [navigation]);
+
+  const totalSelected = Object.values(viewingSchedule).reduce(
+    (total, daySlots) => total + Object.values(daySlots).filter(Boolean).length,
+    0
+  );
+
+  return (
+    <ScreenContainer applyTopInset applyBottomInset={false} keyboardAvoiding={false}>
+      <HeaderBar
+        title="Đăng tin mới"
+        onBack={() => navigation.goBack()}
+        subtitle={`Bước 5 / ${TOTAL_STEPS}: Lịch xem phòng`}
+        alignTitle="left"
+      />
+
+      <StepIndicator currentStep={5} totalSteps={TOTAL_STEPS} />
+
+      <ScrollView
+        style={styles.flex}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={styles.headerSection}>
+          <CalendarDays size={20} color={THEME_COLORS.PRIMARY} />
+
+          <View style={styles.headerText}>
+            <Typography variant="body1" weight="SEMIBOLD" colorKey="TEXT_PRIMARY">
+              Lịch xem phòng
+            </Typography>
+
+            <Typography variant="body2" colorKey="TEXT_SECONDARY">
+              Chọn các khung giờ bạn sẵn sàng cho sinh viên đến xem phòng
+            </Typography>
+          </View>
+        </View>
+
+        {totalSelected > 0 ? (
+          <View style={styles.selectedBadge}>
+            <Typography variant="caption" colorKey="PRIMARY">
+              Đã chọn {totalSelected} khung giờ
+            </Typography>
+          </View>
+        ) : null}
+
+        <View style={styles.scheduleGrid}>
+          <View style={styles.gridHeader}>
+            <View style={styles.dayLabelCell} />
+
+            {VIEWING_SLOT_LABELS.map((slot) => (
+              <View key={slot.key} style={styles.slotHeaderCell}>
+                <Typography variant="caption" weight="SEMIBOLD" colorKey="TEXT_SECONDARY">
+                  {slot.label}
+                </Typography>
+              </View>
+            ))}
+          </View>
+
+          {DAYS_OF_WEEK.map(({ key: dayKey, label: dayLabel }) => (
+            <View key={dayKey} style={styles.gridRow}>
+              <View style={styles.dayLabelCell}>
+                <Typography variant="caption" weight="MEDIUM" colorKey="TEXT_PRIMARY">
+                  {dayLabel}
+                </Typography>
+              </View>
+
+              {VIEWING_SLOT_LABELS.map((slot) => {
+                const isActive = viewingSchedule[dayKey][slot.key as SlotKey];
+
+                return (
+                  <TouchableOpacity
+                    key={slot.key}
+                    style={[styles.slotCell, isActive && styles.slotCellActive]}
+                    onPress={() => handleToggleSlot(dayKey, slot.key as SlotKey)}
+                    activeOpacity={0.7}
+                  >
+                    {isActive ? <View style={styles.slotDot} /> : null}
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          ))}
+        </View>
+
+        <View style={styles.noteBanner}>
+          <Typography variant="caption" colorKey="TEXT_MUTED">
+            Lịch xem phòng giúp sinh viên biết thời gian phù hợp để đặt lịch. Thông tin này sẽ được
+            tích hợp đầy đủ trong phiên bản tiếp theo.
+          </Typography>
+        </View>
+      </ScrollView>
+
+      <View style={styles.bottomBar}>
+        <Button variant="primary" size="lg" fullWidth onPress={handleContinue}>
+          Xem trước
+        </Button>
+      </View>
+    </ScreenContainer>
+  );
+};
+
+const StepIndicator = ({
+  currentStep,
+  totalSteps,
+}: {
+  currentStep: number;
+  totalSteps: number;
+}) => {
+  const progress = currentStep / totalSteps;
+
+  return (
+    <View style={indicatorStyles.container}>
+      <View style={indicatorStyles.track}>
+        <View style={[indicatorStyles.fill, { width: `${progress * 100}%` }]} />
+      </View>
+    </View>
+  );
+};
+
+const indicatorStyles = StyleSheet.create({
+  container: {
+    paddingHorizontal: SPACING_TOKENS.MD,
+    paddingVertical: SPACING_TOKENS.SM,
+    backgroundColor: THEME_COLORS.SURFACE,
+  },
+  track: {
+    height: 4,
+    backgroundColor: THEME_COLORS.SURFACE_MUTED,
+    borderRadius: BORDER_RADIUS_TOKENS.FULL,
+    overflow: 'hidden',
+  },
+  fill: {
+    height: '100%',
+    backgroundColor: THEME_COLORS.PRIMARY,
+    borderRadius: BORDER_RADIUS_TOKENS.FULL,
+  },
+});
+
+const styles = StyleSheet.create({
+  flex: {
+    flex: 1,
+  },
+  scrollContent: {
+    padding: SPACING_TOKENS.MD,
+    paddingBottom: SPACING_TOKENS.XL,
+  },
+  headerSection: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: SPACING_TOKENS.SM,
+    marginBottom: SPACING_TOKENS.MD,
+  },
+  headerText: {
+    flex: 1,
+    gap: 2,
+  },
+  selectedBadge: {
+    backgroundColor: THEME_COLORS.PRIMARY_LIGHT,
+    borderRadius: BORDER_RADIUS_TOKENS.FULL,
+    paddingHorizontal: SPACING_TOKENS.SM,
+    paddingVertical: 4,
+    alignSelf: 'flex-start',
+    marginBottom: SPACING_TOKENS.MD,
+  },
+  scheduleGrid: {
+    borderRadius: BORDER_RADIUS_TOKENS.MD,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: THEME_COLORS.BORDER,
+    marginBottom: SPACING_TOKENS.MD,
+  },
+  gridHeader: {
+    flexDirection: 'row',
+    backgroundColor: THEME_COLORS.SURFACE_MUTED,
+    borderBottomWidth: 1,
+    borderBottomColor: THEME_COLORS.BORDER,
+  },
+  gridRow: {
+    flexDirection: 'row',
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: THEME_COLORS.BORDER,
+  },
+  dayLabelCell: {
+    width: 40,
+    paddingVertical: SPACING_TOKENS.SM,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRightWidth: 1,
+    borderRightColor: THEME_COLORS.BORDER,
+  },
+  slotHeaderCell: {
+    flex: 1,
+    paddingVertical: SPACING_TOKENS.SM,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  slotCell: {
+    flex: 1,
+    height: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderLeftWidth: StyleSheet.hairlineWidth,
+    borderLeftColor: THEME_COLORS.BORDER,
+  },
+  slotCellActive: {
+    backgroundColor: THEME_COLORS.PRIMARY_LIGHT,
+  },
+  slotDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: THEME_COLORS.PRIMARY,
+  },
+  noteBanner: {
+    padding: SPACING_TOKENS.MD,
+    backgroundColor: THEME_COLORS.SURFACE_MUTED,
+    borderRadius: BORDER_RADIUS_TOKENS.MD,
+  },
+  bottomBar: {
+    padding: SPACING_TOKENS.MD,
+    paddingBottom: SPACING_TOKENS.LG,
+    backgroundColor: THEME_COLORS.SURFACE,
+    borderTopWidth: 1,
+    borderTopColor: THEME_COLORS.DIVIDER,
+  },
+});
