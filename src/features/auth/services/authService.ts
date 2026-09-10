@@ -7,6 +7,9 @@ import type {
   LoginPayload,
   RegisterPayload,
   ResetPasswordPayload,
+  Profile,
+  UpdateProfilePayload,
+  ChangePasswordPayload,
   UserRole,
   VerifyOtpPayload,
 } from '../types';
@@ -180,11 +183,51 @@ export const authService = {
     return { success: true };
   },
 
-  async getProfile(): Promise<AuthUser> {
-    const response = await apiClient.get('/auth/me');
-    const result = unwrapData<BackendUser>(response.data);
+  async getProfile(): Promise<Profile> {
+    const response = await apiClient.get('/profile');
+    const result = unwrapData<Profile>(response.data);
 
-    return mapBackendUser(result);
+    return result;
+  },
+
+  async updateProfile(payload: UpdateProfilePayload): Promise<Profile> {
+    const response = await apiClient.patch('/profile', payload);
+
+    return unwrapData<Profile>(response.data);
+  },
+
+  async presignAvatar(fileName: string, contentType: string, fileSize: number) {
+    const response = await apiClient.post('/profile/avatar/presign', {
+      fileName,
+      contentType,
+      fileSize,
+    });
+
+    return unwrapData<{ uploadUrl: string; objectKey: string; expiresIn: number }>(response.data);
+  },
+
+  async confirmAvatar(objectKey: string): Promise<{ avatarUrl: string }> {
+    const response = await apiClient.post('/profile/avatar/confirm', { objectKey });
+
+    return unwrapData<{ avatarUrl: string }>(response.data);
+  },
+
+  async requestPhoneChange(newPhone: string): Promise<{ requestId: string; expiresIn: number }> {
+    const response = await apiClient.post('/profile/phone/request-otp', { newPhone });
+
+    return unwrapData<{ requestId: string; expiresIn: number }>(response.data);
+  },
+
+  async verifyPhoneChange(requestId: string, otp: string): Promise<void> {
+    await apiClient.post('/profile/phone/verify-otp', { requestId, otp });
+  },
+
+  async changePassword(payload: ChangePasswordPayload): Promise<void> {
+    const deviceId = await tokenStorage.getDeviceId();
+
+    await apiClient.patch('/auth/change-password', payload, {
+      headers: deviceId ? { 'x-device-id': deviceId } : undefined,
+    });
   },
 
   async logout(): Promise<void> {
