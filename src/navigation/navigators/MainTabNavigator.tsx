@@ -26,6 +26,7 @@ export const MainTabNavigator = () => {
         },
         headerStyle: { backgroundColor: THEME_COLORS.SURFACE },
         headerTintColor: THEME_COLORS.TEXT_PRIMARY,
+        headerShown: false,
       }}
     >
       <Tab.Screen

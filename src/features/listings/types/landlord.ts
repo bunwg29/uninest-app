@@ -26,6 +26,31 @@ export interface LandlordListingCounters {
   expired: number;
 }
 
+export interface LandlordDashboard {
+  profile: {
+    fullName: string;
+    role: string;
+    listingCount: number;
+  };
+  featured: {
+    isActive: boolean;
+    remainingDays: number;
+    expiresAt: string | null;
+  };
+  period: string;
+  metrics: {
+    views: number;
+    contacts: number;
+    viewingRequests: number;
+    responseRate: number;
+  };
+  pendingTasks: {
+    count: number;
+    items: Array<{ type: string; count: number; title: string }>;
+  };
+  listingCounters: LandlordListingCounters;
+}
+
 export interface LandlordListingsPage {
   items: LandlordListing[];
   totalCount: number;
