@@ -34,4 +34,7 @@ export type RootStackParamList = {
   Splash: undefined;
   Auth: NavigatorScreenParams<AuthStackParamList> | undefined;
   Main: NavigatorScreenParams<MainTabParamList> | undefined;
+  ProfileEdit: undefined;
+  ChangePassword: undefined;
+  Settings: undefined;
 };
