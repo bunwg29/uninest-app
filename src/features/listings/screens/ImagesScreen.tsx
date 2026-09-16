@@ -1,23 +1,14 @@
-import { useState, useCallback } from 'react';
-import {
-  View,
-  StyleSheet,
-  FlatList,
-  TouchableOpacity,
-  Image,
-  ActivityIndicator,
-  Alert,
-} from 'react-native';
+import { useCallback } from 'react';
+import { View, StyleSheet, FlatList, TouchableOpacity, Image, Alert } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import * as ImagePicker from 'expo-image-picker';
-import { Plus, X, Star, Upload } from 'lucide-react-native';
+import { Plus, X, Star } from 'lucide-react-native';
 import { THEME_COLORS, SPACING_TOKENS, BORDER_RADIUS_TOKENS } from '@theme';
 import { Button, Typography, HeaderBar, ScreenContainer } from '@ui';
 import { useToast } from '@hooks';
 import type { ListingPostStackParamList } from '@navigation';
 import { useListingPostStore } from '../store/listingPostStore';
-import { useUploadImages } from '../hooks/useUploadImages';
 import type { LocalImageItem } from '../types';
 import { MAX_LISTING_IMAGES, LISTING_FORM_STEPS } from '../types/constants';
 
@@ -29,9 +20,7 @@ const IMAGE_CELL_SIZE = 100;
 export const ImagesScreen = () => {
   const navigation = useNavigation<NavigationProp>();
   const toast = useToast();
-  const { localImages, setLocalImages, setUploadedImages } = useListingPostStore();
-  const { uploadAll, isUploading, uploadProgress, errors: uploadErrors } = useUploadImages();
-  const [hasAttemptedUpload, setHasAttemptedUpload] = useState(false);
+  const { localImages, setLocalImages } = useListingPostStore();
 
   const handlePickImages = useCallback(async () => {
     if (localImages.length >= MAX_LISTING_IMAGES) {
@@ -101,32 +90,15 @@ export const ImagesScreen = () => {
     [localImages, setLocalImages]
   );
 
-  const handleContinue = useCallback(async () => {
+  const handleContinue = useCallback(() => {
     if (localImages.length === 0) {
-      navigation.navigate('ListingPostLocation');
+      toast.warning('Vui lòng chọn ít nhất 1 ảnh phòng trọ');
 
       return;
-    }
-
-    setHasAttemptedUpload(true);
-    const uploaded = await uploadAll(localImages);
-
-    if (uploaded.length === 0 && localImages.length > 0) {
-      toast.error('Tải ảnh lên thất bại. Vui lòng thử lại.');
-
-      return;
-    }
-
-    setUploadedImages(uploaded);
-
-    if (uploadErrors.length > 0) {
-      toast.warning(
-        `${uploadErrors.length} ảnh không tải được. Tiếp tục với ${uploaded.length} ảnh.`
-      );
     }
 
     navigation.navigate('ListingPostLocation');
-  }, [localImages, uploadAll, setUploadedImages, uploadErrors, navigation, toast]);
+  }, [localImages, navigation, toast]);
 
   return (
     <ScreenContainer applyTopInset applyBottomInset={false} keyboardAvoiding={false}>
@@ -206,33 +178,9 @@ export const ImagesScreen = () => {
         />
       </View>
 
-      {isUploading ? (
-        <View style={styles.uploadingBanner}>
-          <ActivityIndicator size="small" color={THEME_COLORS.PRIMARY} />
-          <Typography variant="body2" colorKey="PRIMARY" style={styles.uploadingText}>
-            Đang tải ảnh... {uploadProgress}%
-          </Typography>
-        </View>
-      ) : null}
-
-      {hasAttemptedUpload && uploadErrors.length > 0 && !isUploading ? (
-        <View style={styles.errorBanner}>
-          <Typography variant="caption" colorKey="ERROR">
-            {uploadErrors.length} ảnh tải lên thất bại. Vui lòng thử lại hoặc bỏ qua.
-          </Typography>
-        </View>
-      ) : null}
-
       <View style={styles.bottomBar}>
-        <Button
-          variant="primary"
-          size="lg"
-          fullWidth
-          isLoading={isUploading}
-          onPress={handleContinue}
-          leftIcon={isUploading ? undefined : <Upload size={18} color={THEME_COLORS.WHITE} />}
-        >
-          {isUploading ? 'Đang tải ảnh...' : 'Tiếp tục'}
+        <Button variant="primary" size="lg" fullWidth onPress={handleContinue}>
+          Tiếp tục
         </Button>
       </View>
     </ScreenContainer>
@@ -352,22 +300,6 @@ const styles = StyleSheet.create({
   },
   addLabel: {
     marginTop: 4,
-  },
-  uploadingBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: SPACING_TOKENS.MD,
-    paddingVertical: SPACING_TOKENS.SM,
-    backgroundColor: THEME_COLORS.PRIMARY_LIGHT,
-    gap: SPACING_TOKENS.SM,
-  },
-  uploadingText: {
-    flex: 1,
-  },
-  errorBanner: {
-    paddingHorizontal: SPACING_TOKENS.MD,
-    paddingVertical: SPACING_TOKENS.SM,
-    backgroundColor: THEME_COLORS.ERROR_LIGHT,
   },
   bottomBar: {
     padding: SPACING_TOKENS.MD,

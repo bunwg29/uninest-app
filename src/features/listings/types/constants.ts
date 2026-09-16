@@ -30,22 +30,22 @@ export const VIEWING_SLOT_LABELS = [
 ] as const;
 
 export const AMENITY_DISPLAY_LIST = [
-  { group: 'Nội thất', name: 'Điều hòa' },
-  { group: 'Nội thất', name: 'Tủ lạnh' },
-  { group: 'Nội thất', name: 'Máy giặt chung' },
-  { group: 'Nội thất', name: 'Gác lửng' },
-  { group: 'Nội thất', name: 'Nội thất cơ bản' },
-  { group: 'Tiện ích', name: 'WiFi miễn phí' },
-  { group: 'Tiện ích', name: 'Chỗ để xe' },
-  { group: 'Tiện ích', name: 'Bếp chung' },
-  { group: 'Tiện ích', name: 'Sân phơi' },
-  { group: 'Tiện ích', name: 'Ban công' },
-  { group: 'An ninh', name: 'Camera an ninh' },
-  { group: 'An ninh', name: 'Bảo vệ 24/7' },
-  { group: 'An ninh', name: 'Khóa cửa điện tử' },
-  { group: 'Phòng', name: 'WC riêng' },
-  { group: 'Phòng', name: 'Cửa sổ lớn' },
-  { group: 'Phòng', name: 'Thang máy' },
+  { id: 1, group: 'Nội thất', name: 'Điều hòa' },
+  { id: 2, group: 'Nội thất', name: 'Tủ lạnh' },
+  { id: 3, group: 'Nội thất', name: 'Máy giặt chung' },
+  { id: 4, group: 'Nội thất', name: 'Gác lửng' },
+  { id: 5, group: 'Nội thất', name: 'Nội thất cơ bản' },
+  { id: 6, group: 'Tiện ích', name: 'WiFi miễn phí' },
+  { id: 7, group: 'Tiện ích', name: 'Chỗ để xe' },
+  { id: 8, group: 'Tiện ích', name: 'Bếp chung' },
+  { id: 9, group: 'Tiện ích', name: 'Sân phơi' },
+  { id: 10, group: 'Tiện ích', name: 'Ban công' },
+  { id: 11, group: 'An ninh', name: 'Camera an ninh' },
+  { id: 12, group: 'An ninh', name: 'Bảo vệ 24/7' },
+  { id: 13, group: 'An ninh', name: 'Khóa cửa điện tử' },
+  { id: 14, group: 'Phòng', name: 'WC riêng' },
+  { id: 15, group: 'Phòng', name: 'Cửa sổ lớn' },
+  { id: 16, group: 'Phòng', name: 'Thang máy' },
 ] as const;
 
 export const SUPPORTED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp'] as const;

@@ -135,22 +135,28 @@ export const LocationScreen = () => {
   }, []);
 
   const handleCurrentLocation = useCallback(async () => {
-    const { status } = await Location.requestForegroundPermissionsAsync();
-
-    if (status !== 'granted') {
-      toast.info('Không có quyền truy cập vị trí. Vui lòng chọn vị trí thủ công trên bản đồ.');
-
-      return;
-    }
-
     try {
-      const location = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High });
+      const { status } = await Location.requestForegroundPermissionsAsync();
+
+      if (status !== 'granted') {
+        toast.info('Không có quyền truy cập vị trí. Vui lòng cấp quyền trong Cài đặt thiết bị.');
+
+        return;
+      }
+
+      const location = await Location.getCurrentPositionAsync({
+        accuracy: Location.Accuracy.Balanced,
+      });
       const coord = { latitude: location.coords.latitude, longitude: location.coords.longitude };
 
       setMarkerCoord(coord);
-      mapRef.current?.animateToRegion({ ...coord, latitudeDelta: 0.01, longitudeDelta: 0.01 }, 600);
+      mapRef.current?.animateToRegion(
+        { ...coord, latitudeDelta: 0.008, longitudeDelta: 0.008 },
+        500
+      );
+      toast.success('Đã lấy vị trí hiện tại');
     } catch {
-      toast.error('Không thể lấy vị trí hiện tại');
+      toast.error('Không thể lấy vị trí hiện tại. Vui lòng chạm vào bản đồ để chọn.');
     }
   }, [toast]);
 
@@ -361,25 +367,43 @@ export const LocationScreen = () => {
                 : DEFAULT_REGION
             }
             onPress={handleMapPress}
+            showsUserLocation={true}
+            showsMyLocationButton={false}
+            showsCompass={true}
+            loadingEnabled={true}
+            loadingIndicatorColor={THEME_COLORS.PRIMARY}
+            loadingBackgroundColor={THEME_COLORS.SURFACE}
           >
             {markerCoord ? (
-              <Marker coordinate={markerCoord} pinColor={THEME_COLORS.PRIMARY} />
+              <Marker
+                coordinate={markerCoord}
+                pinColor={THEME_COLORS.PRIMARY}
+                draggable
+                onDragEnd={(e) => setMarkerCoord(e.nativeEvent.coordinate)}
+                title="Vị trí phòng trọ"
+                description="Kéo thả marker để chọn vị trí chính xác"
+              />
             ) : null}
           </MapView>
 
-          {!markerCoord ? (
-            <View style={styles.mapHint}>
-              <Typography variant="caption" colorKey="TEXT_MUTED" align="center">
-                Nhấn vào bản đồ để chọn vị trí phòng
+          <View style={styles.coordCard}>
+            <MapPin
+              size={18}
+              color={markerCoord ? THEME_COLORS.PRIMARY : THEME_COLORS.TEXT_PLACEHOLDER}
+            />
+            <View style={styles.coordTextContainer}>
+              <Typography variant="caption" weight="SEMIBOLD" colorKey="TEXT_PRIMARY">
+                {markerCoord
+                  ? `Toạ độ đã chọn: ${markerCoord.latitude.toFixed(6)}, ${markerCoord.longitude.toFixed(6)}`
+                  : 'Chưa chọn toạ độ trên bản đồ'}
+              </Typography>
+              <Typography variant="caption" colorKey="TEXT_SECONDARY">
+                {markerCoord
+                  ? 'Kéo marker hoặc chạm vào bản đồ để tinh chỉnh vị trí'
+                  : 'Chạm vào bản đồ hoặc bấm "Vị trí hiện tại" để ghim'}
               </Typography>
             </View>
-          ) : (
-            <View style={styles.coordInfo}>
-              <Typography variant="caption" colorKey="TEXT_MUTED">
-                {markerCoord.latitude.toFixed(6)}, {markerCoord.longitude.toFixed(6)}
-              </Typography>
-            </View>
-          )}
+          </View>
         </View>
       </View>
 
@@ -594,49 +618,56 @@ const styles = StyleSheet.create({
   },
   mapContainer: {
     flex: 1,
+    minHeight: 280,
     margin: SPACING_TOKENS.MD,
     borderRadius: BORDER_RADIUS_TOKENS.MD,
-    overflow: 'hidden',
     borderWidth: 1,
     borderColor: THEME_COLORS.BORDER,
+    backgroundColor: THEME_COLORS.SURFACE,
   },
   mapHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: SPACING_TOKENS.SM,
-    paddingVertical: SPACING_TOKENS.XS + 2,
+    paddingHorizontal: SPACING_TOKENS.MD,
+    paddingVertical: SPACING_TOKENS.SM,
     backgroundColor: THEME_COLORS.SURFACE,
+    borderTopLeftRadius: BORDER_RADIUS_TOKENS.MD,
+    borderTopRightRadius: BORDER_RADIUS_TOKENS.MD,
+    borderBottomWidth: 1,
+    borderBottomColor: THEME_COLORS.DIVIDER,
   },
   locationBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
+    backgroundColor: THEME_COLORS.PRIMARY_LIGHT,
+    paddingHorizontal: SPACING_TOKENS.SM,
+    paddingVertical: 4,
+    borderRadius: BORDER_RADIUS_TOKENS.FULL,
   },
   locationBtnText: {
     marginLeft: 2,
+    fontWeight: '600',
   },
   map: {
     flex: 1,
-    minHeight: 200,
+    minHeight: 220,
   },
-  mapHint: {
-    position: 'absolute',
-    bottom: SPACING_TOKENS.MD,
-    left: SPACING_TOKENS.MD,
-    right: SPACING_TOKENS.MD,
-    backgroundColor: 'rgba(255,255,255,0.9)',
-    borderRadius: BORDER_RADIUS_TOKENS.SM,
-    padding: SPACING_TOKENS.SM,
+  coordCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING_TOKENS.SM,
+    paddingHorizontal: SPACING_TOKENS.MD,
+    paddingVertical: SPACING_TOKENS.SM,
+    backgroundColor: THEME_COLORS.SURFACE,
+    borderTopWidth: 1,
+    borderTopColor: THEME_COLORS.DIVIDER,
+    borderBottomLeftRadius: BORDER_RADIUS_TOKENS.MD,
+    borderBottomRightRadius: BORDER_RADIUS_TOKENS.MD,
   },
-  coordInfo: {
-    position: 'absolute',
-    bottom: SPACING_TOKENS.SM,
-    right: SPACING_TOKENS.SM,
-    backgroundColor: 'rgba(255,255,255,0.85)',
-    borderRadius: BORDER_RADIUS_TOKENS.XS,
-    paddingHorizontal: SPACING_TOKENS.SM,
-    paddingVertical: 3,
+  coordTextContainer: {
+    flex: 1,
   },
   bottomBar: {
     padding: SPACING_TOKENS.MD,

@@ -1,11 +1,12 @@
-import { useState, useCallback } from 'react';
+import { useCallback } from 'react';
 import { View, StyleSheet, ScrollView } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { Info } from 'lucide-react-native';
+import { CheckCircle2 } from 'lucide-react-native';
 import { THEME_COLORS, SPACING_TOKENS, BORDER_RADIUS_TOKENS } from '@theme';
 import { Button, Typography, HeaderBar, ScreenContainer, FilterChip } from '@ui';
 import type { ListingPostStackParamList } from '@navigation';
+import { useListingPostStore } from '../store/listingPostStore';
 import { LISTING_FORM_STEPS, AMENITY_DISPLAY_LIST } from '../types/constants';
 
 type NavigationProp = NativeStackNavigationProp<ListingPostStackParamList>;
@@ -16,21 +17,18 @@ const GROUPS = [...new Set(AMENITY_DISPLAY_LIST.map((a) => a.group))];
 
 export const AmenitiesScreen = () => {
   const navigation = useNavigation<NavigationProp>();
-  const [selectedNames, setSelectedNames] = useState<Set<string>>(new Set());
+  const { selectedAmenityIds, setSelectedAmenityIds } = useListingPostStore();
 
-  const handleToggle = useCallback((name: string) => {
-    setSelectedNames((prev) => {
-      const next = new Set(prev);
+  const handleToggle = useCallback(
+    (id: number) => {
+      const next = selectedAmenityIds.includes(id)
+        ? selectedAmenityIds.filter((item) => item !== id)
+        : [...selectedAmenityIds, id];
 
-      if (next.has(name)) {
-        next.delete(name);
-      } else {
-        next.add(name);
-      }
-
-      return next;
-    });
-  }, []);
+      setSelectedAmenityIds(next);
+    },
+    [selectedAmenityIds, setSelectedAmenityIds]
+  );
 
   const handleContinue = useCallback(() => {
     navigation.navigate('ListingPostSchedule');
@@ -53,11 +51,13 @@ export const AmenitiesScreen = () => {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.blockBanner}>
-          <Info size={16} color={THEME_COLORS.WARNING} />
+          <CheckCircle2 size={18} color={THEME_COLORS.PRIMARY} />
 
-          <Typography variant="caption" colorKey="WARNING" style={styles.bannerText}>
-            Tính năng chọn tiện ích sẽ sớm được tích hợp đầy đủ. Hiện tại danh sách chỉ để tham khảo
-            và không ảnh hưởng đến tin đăng.
+          <Typography variant="caption" colorKey="TEXT_SECONDARY" style={styles.bannerText}>
+            Chọn các tiện ích sẵn có của phòng trọ để người thuê dễ dàng tìm kiếm và lựa chọn.
+            {selectedAmenityIds.length > 0
+              ? ` (Đã chọn ${selectedAmenityIds.length} tiện ích)`
+              : ''}
           </Typography>
         </View>
 
@@ -75,10 +75,10 @@ export const AmenitiesScreen = () => {
             <View style={styles.chipRow}>
               {AMENITY_DISPLAY_LIST.filter((a) => a.group === group).map((amenity) => (
                 <FilterChip
-                  key={amenity.name}
+                  key={amenity.id}
                   label={amenity.name}
-                  isSelected={selectedNames.has(amenity.name)}
-                  onPress={() => handleToggle(amenity.name)}
+                  isSelected={selectedAmenityIds.includes(amenity.id)}
+                  onPress={() => handleToggle(amenity.id)}
                   style={styles.chip}
                 />
               ))}
@@ -145,12 +145,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'flex-start',
     gap: SPACING_TOKENS.SM,
-    backgroundColor: THEME_COLORS.WARNING_LIGHT,
+    backgroundColor: THEME_COLORS.PRIMARY_LIGHT,
     borderRadius: BORDER_RADIUS_TOKENS.MD,
     padding: SPACING_TOKENS.MD,
     marginBottom: SPACING_TOKENS.MD,
     borderWidth: 1,
-    borderColor: THEME_COLORS.WARNING + '40',
+    borderColor: THEME_COLORS.BORDER,
   },
   bannerText: {
     flex: 1,

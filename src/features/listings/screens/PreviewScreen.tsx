@@ -1,13 +1,5 @@
 import { useCallback, useMemo } from 'react';
-import {
-  View,
-  StyleSheet,
-  ScrollView,
-  Image,
-  Dimensions,
-  InteractionManager,
-  FlatList,
-} from 'react-native';
+import { View, StyleSheet, ScrollView, Image, Dimensions, InteractionManager } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import {
@@ -20,6 +12,7 @@ import {
   Calendar,
   AlertCircle,
   FileText,
+  CheckCircle2,
 } from 'lucide-react-native';
 import { THEME_COLORS, SPACING_TOKENS, BORDER_RADIUS_TOKENS } from '@theme';
 import {
@@ -35,8 +28,19 @@ import { useToast } from '@hooks';
 import type { ListingPostStackParamList } from '@navigation';
 import { useListingPostStore } from '../store/listingPostStore';
 import { useCreateListing } from '../hooks/useCreateListing';
-import { ROOM_TYPE_OPTIONS, DAYS_OF_WEEK, VIEWING_SLOT_LABELS } from '../types/constants';
-import type { CreateListingPayload, DayKey, ViewingSlot } from '../types';
+import { useUploadImages } from '../hooks/useUploadImages';
+import {
+  ROOM_TYPE_OPTIONS,
+  DAYS_OF_WEEK,
+  VIEWING_SLOT_LABELS,
+  AMENITY_DISPLAY_LIST,
+} from '../types/constants';
+import type {
+  CreateListingPayload,
+  CreateListingImagePayload,
+  DayKey,
+  ViewingSlot,
+} from '../types';
 
 type NavigationProp = NativeStackNavigationProp<ListingPostStackParamList>;
 
@@ -57,28 +61,34 @@ const formatVND = (value: string | number | undefined): string => {
 export const PreviewScreen = () => {
   const navigation = useNavigation<NavigationProp>();
   const toast = useToast();
-  const { step1, step3, uploadedImages, localImages, viewingSchedule, reset } =
-    useListingPostStore();
+  const {
+    step1,
+    step3,
+    uploadedImages,
+    setUploadedImages,
+    localImages,
+    selectedAmenityIds,
+    viewingSchedule,
+    reset,
+  } = useListingPostStore();
 
   const { mutate: createListing, isPending } = useCreateListing();
+  const { uploadAll, isUploading: isUploadingImages, uploadProgress } = useUploadImages();
 
   const roomTypeLabel = useMemo(() => {
     return ROOM_TYPE_OPTIONS.find((opt) => opt.value === step1.roomType)?.label ?? step1.roomType;
   }, [step1.roomType]);
 
   const imagesToDisplay = useMemo(() => {
-    if (uploadedImages.length > 0) {
-      return uploadedImages.map((img) => ({
-        url: img.publicUrl,
-        isCover: img.isCover,
-      }));
-    }
-
     return localImages.map((img) => ({
       url: img.uri,
       isCover: img.isCover,
     }));
-  }, [uploadedImages, localImages]);
+  }, [localImages]);
+
+  const selectedAmenityNames = useMemo(() => {
+    return AMENITY_DISPLAY_LIST.filter((a) => selectedAmenityIds.includes(a.id)).map((a) => a.name);
+  }, [selectedAmenityIds]);
 
   const fullAddress = useMemo(() => {
     const parts = [step3.streetAddress, step3.wardName, step3.provinceName].filter(Boolean);
@@ -110,7 +120,42 @@ export const PreviewScreen = () => {
     return result;
   }, [viewingSchedule]);
 
-  const handleSubmit = useCallback(() => {
+  const handleSubmit = useCallback(async () => {
+    if (localImages.length === 0) {
+      toast.error('Vui lòng chọn ít nhất 1 ảnh cho phòng trọ');
+
+      return;
+    }
+
+    let finalImages: CreateListingImagePayload[] = [];
+
+    if (uploadedImages.length === localImages.length && uploadedImages.length > 0) {
+      finalImages = uploadedImages.map((img) => ({
+        url: img.publicUrl,
+        isCover: img.isCover,
+      }));
+    } else {
+      try {
+        const uploaded = await uploadAll(localImages);
+
+        if (uploaded.length !== localImages.length) {
+          toast.error('Tải ảnh lên máy chủ thất bại. Vui lòng kiểm tra kết nối và thử lại.');
+
+          return;
+        }
+
+        setUploadedImages(uploaded);
+        finalImages = uploaded.map((img) => ({
+          url: img.publicUrl,
+          isCover: img.isCover,
+        }));
+      } catch {
+        toast.error('Lỗi khi tải ảnh lên Cloudflare R2. Vui lòng thử lại.');
+
+        return;
+      }
+    }
+
     const payload: CreateListingPayload = {
       title: step1.title.trim(),
       description: step1.description?.trim() || undefined,
@@ -126,11 +171,8 @@ export const PreviewScreen = () => {
       wardCode: step3.wardCode,
       latitude: step3.latitude ?? 0,
       longitude: step3.longitude ?? 0,
-      images: uploadedImages.map((img) => ({
-        url: img.publicUrl,
-        isCover: img.isCover,
-      })),
-      amenityIds: [],
+      images: finalImages,
+      amenityIds: selectedAmenityIds,
     };
 
     createListing(payload, {
@@ -148,7 +190,19 @@ export const PreviewScreen = () => {
         toast.error(error.message || 'Không thể tạo tin đăng. Vui lòng thử lại.');
       },
     });
-  }, [step1, step3, uploadedImages, createListing, navigation, reset, toast]);
+  }, [
+    localImages,
+    uploadedImages,
+    uploadAll,
+    setUploadedImages,
+    step1,
+    step3,
+    selectedAmenityIds,
+    createListing,
+    navigation,
+    reset,
+    toast,
+  ]);
 
   return (
     <ScreenContainer applyTopInset applyBottomInset={false} keyboardAvoiding={false}>
@@ -167,14 +221,16 @@ export const PreviewScreen = () => {
         {/* Images Preview */}
         {imagesToDisplay.length > 0 ? (
           <View style={styles.imageSection}>
-            <FlatList
+            <ScrollView
               horizontal
               pagingEnabled
               showsHorizontalScrollIndicator={false}
-              data={imagesToDisplay}
-              keyExtractor={(_, index) => `preview-img-${index}`}
-              renderItem={({ item, index }) => (
-                <View style={styles.imageSlide}>
+              nestedScrollEnabled
+              style={{ height: IMAGE_HEIGHT }}
+              contentContainerStyle={{ height: IMAGE_HEIGHT }}
+            >
+              {imagesToDisplay.map((item, index) => (
+                <View key={`preview-img-${index}`} style={styles.imageSlide}>
                   <Image
                     source={{ uri: item.url }}
                     style={styles.previewImage}
@@ -193,8 +249,8 @@ export const PreviewScreen = () => {
                     </Typography>
                   </View>
                 </View>
-              )}
-            />
+              ))}
+            </ScrollView>
           </View>
         ) : null}
 
@@ -316,6 +372,31 @@ export const PreviewScreen = () => {
           </Typography>
         </View>
 
+        {/* Amenities Card */}
+        <View style={styles.card}>
+          <View style={styles.sectionHeader}>
+            <CheckCircle2 size={18} color={THEME_COLORS.PRIMARY} />
+            <Typography variant="body1" weight="SEMIBOLD" colorKey="TEXT_PRIMARY">
+              Tiện ích phòng ({selectedAmenityIds.length})
+            </Typography>
+          </View>
+          {selectedAmenityNames.length > 0 ? (
+            <View style={styles.amenitiesWrap}>
+              {selectedAmenityNames.map((name) => (
+                <View key={name} style={styles.amenityTag}>
+                  <Typography variant="caption" colorKey="PRIMARY" weight="MEDIUM">
+                    ✓ {name}
+                  </Typography>
+                </View>
+              ))}
+            </View>
+          ) : (
+            <Typography variant="body2" colorKey="TEXT_MUTED">
+              Chưa chọn tiện ích nào.
+            </Typography>
+          )}
+        </View>
+
         {/* Viewing Schedule Card */}
         <View style={styles.card}>
           <View style={styles.sectionHeader}>
@@ -364,19 +445,34 @@ export const PreviewScreen = () => {
           variant="outline"
           onPress={() => navigation.goBack()}
           style={styles.editButton}
-          disabled={isPending}
+          disabled={isPending || isUploadingImages}
         />
         <Button
-          title={isPending ? 'Đang gửi...' : 'Gửi duyệt tin'}
+          title={
+            isUploadingImages
+              ? `Đang tải ảnh (${uploadProgress}%)...`
+              : isPending
+                ? 'Đang đăng...'
+                : 'Đăng tin'
+          }
           variant="primary"
           onPress={handleSubmit}
-          isLoading={isPending}
-          disabled={isPending}
+          isLoading={isPending || isUploadingImages}
+          disabled={isPending || isUploadingImages}
           style={styles.submitButton}
         />
       </View>
 
-      {isPending && <LoadingOverlay isFullScreen message="Đang gửi tin đăng tới máy chủ..." />}
+      {(isPending || isUploadingImages) && (
+        <LoadingOverlay
+          isFullScreen
+          message={
+            isUploadingImages
+              ? `Đang tải ảnh lên Cloudflare R2 (${uploadProgress}%)...`
+              : 'Đang gửi tin đăng tới máy chủ...'
+          }
+        />
+      )}
     </ScreenContainer>
   );
 };
@@ -392,6 +488,7 @@ const styles = StyleSheet.create({
     gap: SPACING_TOKENS.MD,
   },
   imageSection: {
+    height: IMAGE_HEIGHT,
     borderRadius: BORDER_RADIUS_TOKENS.LG,
     overflow: 'hidden',
     marginBottom: SPACING_TOKENS.XS,
@@ -542,5 +639,16 @@ const styles = StyleSheet.create({
   },
   submitButton: {
     flex: 2,
+  },
+  amenitiesWrap: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: SPACING_TOKENS.SM,
+  },
+  amenityTag: {
+    backgroundColor: THEME_COLORS.PRIMARY_LIGHT,
+    paddingHorizontal: SPACING_TOKENS.SM,
+    paddingVertical: 4,
+    borderRadius: BORDER_RADIUS_TOKENS.FULL,
   },
 });
