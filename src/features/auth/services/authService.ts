@@ -212,16 +212,6 @@ export const authService = {
     return unwrapData<{ avatarUrl: string }>(response.data);
   },
 
-  async requestPhoneChange(newPhone: string): Promise<{ requestId: string; expiresIn: number }> {
-    const response = await apiClient.post('/profile/phone/request-otp', { newPhone });
-
-    return unwrapData<{ requestId: string; expiresIn: number }>(response.data);
-  },
-
-  async verifyPhoneChange(requestId: string, otp: string): Promise<void> {
-    await apiClient.post('/profile/phone/verify-otp', { requestId, otp });
-  },
-
   async changePassword(payload: ChangePasswordPayload): Promise<void> {
     const deviceId = await tokenStorage.getDeviceId();
 

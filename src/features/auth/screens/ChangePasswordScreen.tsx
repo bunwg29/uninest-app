@@ -3,7 +3,7 @@ import { StyleSheet, TouchableOpacity, View } from 'react-native';
 import { useMutation } from '@tanstack/react-query';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { Check, ChevronLeft, Circle, HelpCircle, Lock } from 'lucide-react-native';
+import { Check, ChevronLeft, Circle, Lock } from 'lucide-react-native';
 import { THEME_COLORS, SPACING_TOKENS } from '@theme';
 import { Button, Input, ScreenContainer, Typography } from '@ui';
 import { useToast } from '@hooks';
@@ -69,20 +69,6 @@ export const ChangePasswordScreen = () => {
         value={currentPassword}
         onChangeText={setCurrentPassword}
       />
-      <TouchableOpacity
-        style={styles.forgotLink}
-        onPress={() =>
-          navigation.reset({
-            index: 0,
-            routes: [{ name: 'Auth', params: { screen: 'ForgotPassword' } }],
-          })
-        }
-      >
-        <HelpCircle size={16} color={THEME_COLORS.PRIMARY} />
-        <Typography variant="caption" weight="SEMIBOLD" color={THEME_COLORS.PRIMARY}>
-          Quên mật khẩu hiện tại?
-        </Typography>
-      </TouchableOpacity>
       <Input
         label="Mật khẩu mới"
         isPassword
@@ -160,14 +146,6 @@ const styles = StyleSheet.create({
   },
   backButton: { padding: SPACING_TOKENS.XS },
   headerSpace: { width: 32 },
-  forgotLink: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: SPACING_TOKENS.XS,
-    alignSelf: 'flex-end',
-    marginTop: -SPACING_TOKENS.SM,
-    marginBottom: SPACING_TOKENS.MD,
-  },
   strengthRow: {
     flexDirection: 'row',
     alignItems: 'center',
