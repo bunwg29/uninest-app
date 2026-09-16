@@ -17,6 +17,7 @@ export type AuthStackParamList = {
     target: string;
     flow?: 'register' | 'forgot_password';
     role?: UserRole;
+    returnToChangePassword?: boolean;
   };
   ForgotPassword: undefined;
   ResetPassword: { target: string; otpCode: string };

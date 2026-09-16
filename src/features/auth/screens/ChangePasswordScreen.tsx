@@ -3,9 +3,9 @@ import { StyleSheet, TouchableOpacity, View } from 'react-native';
 import { useMutation } from '@tanstack/react-query';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { Check, ChevronLeft, Circle, Lock } from 'lucide-react-native';
+import { Check, ChevronLeft, Circle, HelpCircle, Lock } from 'lucide-react-native';
 import { THEME_COLORS, SPACING_TOKENS } from '@theme';
-import { Button, Input, ScreenContainer, Typography } from '@ui';
+import { Button, Input, Modal, ScreenContainer, Typography } from '@ui';
 import { useToast } from '@hooks';
 import type { RootStackParamList } from '@navigation';
 import { authService } from '../services';
@@ -16,7 +16,7 @@ type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'ChangePassw
 export const ChangePasswordScreen = () => {
   const navigation = useNavigation<NavigationProp>();
   const toast = useToast();
-  const { logout } = useAuth();
+  const { user, logout } = useAuth();
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -28,6 +28,46 @@ export const ChangePasswordScreen = () => {
   const isMatch = Boolean(confirmPassword) && newPassword === confirmPassword;
   const isValid =
     hasMinLength && hasDigit && hasUppercase && isDifferent && isMatch && Boolean(currentPassword);
+  const [isSendingOtp, setIsSendingOtp] = useState(false);
+  const [isForgotModalVisible, setIsForgotModalVisible] = useState(false);
+
+  const sendForgotCurrentPasswordOtp = async () => {
+    const phoneNumber = user?.phoneNumber?.trim();
+
+    if (!phoneNumber) {
+      toast.error('Tài khoản chưa có số điện thoại để nhận mã OTP');
+
+      return;
+    }
+
+    setIsSendingOtp(true);
+
+    try {
+      await authService.resendOtp(phoneNumber, 'FORGOT_PASSWORD');
+      toast.success('Mã OTP đã được gửi đến số điện thoại của bạn');
+      navigation.navigate('Auth', {
+        screen: 'OtpVerification',
+        params: {
+          target: phoneNumber,
+          flow: 'forgot_password',
+          returnToChangePassword: true,
+        },
+      });
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Không thể gửi mã OTP');
+    } finally {
+      setIsSendingOtp(false);
+    }
+  };
+
+  const handleForgotCurrentPassword = () => {
+    setIsForgotModalVisible(true);
+  };
+
+  const handleConfirmForgotPassword = () => {
+    setIsForgotModalVisible(false);
+    sendForgotCurrentPasswordOtp();
+  };
 
   const mutation = useMutation({
     mutationFn: () => authService.changePassword({ currentPassword, newPassword, confirmPassword }),
@@ -69,6 +109,16 @@ export const ChangePasswordScreen = () => {
         value={currentPassword}
         onChangeText={setCurrentPassword}
       />
+      <TouchableOpacity
+        style={styles.forgotLink}
+        onPress={handleForgotCurrentPassword}
+        disabled={isSendingOtp}
+      >
+        <HelpCircle size={16} color={THEME_COLORS.PRIMARY} />
+        <Typography variant="caption" weight="SEMIBOLD" color={THEME_COLORS.PRIMARY}>
+          Quên mật khẩu hiện tại?
+        </Typography>
+      </TouchableOpacity>
       <Input
         label="Mật khẩu mới"
         isPassword
@@ -132,6 +182,16 @@ export const ChangePasswordScreen = () => {
       >
         Cập nhật mật khẩu
       </Button>
+
+      <Modal
+        isVisible={isForgotModalVisible}
+        onClose={() => setIsForgotModalVisible(false)}
+        title="Quên mật khẩu hiện tại?"
+        description="Bạn có muốn nhận mã OTP để đặt lại mật khẩu không?"
+        cancelText="Huỷ"
+        confirmText="Tiếp tục"
+        onConfirm={handleConfirmForgotPassword}
+      />
     </ScreenContainer>
   );
 };
@@ -146,6 +206,14 @@ const styles = StyleSheet.create({
   },
   backButton: { padding: SPACING_TOKENS.XS },
   headerSpace: { width: 32 },
+  forgotLink: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING_TOKENS.XS,
+    alignSelf: 'flex-end',
+    marginTop: -SPACING_TOKENS.SM,
+    marginBottom: SPACING_TOKENS.MD,
+  },
   strengthRow: {
     flexDirection: 'row',
     alignItems: 'center',
