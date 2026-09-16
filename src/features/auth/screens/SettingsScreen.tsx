@@ -1,4 +1,4 @@
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { StyleSheet, TouchableOpacity, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import {
@@ -97,20 +97,6 @@ export const SettingsScreen = () => {
         <View style={styles.headerSpace} />
       </View>
 
-      <Typography
-        variant="tiny"
-        weight="SEMIBOLD"
-        color={THEME_COLORS.TEXT_MUTED}
-        style={styles.sectionTitle}
-      >
-        NGÔN NGỮ HIỂN THỊ
-      </Typography>
-      <LanguageRow label="Tiếng Việt" selected />
-      <Typography variant="caption" color={THEME_COLORS.TEXT_MUTED} style={styles.description}>
-        Chỉ đổi giao diện hệ thống. Nội dung do người dùng đăng
-        {'\n'}(tin trọ, bài forum, tin nhắn) giữ nguyên ngôn ngữ gốc.
-      </Typography>
-
       <SettingsSection title="GIAO DIỆN" items={appearanceItems} />
       <SettingsSection title="TÀI KHOẢN" items={accountItems} />
 
@@ -133,26 +119,6 @@ export const SettingsScreen = () => {
     </ScreenContainer>
   );
 };
-
-const LanguageRow = ({ label, selected = false }: { label: string; selected?: boolean }) => (
-  <TouchableOpacity style={[styles.languageRow, selected && styles.selectedLanguage]}>
-    <View style={[styles.flag, styles.vietnamFlag]}>
-      <Text style={styles.flagText}>★</Text>
-    </View>
-    <Typography
-      variant="body2"
-      weight={selected ? 'SEMIBOLD' : 'REGULAR'}
-      style={styles.languageLabel}
-    >
-      {label}
-    </Typography>
-    {selected ? (
-      <Typography variant="h3" weight="BOLD" color={THEME_COLORS.PRIMARY}>
-        ✓
-      </Typography>
-    ) : null}
-  </TouchableOpacity>
-);
 
 const SettingsSection = ({ title, items }: { title: string; items: SettingItem[] }) => (
   <View>
@@ -208,28 +174,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: SPACING_TOKENS.SM,
     paddingVertical: SPACING_TOKENS.SM,
   },
-  languageRow: {
-    height: 58,
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: SPACING_TOKENS.SM,
-    backgroundColor: THEME_COLORS.SURFACE,
-    borderBottomWidth: 1,
-    borderBottomColor: THEME_COLORS.BORDER,
-  },
-  selectedLanguage: { backgroundColor: THEME_COLORS.PRIMARY_LIGHT },
-  flag: {
-    width: 32,
-    height: 22,
-    borderRadius: 5,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  vietnamFlag: { backgroundColor: '#E31B23' },
-  englishFlag: { backgroundColor: '#082B7A' },
-  flagText: { color: THEME_COLORS.WHITE, fontSize: 13, fontWeight: '700' },
-  languageLabel: { flex: 1, marginLeft: SPACING_TOKENS.MD },
-  description: { padding: SPACING_TOKENS.SM, lineHeight: 16 },
   row: {
     minHeight: 62,
     flexDirection: 'row',

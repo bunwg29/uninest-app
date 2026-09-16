@@ -19,7 +19,6 @@ import {
   Edit3,
   LogOut,
   Settings2,
-  Settings,
   Star,
 } from 'lucide-react-native';
 import { THEME_COLORS, SPACING_TOKENS, BORDER_RADIUS_TOKENS } from '@theme';
@@ -80,12 +79,7 @@ export const ProfileScreen = () => {
           Cá nhân
         </Typography>
 
-        <TouchableOpacity
-          onPress={() => navigation.navigate('Settings')}
-          style={styles.settingsButton}
-        >
-          <Settings size={22} color={THEME_COLORS.TEXT_SECONDARY} />
-        </TouchableOpacity>
+        <View style={styles.headerSpacer} />
       </View>
 
       {isAuthenticated && profileQuery.isLoading ? (
@@ -147,6 +141,16 @@ export const ProfileScreen = () => {
             <Stat label="Lịch hẹn" value={profile.stats.appointments} />
             <Stat label="Đánh giá" value={profile.stats.reviews} />
           </View>
+
+          <TouchableOpacity
+            style={styles.settingsRow}
+            onPress={() => navigation.navigate('Settings')}
+          >
+            <Typography variant="body2" weight="SEMIBOLD" style={styles.settingsRowLabel}>
+              Cài đặt
+            </Typography>
+            <ChevronRight size={18} color={THEME_COLORS.TEXT_PLACEHOLDER} />
+          </TouchableOpacity>
 
           <ProfileSection
             title="HOẠT ĐỘNG"
@@ -292,11 +296,9 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: THEME_COLORS.BORDER,
   },
-  settingsButton: {
+  headerSpacer: {
     width: 40,
     height: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   stateContainer: { paddingVertical: SPACING_TOKENS.XL, alignItems: 'center' },
   card: {
@@ -320,6 +322,17 @@ const styles = StyleSheet.create({
     borderRadius: BORDER_RADIUS_TOKENS.LG,
     marginBottom: SPACING_TOKENS.LG,
   },
+  settingsRow: {
+    minHeight: 48,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: THEME_COLORS.SURFACE,
+    borderBottomWidth: 1,
+    borderBottomColor: THEME_COLORS.BORDER,
+    paddingHorizontal: SPACING_TOKENS.SM,
+    marginBottom: SPACING_TOKENS.SM,
+  },
+  settingsRowLabel: { flex: 1 },
   stat: {
     flex: 1,
     alignItems: 'center',
