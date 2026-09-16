@@ -63,10 +63,17 @@ export const RegisterScreen = () => {
   return (
     <ScreenContainer scrollable style={styles.container}>
       <View style={styles.header}>
-        <View style={styles.stepBadge}>
-          <Typography variant="caption" weight="SEMIBOLD" color={THEME_COLORS.PRIMARY}>
-            Bước 1 / 2
-          </Typography>
+        <View style={styles.badgeRow}>
+          <View style={styles.stepBadge}>
+            <Typography variant="caption" weight="SEMIBOLD" color={THEME_COLORS.PRIMARY}>
+              Bước 1 / 2
+            </Typography>
+          </View>
+          <Badge
+            variant={role === 'landlord' ? 'holding' : 'primary'}
+            size="sm"
+            label={role === 'landlord' ? 'Vai trò: Chủ trọ' : 'Vai trò: Sinh viên'}
+          />
         </View>
 
         <Typography variant="h1" weight="BOLD" style={styles.title}>
@@ -220,13 +227,18 @@ const styles = StyleSheet.create({
     marginTop: SPACING_TOKENS.SM,
     marginBottom: SPACING_TOKENS.LG,
   },
+  badgeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING_TOKENS.SM,
+    marginBottom: SPACING_TOKENS.SM,
+  },
   stepBadge: {
     backgroundColor: THEME_COLORS.PRIMARY_LIGHT,
     alignSelf: 'flex-start',
     paddingHorizontal: SPACING_TOKENS.SM,
     paddingVertical: 4,
     borderRadius: BORDER_RADIUS_TOKENS.FULL,
-    marginBottom: SPACING_TOKENS.SM,
   },
   title: {
     marginBottom: SPACING_TOKENS.XS,

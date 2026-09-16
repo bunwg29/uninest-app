@@ -4,10 +4,12 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { PlusCircle, Building2 } from 'lucide-react-native';
 import { THEME_COLORS, SPACING_TOKENS, BORDER_RADIUS_TOKENS } from '@theme';
 import { Button, Typography } from '@ui';
+import { useRoleGuard } from '@features/auth';
 import type { RootStackParamList } from '@navigation';
 
 export const HomeScreen = () => {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const { isLandlord } = useRoleGuard();
 
   return (
     <View style={styles.container}>
@@ -24,22 +26,33 @@ export const HomeScreen = () => {
           Nền tảng tìm kiếm và đăng tin phòng trọ cho sinh viên
         </Typography>
 
-        <View style={styles.card}>
-          <Typography variant="body1" weight="SEMIBOLD" colorKey="TEXT_PRIMARY">
-            Dành cho Chủ trọ
-          </Typography>
-          <Typography variant="caption" colorKey="TEXT_SECONDARY" style={styles.cardDesc}>
-            Đăng tin phòng trọ của bạn để tiếp cận hàng ngàn sinh viên đang tìm kiếm phòng ở.
-          </Typography>
+        {isLandlord ? (
+          <View style={styles.card}>
+            <Typography variant="body1" weight="SEMIBOLD" colorKey="TEXT_PRIMARY">
+              Dành cho Chủ trọ
+            </Typography>
+            <Typography variant="caption" colorKey="TEXT_SECONDARY" style={styles.cardDesc}>
+              Đăng tin phòng trọ của bạn để tiếp cận hàng ngàn sinh viên đang tìm kiếm phòng ở.
+            </Typography>
 
-          <Button
-            title="Đăng tin cho thuê"
-            variant="primary"
-            leftIcon={<PlusCircle size={18} color={THEME_COLORS.SURFACE} />}
-            onPress={() => navigation.navigate('ListingPost')}
-            style={styles.postButton}
-          />
-        </View>
+            <Button
+              title="Đăng tin cho thuê"
+              variant="primary"
+              leftIcon={<PlusCircle size={18} color={THEME_COLORS.SURFACE} />}
+              onPress={() => navigation.navigate('ListingPost')}
+              style={styles.postButton}
+            />
+          </View>
+        ) : (
+          <View style={styles.card}>
+            <Typography variant="body1" weight="SEMIBOLD" colorKey="TEXT_PRIMARY">
+              Tìm phòng trọ lý tưởng
+            </Typography>
+            <Typography variant="caption" colorKey="TEXT_SECONDARY" style={styles.cardDesc}>
+              Khám phá các phòng trọ tiện nghi, an ninh và vị trí thuận tiện gần trường học của bạn.
+            </Typography>
+          </View>
+        )}
       </View>
     </View>
   );

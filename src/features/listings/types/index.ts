@@ -19,7 +19,7 @@ export interface CreateListingPayload {
   latitude: number;
   longitude: number;
   images?: CreateListingImagePayload[];
-  amenityIds?: string[];
+  amenityIds?: number[];
 }
 
 export interface ListingResponse {

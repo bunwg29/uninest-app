@@ -47,12 +47,14 @@ interface ListingPostState {
   localImages: LocalImageItem[];
   uploadedImages: UploadedImageItem[];
   step3: ListingStep3State;
+  selectedAmenityIds: number[];
   viewingSchedule: ViewingSchedule;
 
   setStep1: (data: Partial<ListingStep1State>) => void;
   setLocalImages: (images: LocalImageItem[]) => void;
   setUploadedImages: (images: UploadedImageItem[]) => void;
   setStep3: (data: Partial<ListingStep3State>) => void;
+  setSelectedAmenityIds: (ids: number[]) => void;
   setViewingSchedule: (schedule: ViewingSchedule) => void;
   reset: () => void;
 }
@@ -62,6 +64,7 @@ const INITIAL_STATE = {
   localImages: [] as LocalImageItem[],
   uploadedImages: [] as UploadedImageItem[],
   step3: INITIAL_STEP3,
+  selectedAmenityIds: [] as number[],
   viewingSchedule: buildInitialSchedule(),
 };
 
@@ -75,6 +78,8 @@ export const useListingPostStore = create<ListingPostState>((set) => ({
   setUploadedImages: (uploadedImages) => set({ uploadedImages }),
 
   setStep3: (data) => set((state) => ({ step3: { ...state.step3, ...data } })),
+
+  setSelectedAmenityIds: (selectedAmenityIds) => set({ selectedAmenityIds }),
 
   setViewingSchedule: (viewingSchedule) => set({ viewingSchedule }),
 

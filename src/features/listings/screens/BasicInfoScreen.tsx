@@ -14,6 +14,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { ChevronDown } from 'lucide-react-native';
 import { THEME_COLORS, SPACING_TOKENS, BORDER_RADIUS_TOKENS } from '@theme';
 import { Button, Input, Typography, HeaderBar, ScreenContainer, Modal } from '@ui';
+import { formatNumberWithDots, parseRawNumberString } from '@core';
 import { useState } from 'react';
 import type { ListingPostStackParamList } from '@navigation';
 import { useListingPostStore } from '../store/listingPostStore';
@@ -151,9 +152,9 @@ export const BasicInfoScreen = () => {
                 render={({ field: { onChange, value } }) => (
                   <Input
                     label="Giá thuê (đ/tháng) *"
-                    placeholder="VD: 2500000"
-                    value={value}
-                    onChangeText={onChange}
+                    placeholder="VD: 2.500.000"
+                    value={formatNumberWithDots(value)}
+                    onChangeText={(text) => onChange(parseRawNumberString(text))}
                     keyboardType="numeric"
                     errorMessage={errors.price?.message}
                   />
@@ -202,9 +203,9 @@ export const BasicInfoScreen = () => {
                 render={({ field: { onChange, value } }) => (
                   <Input
                     label="Giá điện (đ/kWh)"
-                    placeholder="VD: 4000"
-                    value={value}
-                    onChangeText={onChange}
+                    placeholder="VD: 4.000"
+                    value={formatNumberWithDots(value)}
+                    onChangeText={(text) => onChange(parseRawNumberString(text))}
                     keyboardType="numeric"
                     errorMessage={errors.electricPrice?.message}
                   />
@@ -219,9 +220,9 @@ export const BasicInfoScreen = () => {
                 render={({ field: { onChange, value } }) => (
                   <Input
                     label="Giá nước (đ/m³)"
-                    placeholder="VD: 100000"
-                    value={value}
-                    onChangeText={onChange}
+                    placeholder="VD: 100.000"
+                    value={formatNumberWithDots(value)}
+                    onChangeText={(text) => onChange(parseRawNumberString(text))}
                     keyboardType="numeric"
                     errorMessage={errors.waterPrice?.message}
                   />
@@ -236,9 +237,9 @@ export const BasicInfoScreen = () => {
             render={({ field: { onChange, value } }) => (
               <Input
                 label="Tiền cọc (đ)"
-                placeholder="VD: 2500000"
-                value={value}
-                onChangeText={onChange}
+                placeholder="VD: 2.500.000"
+                value={formatNumberWithDots(value)}
+                onChangeText={(text) => onChange(parseRawNumberString(text))}
                 keyboardType="numeric"
                 errorMessage={errors.deposit?.message}
               />
@@ -381,9 +382,8 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   textArea: {
-    height: 100,
+    minHeight: 96,
     textAlignVertical: 'top',
-    paddingTop: SPACING_TOKENS.SM,
   },
   bottomPadding: {
     height: SPACING_TOKENS.XL,
