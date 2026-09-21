@@ -5,6 +5,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   StyleSheet,
+  StatusBar,
   ViewStyle,
   StyleProp,
   RefreshControlProps,
@@ -38,10 +39,17 @@ export const ScreenContainer = ({
   applyBottomInset = true,
 }: ScreenContainerProps) => {
   const insets = useSafeAreaInsets();
+  const flatStyle = StyleSheet.flatten(style);
+  const extraPaddingTop = Number(flatStyle?.paddingTop ?? flatStyle?.paddingVertical ?? 0);
+  const extraPaddingBottom = Number(flatStyle?.paddingBottom ?? flatStyle?.paddingVertical ?? 0);
+
+  const topInset = applyTopInset
+    ? Math.max(insets.top, Platform.OS === 'android' ? (StatusBar.currentHeight ?? 0) : 0)
+    : 0;
 
   const safePaddingStyle: ViewStyle = {
-    paddingTop: applyTopInset ? insets.top : 0,
-    paddingBottom: applyBottomInset ? insets.bottom : 0,
+    paddingTop: topInset + extraPaddingTop,
+    paddingBottom: (applyBottomInset ? insets.bottom : 0) + extraPaddingBottom,
   };
 
   const content = scrollable ? (
@@ -59,7 +67,7 @@ export const ScreenContainer = ({
   );
 
   return (
-    <View style={[styles.container, safePaddingStyle, style]}>
+    <View style={[styles.container, style, safePaddingStyle]}>
       {keyboardAvoiding ? (
         <KeyboardAvoidingView
           style={styles.flexOne}
