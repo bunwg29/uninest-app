@@ -6,7 +6,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Camera, ChevronLeft, GraduationCap, Mail, Phone, UserRound } from 'lucide-react-native';
-import { THEME_COLORS, SPACING_TOKENS } from '@theme';
+import { THEME_COLORS, SPACING_TOKENS, BORDER_RADIUS_TOKENS } from '@theme';
 import { Avatar, Badge, Button, Input, ScreenContainer, Typography } from '@ui';
 import { useToast } from '@hooks';
 import type { RootStackParamList } from '@navigation';
@@ -131,8 +131,8 @@ export const ProfileEditScreen = () => {
   return (
     <ScreenContainer scrollable style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={handleBack}>
-          <ChevronLeft size={24} color={THEME_COLORS.TEXT_PRIMARY} />
+        <TouchableOpacity onPress={handleBack} style={styles.backButton} activeOpacity={0.7}>
+          <ChevronLeft size={22} color={THEME_COLORS.TEXT_PRIMARY} />
         </TouchableOpacity>
         <Typography variant="h3" weight="BOLD">
           Chỉnh sửa hồ sơ
@@ -212,9 +212,20 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    paddingTop: SPACING_TOKENS.SM,
     marginBottom: SPACING_TOKENS.XL,
   },
-  headerSpace: { width: 24 },
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: BORDER_RADIUS_TOKENS.MD,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: THEME_COLORS.SURFACE,
+    borderWidth: 1,
+    borderColor: THEME_COLORS.BORDER,
+  },
+  headerSpace: { width: 40 },
   avatarBlock: { alignItems: 'center', marginBottom: SPACING_TOKENS.XL },
   cameraButton: {
     backgroundColor: THEME_COLORS.PRIMARY,

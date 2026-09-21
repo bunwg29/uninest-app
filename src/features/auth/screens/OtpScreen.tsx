@@ -101,11 +101,6 @@ export const OtpScreen = () => {
       });
 
       toast.success('Xác thực tài khoản thành công!');
-
-      navigation.reset({
-        index: 0,
-        routes: [{ name: 'Main' }],
-      });
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Đã có lỗi xảy ra. Vui lòng thử lại.';
 
@@ -126,8 +121,8 @@ export const OtpScreen = () => {
     <ScreenContainer scrollable style={styles.container}>
       <View style={styles.header}>
         <View style={styles.topRow}>
-          <TouchableOpacity onPress={handleBack} style={styles.backButton}>
-            <ChevronLeft size={24} color={THEME_COLORS.TEXT_PRIMARY} />
+          <TouchableOpacity onPress={handleBack} style={styles.backButton} activeOpacity={0.7}>
+            <ChevronLeft size={22} color={THEME_COLORS.TEXT_PRIMARY} />
           </TouchableOpacity>
 
           <View style={styles.stepBadge}>
@@ -241,11 +236,18 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: SPACING_TOKENS.SM,
+    paddingTop: SPACING_TOKENS.XS,
+    marginBottom: SPACING_TOKENS.MD,
   },
   backButton: {
-    marginLeft: -SPACING_TOKENS.XS,
-    padding: SPACING_TOKENS.XS,
+    width: 40,
+    height: 40,
+    borderRadius: BORDER_RADIUS_TOKENS.MD,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: THEME_COLORS.SURFACE,
+    borderWidth: 1,
+    borderColor: THEME_COLORS.BORDER,
   },
   stepBadge: {
     backgroundColor: THEME_COLORS.PRIMARY_LIGHT,
