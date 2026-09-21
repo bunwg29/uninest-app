@@ -9,8 +9,10 @@ interface AuthState {
   isAuthenticated: boolean;
   isLoading: boolean;
   isInitialized: boolean;
+  hasOnboarded: boolean;
   error: string | null;
   initialize: () => Promise<void>;
+  setOnboardingCompleted: (completed: boolean) => Promise<void>;
   selectRole: (role: UserRole) => Promise<void>;
   login: (payload: LoginPayload) => Promise<void>;
   register: (payload: RegisterPayload) => Promise<void>;
@@ -30,12 +32,14 @@ export const useAuthStore = create<AuthState>((set, get) => {
     isAuthenticated: false,
     isLoading: false,
     isInitialized: false,
+    hasOnboarded: false,
     error: null,
 
     async initialize() {
       set({ isLoading: true });
 
       try {
+        const hasOnboarded = await tokenStorage.getOnboardingCompleted();
         const token = await tokenStorage.getAccessToken();
         const savedRole = (await tokenStorage.getRole()) as UserRole | null;
         const savedUser = await tokenStorage.getUser<AuthUser>();
@@ -47,6 +51,7 @@ export const useAuthStore = create<AuthState>((set, get) => {
             isAuthenticated: true,
             isInitialized: true,
             isLoading: false,
+            hasOnboarded,
           });
 
           return;
@@ -58,6 +63,7 @@ export const useAuthStore = create<AuthState>((set, get) => {
           isAuthenticated: false,
           isInitialized: true,
           isLoading: false,
+          hasOnboarded,
         });
       } catch {
         set({
@@ -65,8 +71,14 @@ export const useAuthStore = create<AuthState>((set, get) => {
           isAuthenticated: false,
           isInitialized: true,
           isLoading: false,
+          hasOnboarded: false,
         });
       }
+    },
+
+    async setOnboardingCompleted(completed: boolean) {
+      await tokenStorage.setOnboardingCompleted(completed);
+      set({ hasOnboarded: completed });
     },
 
     async selectRole(role: UserRole) {
