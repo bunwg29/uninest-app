@@ -17,7 +17,7 @@ type NavigationProp = NativeStackNavigationProp<AuthStackParamList & RootStackPa
 
 export const LoginScreen = () => {
   const navigation = useNavigation<NavigationProp>();
-  const { login, role, isLoading, error, clearError } = useAuth();
+  const { login, isLoading, error, clearError } = useAuth();
   const toast = useToast();
 
   const [loginType, setLoginType] = useState<LoginIdentifierType>('phone');
@@ -50,11 +50,6 @@ export const LoginScreen = () => {
       });
 
       toast.success('Đăng nhập thành công!');
-
-      navigation.reset({
-        index: 0,
-        routes: [{ name: 'Main' }],
-      });
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Đã có lỗi xảy ra');
     }
@@ -62,7 +57,7 @@ export const LoginScreen = () => {
 
   const handleGoToRegister = () => {
     clearError();
-    navigation.navigate('Register', { role: role || 'student' });
+    navigation.navigate('RoleSelection');
   };
 
   const handleGoToForgotPassword = () => {

@@ -22,8 +22,8 @@ import {
 } from 'lucide-react-native';
 import { THEME_COLORS, SPACING_TOKENS, BORDER_RADIUS_TOKENS } from '@theme';
 import { Button, Typography } from '@ui';
-import { tokenStorage } from '@core';
 import type { AuthStackParamList } from '@navigation';
+import { useAuth } from '../hooks';
 
 type NavigationProp = NativeStackNavigationProp<AuthStackParamList>;
 
@@ -62,14 +62,15 @@ const ONBOARDING_SLIDES: OnboardingSlide[] = [
 
 export const OnboardingScreen = () => {
   const navigation = useNavigation<NavigationProp>();
+  const { setOnboardingCompleted } = useAuth();
   const [currentIndex, setCurrentIndex] = useState(0);
   const flatListRef = useRef<FlatList<OnboardingSlide>>(null);
 
   const handleFinishOnboarding = useCallback(async () => {
-    await tokenStorage.setOnboardingCompleted(true);
+    await setOnboardingCompleted(true);
 
-    navigation.replace('RoleSelection');
-  }, [navigation]);
+    navigation.replace('Login');
+  }, [navigation, setOnboardingCompleted]);
 
   const handleNext = async () => {
     if (currentIndex < ONBOARDING_SLIDES.length - 1) {

@@ -12,7 +12,11 @@ const APP_LOGO = require('../../../../assets/logo.png');
 
 type NavigationProp = NativeStackNavigationProp<AuthStackParamList & RootStackParamList>;
 
-export const SplashScreen = () => {
+export interface SplashScreenProps {
+  onFinish?: () => void;
+}
+
+export const SplashScreen = ({ onFinish }: SplashScreenProps) => {
   const navigation = useNavigation<NavigationProp>();
   const { isAuthenticated, isInitialized, initialize } = useAuth();
 
@@ -26,6 +30,12 @@ export const SplashScreen = () => {
     }
 
     const timer = setTimeout(async () => {
+      if (onFinish) {
+        onFinish();
+
+        return;
+      }
+
       if (isAuthenticated) {
         navigation.reset({
           index: 0,
@@ -45,13 +55,13 @@ export const SplashScreen = () => {
       } else {
         navigation.reset({
           index: 0,
-          routes: [{ name: 'Auth', params: { screen: 'RoleSelection' } }],
+          routes: [{ name: 'Auth', params: { screen: 'Login' } }],
         });
       }
     }, 1500);
 
     return () => clearTimeout(timer);
-  }, [isInitialized, isAuthenticated, navigation]);
+  }, [isInitialized, isAuthenticated, navigation, onFinish]);
 
   return (
     <View style={styles.container}>
