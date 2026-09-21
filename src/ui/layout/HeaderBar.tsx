@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { View, TouchableOpacity, StyleSheet, ViewStyle, StyleProp } from 'react-native';
 import { ChevronLeft } from 'lucide-react-native';
-import { THEME_COLORS, SPACING_TOKENS } from '@theme';
+import { THEME_COLORS, SPACING_TOKENS, BORDER_RADIUS_TOKENS } from '@theme';
 import { Typography } from '../atoms/Typography';
 
 export interface HeaderBarProps {
@@ -29,13 +29,8 @@ export const HeaderBar = ({
     <View style={[styles.container, hasBottomBorder && styles.bottomBorder, style]}>
       <View style={styles.leftSlot}>
         {onBack ? (
-          <TouchableOpacity
-            style={styles.backButton}
-            onPress={onBack}
-            activeOpacity={0.7}
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-          >
-            <ChevronLeft size={24} color={THEME_COLORS.TEXT_PRIMARY} />
+          <TouchableOpacity style={styles.backButton} onPress={onBack} activeOpacity={0.7}>
+            <ChevronLeft size={22} color={THEME_COLORS.TEXT_PRIMARY} />
           </TouchableOpacity>
         ) : null}
       </View>
@@ -89,8 +84,12 @@ const styles = StyleSheet.create({
   backButton: {
     width: 40,
     height: 40,
+    borderRadius: BORDER_RADIUS_TOKENS.MD,
     alignItems: 'center',
     justifyContent: 'center',
+    backgroundColor: THEME_COLORS.SURFACE,
+    borderWidth: 1,
+    borderColor: THEME_COLORS.BORDER,
   },
   titleSlot: {
     flex: 1,
