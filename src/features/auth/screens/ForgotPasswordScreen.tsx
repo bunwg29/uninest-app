@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { View, StyleSheet, TouchableOpacity } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { KeyRound, Phone } from 'lucide-react-native';
+import { ChevronLeft, KeyRound, Phone } from 'lucide-react-native';
 import { THEME_COLORS, SPACING_TOKENS, BORDER_RADIUS_TOKENS } from '@theme';
 import { Button, Input, ScreenContainer, Typography } from '@ui';
 import { useToast } from '@hooks';
@@ -52,12 +52,11 @@ export const ForgotPasswordScreen = () => {
     }
   };
 
-  const handleBackToLogin = () => {
-    navigation.goBack();
-  };
-
   return (
     <ScreenContainer scrollable style={styles.container}>
+      <TouchableOpacity style={styles.screenBackButton} onPress={() => navigation.goBack()}>
+        <ChevronLeft size={24} color={THEME_COLORS.TEXT_PRIMARY} />
+      </TouchableOpacity>
       <View style={styles.content}>
         <View style={styles.iconCircle}>
           <KeyRound size={32} color={THEME_COLORS.SECONDARY} />
@@ -97,16 +96,6 @@ export const ForgotPasswordScreen = () => {
           >
             Gửi mã xác thực
           </Button>
-
-          <TouchableOpacity
-            style={styles.backButton}
-            onPress={handleBackToLogin}
-            activeOpacity={0.7}
-          >
-            <Typography variant="body2" weight="SEMIBOLD" color={THEME_COLORS.TEXT_MUTED}>
-              Quay lại đăng nhập
-            </Typography>
-          </TouchableOpacity>
         </View>
       </View>
     </ScreenContainer>
@@ -144,8 +133,5 @@ const styles = StyleSheet.create({
     marginTop: SPACING_TOKENS.MD,
     marginBottom: SPACING_TOKENS.MD,
   },
-  backButton: {
-    alignItems: 'center',
-    paddingVertical: SPACING_TOKENS.SM,
-  },
+  screenBackButton: { paddingVertical: SPACING_TOKENS.XS },
 });
