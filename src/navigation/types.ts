@@ -34,11 +34,16 @@ export type AuthStackParamList = {
 };
 
 export type MainTabParamList = {
-  Overview: undefined;
-  Listings: undefined;
-  CreateListing: undefined;
-  Appointments: undefined;
+  Home: undefined;
+  Search: undefined;
+  AiChat: undefined;
   Messages: undefined;
+  Profile: undefined;
+  Overview?: undefined;
+  Listings?: undefined;
+  CreateListing?: undefined;
+  Appointments?: undefined;
+  Community?: undefined;
 };
 
 export type RootStackParamList = {
@@ -46,4 +51,14 @@ export type RootStackParamList = {
   Auth: NavigatorScreenParams<AuthStackParamList> | undefined;
   Main: NavigatorScreenParams<MainTabParamList> | undefined;
   ListingPost: NavigatorScreenParams<ListingPostStackParamList> | undefined;
+  ProfileEdit: undefined;
+  ChangePassword: undefined;
+  Settings: undefined;
+  OtpVerification: {
+    target: string;
+    flow?: 'register' | 'forgot_password';
+    role?: UserRole;
+    returnToChangePassword?: boolean;
+  };
+  ResetPassword: { target: string; otpCode: string };
 };
