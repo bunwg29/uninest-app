@@ -17,6 +17,7 @@ export type AuthStackParamList = {
     target: string;
     flow?: 'register' | 'forgot_password';
     role?: UserRole;
+    returnToChangePassword?: boolean;
   };
   ForgotPassword: undefined;
   ResetPassword: { target: string; otpCode: string };
@@ -34,4 +35,7 @@ export type RootStackParamList = {
   Splash: undefined;
   Auth: NavigatorScreenParams<AuthStackParamList> | undefined;
   Main: NavigatorScreenParams<MainTabParamList> | undefined;
+  ProfileEdit: undefined;
+  ChangePassword: undefined;
+  Settings: undefined;
 };
