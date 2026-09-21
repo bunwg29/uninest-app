@@ -1,0 +1,180 @@
+import { useCallback } from 'react';
+import { View, StyleSheet, ScrollView } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { CheckCircle2 } from 'lucide-react-native';
+import { THEME_COLORS, SPACING_TOKENS, BORDER_RADIUS_TOKENS } from '@theme';
+import { Button, Typography, HeaderBar, ScreenContainer, FilterChip } from '@ui';
+import type { ListingPostStackParamList } from '@navigation';
+import { useListingPostStore } from '../store/listingPostStore';
+import { LISTING_FORM_STEPS, AMENITY_DISPLAY_LIST } from '../types/constants';
+
+type NavigationProp = NativeStackNavigationProp<ListingPostStackParamList>;
+
+const TOTAL_STEPS = LISTING_FORM_STEPS.length;
+
+const GROUPS = [...new Set(AMENITY_DISPLAY_LIST.map((a) => a.group))];
+
+export const AmenitiesScreen = () => {
+  const navigation = useNavigation<NavigationProp>();
+  const { selectedAmenityIds, setSelectedAmenityIds } = useListingPostStore();
+
+  const handleToggle = useCallback(
+    (id: number) => {
+      const next = selectedAmenityIds.includes(id)
+        ? selectedAmenityIds.filter((item) => item !== id)
+        : [...selectedAmenityIds, id];
+
+      setSelectedAmenityIds(next);
+    },
+    [selectedAmenityIds, setSelectedAmenityIds]
+  );
+
+  const handleContinue = useCallback(() => {
+    navigation.navigate('ListingPostSchedule');
+  }, [navigation]);
+
+  return (
+    <ScreenContainer applyTopInset applyBottomInset={false} keyboardAvoiding={false}>
+      <HeaderBar
+        title="Đăng tin mới"
+        onBack={() => navigation.goBack()}
+        subtitle={`Bước 4 / ${TOTAL_STEPS}: Tiện ích`}
+        alignTitle="left"
+      />
+
+      <StepIndicator currentStep={4} totalSteps={TOTAL_STEPS} />
+
+      <ScrollView
+        style={styles.flex}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={styles.blockBanner}>
+          <CheckCircle2 size={18} color={THEME_COLORS.PRIMARY} />
+
+          <Typography variant="caption" colorKey="TEXT_SECONDARY" style={styles.bannerText}>
+            Chọn các tiện ích sẵn có của phòng trọ để người thuê dễ dàng tìm kiếm và lựa chọn.
+            {selectedAmenityIds.length > 0
+              ? ` (Đã chọn ${selectedAmenityIds.length} tiện ích)`
+              : ''}
+          </Typography>
+        </View>
+
+        {GROUPS.map((group) => (
+          <View key={group} style={styles.group}>
+            <Typography
+              variant="label"
+              weight="SEMIBOLD"
+              colorKey="TEXT_PRIMARY"
+              style={styles.groupTitle}
+            >
+              {group}
+            </Typography>
+
+            <View style={styles.chipRow}>
+              {AMENITY_DISPLAY_LIST.filter((a) => a.group === group).map((amenity) => (
+                <FilterChip
+                  key={amenity.id}
+                  label={amenity.name}
+                  isSelected={selectedAmenityIds.includes(amenity.id)}
+                  onPress={() => handleToggle(amenity.id)}
+                  style={styles.chip}
+                />
+              ))}
+            </View>
+          </View>
+        ))}
+      </ScrollView>
+
+      <View style={styles.bottomBar}>
+        <Button variant="primary" size="lg" fullWidth onPress={handleContinue}>
+          Tiếp tục
+        </Button>
+      </View>
+    </ScreenContainer>
+  );
+};
+
+const StepIndicator = ({
+  currentStep,
+  totalSteps,
+}: {
+  currentStep: number;
+  totalSteps: number;
+}) => {
+  const progress = currentStep / totalSteps;
+
+  return (
+    <View style={indicatorStyles.container}>
+      <View style={indicatorStyles.track}>
+        <View style={[indicatorStyles.fill, { width: `${progress * 100}%` }]} />
+      </View>
+    </View>
+  );
+};
+
+const indicatorStyles = StyleSheet.create({
+  container: {
+    paddingHorizontal: SPACING_TOKENS.MD,
+    paddingVertical: SPACING_TOKENS.SM,
+    backgroundColor: THEME_COLORS.SURFACE,
+  },
+  track: {
+    height: 4,
+    backgroundColor: THEME_COLORS.SURFACE_MUTED,
+    borderRadius: BORDER_RADIUS_TOKENS.FULL,
+    overflow: 'hidden',
+  },
+  fill: {
+    height: '100%',
+    backgroundColor: THEME_COLORS.PRIMARY,
+    borderRadius: BORDER_RADIUS_TOKENS.FULL,
+  },
+});
+
+const styles = StyleSheet.create({
+  flex: {
+    flex: 1,
+  },
+  scrollContent: {
+    padding: SPACING_TOKENS.MD,
+    paddingBottom: SPACING_TOKENS.XL,
+  },
+  blockBanner: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: SPACING_TOKENS.SM,
+    backgroundColor: THEME_COLORS.PRIMARY_LIGHT,
+    borderRadius: BORDER_RADIUS_TOKENS.MD,
+    padding: SPACING_TOKENS.MD,
+    marginBottom: SPACING_TOKENS.MD,
+    borderWidth: 1,
+    borderColor: THEME_COLORS.BORDER,
+  },
+  bannerText: {
+    flex: 1,
+    lineHeight: 18,
+  },
+  group: {
+    marginBottom: SPACING_TOKENS.MD,
+  },
+  groupTitle: {
+    marginBottom: SPACING_TOKENS.SM,
+  },
+  chipRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: SPACING_TOKENS.SM,
+  },
+  chip: {
+    marginBottom: 0,
+  },
+  bottomBar: {
+    padding: SPACING_TOKENS.MD,
+    paddingBottom: SPACING_TOKENS.LG,
+    backgroundColor: THEME_COLORS.SURFACE,
+    borderTopWidth: 1,
+    borderTopColor: THEME_COLORS.DIVIDER,
+  },
+});
