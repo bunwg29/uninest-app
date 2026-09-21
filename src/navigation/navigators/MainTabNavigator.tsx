@@ -1,77 +1,74 @@
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { CalendarDays, Grid2X2, House, MessageCircle, Plus } from 'lucide-react-native';
+import { Home, Search, Sparkles, MessageSquare, User } from 'lucide-react-native';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { BORDER_RADIUS_TOKENS, THEME_COLORS } from '@theme';
 import type { MainTabParamList } from '../types';
 import { HomeScreen, LandlordListingsScreen, LandlordPlaceholderScreen } from '@features/listings';
+import { SearchScreen } from '@features/search';
+import { AiChatScreen } from '@features/ai-chat';
 import { MessagesScreen } from '@features/chat';
+import { ProfileScreen } from '@features/auth';
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
 
-const TAB_ICON_SIZE = 21;
+const TAB_ICON_SIZE = 22;
 
 export const MainTabNavigator = () => {
   return (
     <Tab.Navigator
-      initialRouteName="Overview"
+      initialRouteName="Home"
       screenOptions={{
+        headerShown: false,
         tabBarActiveTintColor: THEME_COLORS.PRIMARY,
         tabBarInactiveTintColor: THEME_COLORS.TEXT_MUTED,
+        tabBarLabelStyle: styles.tabLabel,
         tabBarStyle: {
           backgroundColor: THEME_COLORS.SURFACE,
           borderTopColor: THEME_COLORS.BORDER,
+          borderTopWidth: 1,
           height: 72,
           paddingBottom: 8,
           paddingTop: 6,
         },
-        headerStyle: { backgroundColor: THEME_COLORS.SURFACE },
-        headerTintColor: THEME_COLORS.TEXT_PRIMARY,
       }}
     >
       <Tab.Screen
-        name="Overview"
+        name="Home"
         component={HomeScreen}
         options={{
-          title: 'Tổng quan',
-          tabBarIcon: ({ color }) => <Grid2X2 size={TAB_ICON_SIZE} color={color} />,
+          title: 'Trang chủ',
+          tabBarIcon: ({ color }) => <Home size={TAB_ICON_SIZE} color={color} />,
         }}
       />
 
       <Tab.Screen
-        name="Listings"
-        component={LandlordListingsScreen}
+        name="Search"
+        component={SearchScreen}
         options={{
-          title: 'Tin đăng',
-          tabBarIcon: ({ color }) => <House size={TAB_ICON_SIZE} color={color} />,
+          title: 'Tìm trọ',
+          tabBarIcon: ({ color }) => <Search size={TAB_ICON_SIZE} color={color} />,
         }}
       />
 
       <Tab.Screen
-        name="CreateListing"
-        component={LandlordPlaceholderScreen}
+        name="AiChat"
+        component={AiChatScreen}
         options={{
-          title: 'Đăng tin',
+          title: 'Trợ lý AI',
           tabBarButton: (props) => (
             <TouchableOpacity
               onPress={props.onPress ?? undefined}
-              accessibilityLabel="Đăng tin"
-              style={styles.createTabButton}
+              accessibilityLabel="Trợ lý AI"
+              style={styles.aiTabButton}
+              activeOpacity={0.85}
             >
-              <View style={styles.createButtonCircle}>
-                <Plus size={26} color={THEME_COLORS.WHITE} />
+              <View style={styles.aiButtonCircle}>
+                <Sparkles size={24} color={THEME_COLORS.WHITE} />
               </View>
-              <Text style={styles.createTabLabel}>Đăng tin</Text>
+
+              <Text style={styles.aiTabLabel}>Trợ lý AI</Text>
             </TouchableOpacity>
           ),
-        }}
-      />
-
-      <Tab.Screen
-        name="Appointments"
-        component={LandlordPlaceholderScreen}
-        options={{
-          title: 'Lịch hẹn',
-          tabBarIcon: ({ color }) => <CalendarDays size={TAB_ICON_SIZE} color={color} />,
         }}
       />
 
@@ -80,7 +77,50 @@ export const MainTabNavigator = () => {
         component={MessagesScreen}
         options={{
           title: 'Tin nhắn',
-          tabBarIcon: ({ color }) => <MessageCircle size={TAB_ICON_SIZE} color={color} />,
+          tabBarBadge: 2,
+          tabBarBadgeStyle: styles.badgeStyle,
+          tabBarIcon: ({ color }) => <MessageSquare size={TAB_ICON_SIZE} color={color} />,
+        }}
+      />
+
+      <Tab.Screen
+        name="Profile"
+        component={ProfileScreen}
+        options={{
+          title: 'Cá nhân',
+          tabBarIcon: ({ color }) => <User size={TAB_ICON_SIZE} color={color} />,
+        }}
+      />
+
+      <Tab.Screen
+        name="Overview"
+        component={HomeScreen}
+        options={{
+          tabBarItemStyle: { display: 'none' },
+        }}
+      />
+
+      <Tab.Screen
+        name="Listings"
+        component={LandlordListingsScreen}
+        options={{
+          tabBarItemStyle: { display: 'none' },
+        }}
+      />
+
+      <Tab.Screen
+        name="CreateListing"
+        component={LandlordPlaceholderScreen}
+        options={{
+          tabBarItemStyle: { display: 'none' },
+        }}
+      />
+
+      <Tab.Screen
+        name="Appointments"
+        component={LandlordPlaceholderScreen}
+        options={{
+          tabBarItemStyle: { display: 'none' },
         }}
       />
     </Tab.Navigator>
@@ -88,28 +128,44 @@ export const MainTabNavigator = () => {
 };
 
 const styles = StyleSheet.create({
-  createTabButton: {
+  tabLabel: {
+    fontSize: 10,
+    fontWeight: '500',
+    marginTop: 2,
+  },
+  aiTabButton: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'flex-start',
   },
-  createButtonCircle: {
-    width: 50,
-    height: 50,
-    marginTop: -20,
+  aiButtonCircle: {
+    width: 48,
+    height: 48,
+    marginTop: -16,
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: BORDER_RADIUS_TOKENS.FULL,
     backgroundColor: THEME_COLORS.PRIMARY,
-    elevation: 5,
-    shadowColor: THEME_COLORS.BLACK,
-    shadowOpacity: 0.2,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 3 },
+    elevation: 6,
+    shadowColor: THEME_COLORS.PRIMARY,
+    shadowOpacity: 0.35,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
   },
-  createTabLabel: {
-    marginTop: 3,
-    color: THEME_COLORS.TEXT_MUTED,
-    fontSize: 11,
+  aiTabLabel: {
+    marginTop: 4,
+    color: THEME_COLORS.PRIMARY,
+    fontSize: 10,
+    fontWeight: '600',
+  },
+  badgeStyle: {
+    backgroundColor: THEME_COLORS.ERROR,
+    color: THEME_COLORS.WHITE,
+    fontSize: 10,
+    fontWeight: '700',
+    minWidth: 16,
+    height: 16,
+    borderRadius: 8,
+    lineHeight: 16,
   },
 });
