@@ -54,8 +54,12 @@ export const ForgotPasswordScreen = () => {
 
   return (
     <ScreenContainer scrollable style={styles.container}>
-      <TouchableOpacity style={styles.screenBackButton} onPress={() => navigation.goBack()}>
-        <ChevronLeft size={24} color={THEME_COLORS.TEXT_PRIMARY} />
+      <TouchableOpacity
+        style={styles.screenBackButton}
+        onPress={() => navigation.goBack()}
+        activeOpacity={0.7}
+      >
+        <ChevronLeft size={22} color={THEME_COLORS.TEXT_PRIMARY} />
       </TouchableOpacity>
       <View style={styles.content}>
         <View style={styles.iconCircle}>
@@ -133,5 +137,16 @@ const styles = StyleSheet.create({
     marginTop: SPACING_TOKENS.MD,
     marginBottom: SPACING_TOKENS.MD,
   },
-  screenBackButton: { paddingVertical: SPACING_TOKENS.XS },
+  screenBackButton: {
+    width: 40,
+    height: 40,
+    borderRadius: BORDER_RADIUS_TOKENS.MD,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: THEME_COLORS.SURFACE,
+    borderWidth: 1,
+    borderColor: THEME_COLORS.BORDER,
+    marginTop: SPACING_TOKENS.XS,
+    marginBottom: SPACING_TOKENS.MD,
+  },
 });

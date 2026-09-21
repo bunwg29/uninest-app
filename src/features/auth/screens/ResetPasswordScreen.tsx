@@ -1,12 +1,13 @@
 import { useState } from 'react';
-import { View, StyleSheet } from 'react-native';
+import { View, StyleSheet, TouchableOpacity } from 'react-native';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { Check, Circle, Lock } from 'lucide-react-native';
+import { Check, ChevronLeft, Circle, Lock } from 'lucide-react-native';
 import { THEME_COLORS, SPACING_TOKENS, BORDER_RADIUS_TOKENS } from '@theme';
 import { Button, Input, ScreenContainer, Typography } from '@ui';
 import { useToast } from '@hooks';
 import type { AuthStackParamList } from '@navigation';
+import { useAuth } from '../hooks';
 import { authService } from '../services';
 import { resetPasswordSchema } from '../validations';
 
@@ -17,6 +18,7 @@ export const ResetPasswordScreen = () => {
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<ResetRouteProp>();
   const toast = useToast();
+  const { isAuthenticated, logout } = useAuth();
 
   const target = route.params?.target || '';
   const otpCode = route.params?.otpCode || '';
@@ -58,10 +60,14 @@ export const ResetPasswordScreen = () => {
 
       toast.success('Đặt mật khẩu mới thành công!');
 
-      navigation.reset({
-        index: 0,
-        routes: [{ name: 'Login' }],
-      });
+      if (isAuthenticated) {
+        await logout();
+      } else {
+        navigation.reset({
+          index: 0,
+          routes: [{ name: 'Login' }],
+        });
+      }
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Đã có lỗi xảy ra. Vui lòng thử lại.';
 
@@ -74,6 +80,14 @@ export const ResetPasswordScreen = () => {
 
   return (
     <ScreenContainer scrollable style={styles.container}>
+      <TouchableOpacity
+        style={styles.backButton}
+        onPress={() => navigation.goBack()}
+        activeOpacity={0.7}
+      >
+        <ChevronLeft size={22} color={THEME_COLORS.TEXT_PRIMARY} />
+      </TouchableOpacity>
+
       <View style={styles.header}>
         <Typography variant="h1" weight="BOLD" style={styles.title}>
           Đặt mật khẩu mới
@@ -234,8 +248,18 @@ const styles = StyleSheet.create({
     paddingHorizontal: SPACING_TOKENS.LG,
     paddingVertical: SPACING_TOKENS.MD,
   },
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: BORDER_RADIUS_TOKENS.MD,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: THEME_COLORS.SURFACE,
+    borderWidth: 1,
+    borderColor: THEME_COLORS.BORDER,
+    marginBottom: SPACING_TOKENS.MD,
+  },
   header: {
-    marginTop: SPACING_TOKENS.SM,
     marginBottom: SPACING_TOKENS.LG,
   },
   title: {
