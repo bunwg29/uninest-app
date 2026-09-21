@@ -17,7 +17,7 @@ type NavigationProp = NativeStackNavigationProp<AuthStackParamList & RootStackPa
 
 export const LoginScreen = () => {
   const navigation = useNavigation<NavigationProp>();
-  const { login, isLoading, error, clearError } = useAuth();
+  const { login, role, isLoading, error, clearError } = useAuth();
   const toast = useToast();
 
   const [loginType, setLoginType] = useState<LoginIdentifierType>('phone');
@@ -62,7 +62,7 @@ export const LoginScreen = () => {
 
   const handleGoToRegister = () => {
     clearError();
-    navigation.navigate('Register');
+    navigation.navigate('Register', { role: role || 'student' });
   };
 
   const handleGoToForgotPassword = () => {

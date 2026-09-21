@@ -54,6 +54,8 @@ export const Input = ({
     onClear?.();
   };
 
+  const isMultiline = Boolean(rest.multiline);
+
   const borderColor = hasError
     ? THEME_COLORS.ERROR
     : isFocused
@@ -76,6 +78,7 @@ export const Input = ({
       <View
         style={[
           styles.inputContainer,
+          isMultiline && styles.multilineContainer,
           { borderColor },
           !editable && styles.disabledContainer,
           inputContainerStyle,
@@ -84,7 +87,7 @@ export const Input = ({
         {leftIcon ? <View style={styles.leftIconWrapper}>{leftIcon}</View> : null}
 
         <TextInput
-          style={[styles.input, style]}
+          style={[styles.input, isMultiline && styles.multilineInput, style]}
           value={value}
           onChangeText={onChangeText}
           editable={editable}
@@ -92,6 +95,7 @@ export const Input = ({
           secureTextEntry={isPassword ? isSecure : false}
           onFocus={() => setIsFocused(true)}
           onBlur={() => setIsFocused(false)}
+          textAlignVertical={isMultiline ? 'top' : undefined}
           {...rest}
         />
 
@@ -151,6 +155,12 @@ const styles = StyleSheet.create({
     borderRadius: BORDER_RADIUS_TOKENS.MD,
     paddingHorizontal: SPACING_TOKENS.MD,
   },
+  multilineContainer: {
+    height: undefined,
+    minHeight: 100,
+    alignItems: 'flex-start',
+    paddingVertical: SPACING_TOKENS.SM,
+  },
   disabledContainer: {
     backgroundColor: THEME_COLORS.SURFACE_MUTED,
   },
@@ -160,6 +170,11 @@ const styles = StyleSheet.create({
     color: THEME_COLORS.TEXT_PRIMARY,
     fontSize: 14,
     paddingVertical: 0,
+  },
+  multilineInput: {
+    height: undefined,
+    minHeight: 84,
+    textAlignVertical: 'top',
   },
   leftIconWrapper: {
     marginRight: SPACING_TOKENS.SM,

@@ -1,6 +1,16 @@
 import type { NavigatorScreenParams } from '@react-navigation/native';
 import type { UserRole } from '@features/auth';
 
+export type ListingPostStackParamList = {
+  ListingPostBasicInfo: undefined;
+  ListingPostImages: undefined;
+  ListingPostLocation: undefined;
+  ListingPostAmenities: undefined;
+  ListingPostSchedule: undefined;
+  ListingPostPreview: undefined;
+  ListingPostSuccess: { listingId: string };
+};
+
 export type AuthStackParamList = {
   Onboarding: undefined;
   RoleSelection: undefined;
@@ -35,7 +45,5 @@ export type RootStackParamList = {
   Splash: undefined;
   Auth: NavigatorScreenParams<AuthStackParamList> | undefined;
   Main: NavigatorScreenParams<MainTabParamList> | undefined;
-  ProfileEdit: undefined;
-  ChangePassword: undefined;
-  Settings: undefined;
+  ListingPost: NavigatorScreenParams<ListingPostStackParamList> | undefined;
 };
