@@ -14,6 +14,39 @@ export interface AuthUser {
   fullAddress?: string;
 }
 
+export interface Profile {
+  id: string;
+  name: string;
+  avatarUrl?: string | null;
+  phone?: string | null;
+  phoneVerified: boolean;
+  email?: string | null;
+  school?: string | null;
+  bio?: string | null;
+  interestedAreas: string[];
+  role: UserRole;
+  stats: {
+    savedRooms: number;
+    appointments: number;
+    reviews: number;
+  };
+  createdAt: string;
+}
+
+export interface UpdateProfilePayload {
+  name?: string;
+  email?: string;
+  school?: string;
+  bio?: string;
+  interestedAreas?: string[];
+}
+
+export interface ChangePasswordPayload {
+  currentPassword: string;
+  newPassword: string;
+  confirmPassword: string;
+}
+
 export interface AuthTokens {
   accessToken: string;
   refreshToken: string;

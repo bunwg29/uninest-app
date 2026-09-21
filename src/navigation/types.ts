@@ -27,17 +27,18 @@ export type AuthStackParamList = {
     target: string;
     flow?: 'register' | 'forgot_password';
     role?: UserRole;
+    returnToChangePassword?: boolean;
   };
   ForgotPassword: undefined;
   ResetPassword: { target: string; otpCode: string };
 };
 
 export type MainTabParamList = {
-  Home: undefined;
-  Search: undefined;
+  Overview: undefined;
+  Listings: undefined;
+  CreateListing: undefined;
+  Appointments: undefined;
   Messages: undefined;
-  Community: undefined;
-  Profile: undefined;
 };
 
 export type RootStackParamList = {
