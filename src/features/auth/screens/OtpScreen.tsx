@@ -3,7 +3,7 @@ import { View, StyleSheet, TouchableOpacity, Text } from 'react-native';
 
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { AlertCircle, AlertTriangle, ShieldCheck } from 'lucide-react-native';
+import { AlertCircle, AlertTriangle, ChevronLeft, ShieldCheck } from 'lucide-react-native';
 import { THEME_COLORS, SPACING_TOKENS, BORDER_RADIUS_TOKENS } from '@theme';
 import { Button, ScreenContainer, Typography } from '@ui';
 import { useToast } from '@hooks';
@@ -26,6 +26,7 @@ export const OtpScreen = () => {
   const target = route.params?.target || '0905 123 456';
   const flow = route.params?.flow || 'register';
   const role = route.params?.role || 'student';
+  const returnToChangePassword = route.params?.returnToChangePassword === true;
 
   const [code, setCode] = useState('');
   const [countdown, setCountdown] = useState(COUNTDOWN_SECONDS);
@@ -113,8 +114,9 @@ export const OtpScreen = () => {
     }
   }, [code, isLoading, clearError, flow, target, role, verifyOtp, navigation, toast]);
 
-  const handleChangePhone = () => {
+  const handleBack = () => {
     clearError();
+
     navigation.goBack();
   };
 
@@ -123,10 +125,16 @@ export const OtpScreen = () => {
   return (
     <ScreenContainer scrollable style={styles.container}>
       <View style={styles.header}>
-        <View style={styles.stepBadge}>
-          <Typography variant="caption" weight="SEMIBOLD" color={THEME_COLORS.PRIMARY}>
-            Bước 2 / 2
-          </Typography>
+        <View style={styles.topRow}>
+          <TouchableOpacity onPress={handleBack} style={styles.backButton}>
+            <ChevronLeft size={24} color={THEME_COLORS.TEXT_PRIMARY} />
+          </TouchableOpacity>
+
+          <View style={styles.stepBadge}>
+            <Typography variant="caption" weight="SEMIBOLD" color={THEME_COLORS.PRIMARY}>
+              Bước 2 / 2
+            </Typography>
+          </View>
         </View>
 
         <Typography variant="h1" weight="BOLD" style={styles.title}>
@@ -210,13 +218,9 @@ export const OtpScreen = () => {
           Xác nhận
         </Button>
 
-        <TouchableOpacity
-          style={styles.changePhoneButton}
-          onPress={handleChangePhone}
-          activeOpacity={0.7}
-        >
+        <TouchableOpacity style={styles.changePhoneButton} onPress={handleBack} activeOpacity={0.7}>
           <Typography variant="body2" weight="SEMIBOLD" color={THEME_COLORS.TEXT_SECONDARY}>
-            Đổi số điện thoại khác
+            {returnToChangePassword ? 'Quay lại đổi mật khẩu' : 'Đổi số điện thoại khác'}
           </Typography>
         </TouchableOpacity>
       </View>
@@ -233,13 +237,22 @@ const styles = StyleSheet.create({
     marginTop: SPACING_TOKENS.SM,
     marginBottom: SPACING_TOKENS.LG,
   },
+  topRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: SPACING_TOKENS.SM,
+  },
+  backButton: {
+    marginLeft: -SPACING_TOKENS.XS,
+    padding: SPACING_TOKENS.XS,
+  },
   stepBadge: {
     backgroundColor: THEME_COLORS.PRIMARY_LIGHT,
     alignSelf: 'flex-start',
     paddingHorizontal: SPACING_TOKENS.SM,
     paddingVertical: 4,
     borderRadius: BORDER_RADIUS_TOKENS.FULL,
-    marginBottom: SPACING_TOKENS.SM,
   },
   title: {
     marginBottom: SPACING_TOKENS.XS,

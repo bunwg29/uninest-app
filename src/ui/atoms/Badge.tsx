@@ -4,7 +4,7 @@ import { THEME_COLORS, BORDER_RADIUS_TOKENS, SPACING_TOKENS } from '@theme';
 import { Typography } from './Typography';
 
 export type BadgeVariant =
-  'available' | 'holding' | 'featured' | 'match' | 'counter' | 'neutral' | 'primary';
+  'available' | 'holding' | 'featured' | 'match' | 'counter' | 'neutral' | 'primary' | 'danger';
 
 export type BadgeSize = 'sm' | 'md';
 
@@ -78,6 +78,10 @@ const BADGE_CONFIGS: Record<
   primary: {
     backgroundColor: THEME_COLORS.PRIMARY_LIGHT,
     textColor: THEME_COLORS.PRIMARY,
+  },
+  danger: {
+    backgroundColor: THEME_COLORS.ERROR_LIGHT,
+    textColor: THEME_COLORS.ERROR,
   },
 };
 
