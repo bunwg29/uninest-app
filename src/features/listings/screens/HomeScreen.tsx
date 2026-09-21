@@ -1,60 +1,229 @@
-import { View, StyleSheet } from 'react-native';
+import { View, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { PlusCircle, Building2 } from 'lucide-react-native';
+import {
+  Bell,
+  Building2,
+  GraduationCap,
+  MapPin,
+  MessageSquare,
+  PlusCircle,
+  Search,
+  Tag,
+  Users2,
+} from 'lucide-react-native';
 import { THEME_COLORS, SPACING_TOKENS, BORDER_RADIUS_TOKENS } from '@theme';
-import { Button, Typography } from '@ui';
-import { useRoleGuard } from '@features/auth';
-import type { RootStackParamList } from '@navigation';
+import { Avatar, Button, Typography } from '@ui';
+import { useAuth, useRoleGuard } from '@features/auth';
+import type { MainTabParamList, RootStackParamList } from '@navigation';
+
+type NavigationProp = NativeStackNavigationProp<RootStackParamList & MainTabParamList>;
+
+const QUICK_CATEGORIES = [
+  {
+    id: 'near-university',
+    label: 'Gần trường ĐH',
+    icon: GraduationCap,
+    bgColor: '#EFF6FF',
+    iconColor: THEME_COLORS.PRIMARY,
+  },
+  {
+    id: 'roommate',
+    label: 'Tìm ở ghép',
+    icon: Users2,
+    bgColor: '#ECFDF5',
+    iconColor: THEME_COLORS.SUCCESS,
+  },
+  {
+    id: 'studio',
+    label: 'Căn hộ mini',
+    icon: Building2,
+    bgColor: '#FFF7ED',
+    iconColor: THEME_COLORS.SECONDARY,
+  },
+  {
+    id: 'budget',
+    label: 'Giá sinh viên',
+    icon: Tag,
+    bgColor: '#FAF5FF',
+    iconColor: '#7C3AED',
+  },
+];
 
 export const HomeScreen = () => {
-  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const navigation = useNavigation<NavigationProp>();
+  const { user } = useAuth();
   const { isLandlord } = useRoleGuard();
 
+  const handleGoToProfile = () => {
+    navigation.navigate('Profile' as never);
+  };
+
+  const handleGoToSearch = () => {
+    navigation.navigate('Search' as never);
+  };
+
+  const handleGoToMessages = () => {
+    navigation.navigate('Messages' as never);
+  };
+
+  const handleGoToListingPost = () => {
+    navigation.navigate('ListingPost');
+  };
+
+  const handleGoToListings = () => {
+    navigation.navigate('Listings' as never);
+  };
+
+  const userDisplayName = user?.fullName || 'Bạn';
+  const locationText = user?.streetAddress || user?.fullAddress || 'Đà Nẵng, Việt Nam';
+
   return (
-    <View style={styles.container}>
-      <View style={styles.content}>
-        <View style={styles.iconCircle}>
-          <Building2 size={40} color={THEME_COLORS.PRIMARY} />
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={styles.contentContainer}
+      showsVerticalScrollIndicator={false}
+    >
+      <View style={styles.header}>
+        <TouchableOpacity
+          style={styles.profileHeaderButton}
+          onPress={handleGoToProfile}
+          activeOpacity={0.8}
+        >
+          <Avatar uri={user?.avatarUrl || undefined} name={userDisplayName} size="md" />
+
+          <View style={styles.greetingContainer}>
+            <Typography
+              variant="body1"
+              weight="BOLD"
+              color={THEME_COLORS.TEXT_PRIMARY}
+              numberOfLines={1}
+            >
+              Chào {userDisplayName} 👋
+            </Typography>
+
+            <View style={styles.locationRow}>
+              <MapPin size={13} color={THEME_COLORS.PRIMARY} />
+
+              <Typography
+                variant="caption"
+                color={THEME_COLORS.TEXT_MUTED}
+                style={styles.locationText}
+                numberOfLines={1}
+              >
+                {locationText}
+              </Typography>
+            </View>
+          </View>
+        </TouchableOpacity>
+
+        <View style={styles.headerActions}>
+          <TouchableOpacity
+            style={styles.iconButton}
+            onPress={handleGoToMessages}
+            activeOpacity={0.7}
+          >
+            <MessageSquare size={20} color={THEME_COLORS.TEXT_PRIMARY} />
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.iconButton}
+            onPress={handleGoToProfile}
+            activeOpacity={0.7}
+          >
+            <Bell size={20} color={THEME_COLORS.TEXT_PRIMARY} />
+            <View style={styles.notificationDot} />
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      <TouchableOpacity style={styles.searchBar} onPress={handleGoToSearch} activeOpacity={0.8}>
+        <Search size={18} color={THEME_COLORS.TEXT_PLACEHOLDER} />
+
+        <Typography
+          variant="body2"
+          color={THEME_COLORS.TEXT_PLACEHOLDER}
+          style={styles.searchPlaceholder}
+        >
+          Tìm theo khu vực, tên trường, tên đường…
+        </Typography>
+      </TouchableOpacity>
+
+      <View style={styles.categoriesSection}>
+        <View style={styles.categoriesHeader}>
+          <Typography variant="body1" weight="BOLD" color={THEME_COLORS.TEXT_PRIMARY}>
+            Danh mục nổi bật
+          </Typography>
         </View>
 
-        <Typography variant="h2" weight="BOLD" colorKey="TEXT_PRIMARY" style={styles.title}>
-          UniNest
-        </Typography>
+        <View style={styles.categoriesGrid}>
+          {QUICK_CATEGORIES.map((cat) => {
+            const Icon = cat.icon;
 
-        <Typography variant="body2" colorKey="TEXT_SECONDARY" style={styles.subtitle}>
-          Nền tảng tìm kiếm và đăng tin phòng trọ cho sinh viên
-        </Typography>
+            return (
+              <TouchableOpacity
+                key={cat.id}
+                style={styles.categoryItem}
+                onPress={handleGoToSearch}
+                activeOpacity={0.7}
+              >
+                <View style={[styles.categoryIconCircle, { backgroundColor: cat.bgColor }]}>
+                  <Icon size={24} color={cat.iconColor} />
+                </View>
 
-        {isLandlord ? (
-          <View style={styles.card}>
-            <Typography variant="body1" weight="SEMIBOLD" colorKey="TEXT_PRIMARY">
-              Dành cho Chủ trọ
+                <Typography
+                  variant="caption"
+                  weight="SEMIBOLD"
+                  color={THEME_COLORS.TEXT_PRIMARY}
+                  style={styles.categoryLabel}
+                >
+                  {cat.label}
+                </Typography>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+      </View>
+
+      {isLandlord ? (
+        <View style={styles.landlordCard}>
+          <View style={styles.cardHeader}>
+            <Typography variant="body1" weight="BOLD" color={THEME_COLORS.TEXT_PRIMARY}>
+              Quản lý Cho thuê
             </Typography>
-            <Typography variant="caption" colorKey="TEXT_SECONDARY" style={styles.cardDesc}>
-              Đăng tin phòng trọ của bạn để tiếp cận hàng ngàn sinh viên đang tìm kiếm phòng ở.
-            </Typography>
 
+            <TouchableOpacity onPress={handleGoToListings} activeOpacity={0.7}>
+              <Typography variant="caption" weight="SEMIBOLD" color={THEME_COLORS.PRIMARY}>
+                Xem tất cả tin
+              </Typography>
+            </TouchableOpacity>
+          </View>
+
+          <Typography variant="caption" color={THEME_COLORS.TEXT_SECONDARY} style={styles.cardDesc}>
+            Đăng tin phòng trọ của bạn để tiếp cận sinh viên đang tìm kiếm phòng ở.
+          </Typography>
+
+          <View style={styles.landlordButtonsRow}>
             <Button
               title="Đăng tin cho thuê"
               variant="primary"
-              leftIcon={<PlusCircle size={18} color={THEME_COLORS.SURFACE} />}
-              onPress={() => navigation.navigate('ListingPost')}
-              style={styles.postButton}
+              size="md"
+              leftIcon={<PlusCircle size={16} color={THEME_COLORS.SURFACE} />}
+              onPress={handleGoToListingPost}
+              style={styles.actionBtn}
+            />
+
+            <Button
+              title="Tin đăng của bạn"
+              variant="outline"
+              size="md"
+              onPress={handleGoToListings}
+              style={styles.actionBtn}
             />
           </View>
-        ) : (
-          <View style={styles.card}>
-            <Typography variant="body1" weight="SEMIBOLD" colorKey="TEXT_PRIMARY">
-              Tìm phòng trọ lý tưởng
-            </Typography>
-            <Typography variant="caption" colorKey="TEXT_SECONDARY" style={styles.cardDesc}>
-              Khám phá các phòng trọ tiện nghi, an ninh và vị trí thuận tiện gần trường học của bạn.
-            </Typography>
-          </View>
-        )}
-      </View>
-    </View>
+        </View>
+      ) : null}
+    </ScrollView>
   );
 };
 
@@ -62,46 +231,130 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: THEME_COLORS.BACKGROUND,
-    justifyContent: 'center',
+  },
+  contentContainer: {
+    paddingHorizontal: SPACING_TOKENS.MD,
+    paddingTop: SPACING_TOKENS.SM,
+    paddingBottom: 100,
+  },
+  header: {
+    flexDirection: 'row',
     alignItems: 'center',
-    padding: SPACING_TOKENS.LG,
+    justifyContent: 'space-between',
+    paddingVertical: SPACING_TOKENS.SM,
+    marginBottom: SPACING_TOKENS.SM,
   },
-  content: {
-    width: '100%',
-    maxWidth: 400,
+  profileHeaderButton: {
+    flexDirection: 'row',
     alignItems: 'center',
+    flex: 1,
   },
-  iconCircle: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: THEME_COLORS.PRIMARY_LIGHT,
+  greetingContainer: {
+    marginLeft: SPACING_TOKENS.SM,
+    flex: 1,
+  },
+  locationRow: {
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: SPACING_TOKENS.MD,
+    marginTop: 2,
   },
-  title: {
-    marginBottom: SPACING_TOKENS.XS,
+  locationText: {
+    marginLeft: 4,
   },
-  subtitle: {
-    textAlign: 'center',
-    marginBottom: SPACING_TOKENS.XL,
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING_TOKENS.SM,
   },
-  card: {
-    width: '100%',
+  iconButton: {
+    width: 38,
+    height: 38,
+    borderRadius: BORDER_RADIUS_TOKENS.MD,
     backgroundColor: THEME_COLORS.SURFACE,
-    borderRadius: BORDER_RADIUS_TOKENS.LG,
-    padding: SPACING_TOKENS.LG,
+    alignItems: 'center',
+    justifyContent: 'center',
     borderWidth: 1,
     borderColor: THEME_COLORS.BORDER,
-    alignItems: 'center',
   },
-  cardDesc: {
-    textAlign: 'center',
-    marginTop: SPACING_TOKENS.XS,
+  notificationDot: {
+    position: 'absolute',
+    top: 7,
+    right: 7,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: THEME_COLORS.ERROR,
+  },
+  searchBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: THEME_COLORS.SURFACE,
+    borderRadius: BORDER_RADIUS_TOKENS.LG,
+    paddingHorizontal: SPACING_TOKENS.MD,
+    paddingVertical: SPACING_TOKENS.SM + 2,
+    borderWidth: 1,
+    borderColor: THEME_COLORS.BORDER,
     marginBottom: SPACING_TOKENS.MD,
   },
-  postButton: {
-    width: '100%',
+  searchPlaceholder: {
+    marginLeft: SPACING_TOKENS.SM,
+    flex: 1,
+  },
+  categoriesSection: {
+    backgroundColor: THEME_COLORS.SURFACE,
+    borderRadius: BORDER_RADIUS_TOKENS.LG,
+    padding: SPACING_TOKENS.MD,
+    borderWidth: 1,
+    borderColor: THEME_COLORS.BORDER,
+    marginBottom: SPACING_TOKENS.MD,
+  },
+  categoriesHeader: {
+    marginBottom: SPACING_TOKENS.MD,
+  },
+  categoriesGrid: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  categoryItem: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  categoryIconCircle: {
+    width: 48,
+    height: 48,
+    borderRadius: BORDER_RADIUS_TOKENS.MD,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 6,
+  },
+  categoryLabel: {
+    textAlign: 'center',
+    fontSize: 11,
+    lineHeight: 14,
+  },
+  landlordCard: {
+    backgroundColor: THEME_COLORS.SURFACE,
+    borderRadius: BORDER_RADIUS_TOKENS.LG,
+    padding: SPACING_TOKENS.MD,
+    borderWidth: 1,
+    borderColor: THEME_COLORS.BORDER,
+    marginBottom: SPACING_TOKENS.MD,
+  },
+  cardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 4,
+  },
+  cardDesc: {
+    marginBottom: SPACING_TOKENS.MD,
+  },
+  landlordButtonsRow: {
+    flexDirection: 'row',
+    gap: SPACING_TOKENS.SM,
+  },
+  actionBtn: {
+    flex: 1,
   },
 });
