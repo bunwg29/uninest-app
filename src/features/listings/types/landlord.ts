@@ -5,6 +5,7 @@ export interface LandlordListing {
   title: string;
   price: number;
   area: number;
+  address?: string;
   imageUrl?: string;
   status: LandlordListingStatus;
   isFeatured: boolean;
@@ -16,6 +17,21 @@ export interface LandlordListing {
   holdExpireDate?: string;
   depositAmount?: number;
   rejectionReason?: string;
+  roomType?: string;
+  maxOccupants?: number;
+  description?: string;
+  electricPrice?: number;
+  waterPrice?: number;
+  deposit?: number;
+  streetAddress?: string;
+  provinceCode?: string;
+  provinceName?: string;
+  wardCode?: string;
+  wardName?: string;
+  latitude?: number;
+  longitude?: number;
+  imageUrls?: string[];
+  amenityIds?: number[];
 }
 
 export interface LandlordListingCounters {
@@ -32,4 +48,18 @@ export interface LandlordListingsPage {
   counters: LandlordListingCounters;
   page: number;
   totalPages: number;
+}
+
+export interface LandlordDashboardStat {
+  label: string;
+  value: string;
+  trend: string;
+  tone: 'positive' | 'warning';
+}
+
+export interface LandlordDashboardTask {
+  id: string;
+  type: 'message' | 'review';
+  title: string;
+  description: string;
 }

@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useEffect } from 'react';
 import {
   View,
   ScrollView,
@@ -9,7 +9,7 @@ import {
 } from 'react-native';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute, type RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { ChevronDown } from 'lucide-react-native';
 import { THEME_COLORS, SPACING_TOKENS, BORDER_RADIUS_TOKENS } from '@theme';
@@ -22,17 +22,28 @@ import { basicInfoSchema, type BasicInfoFormValues } from '../validations/listin
 import { ROOM_TYPE_OPTIONS, LISTING_FORM_STEPS } from '../types/constants';
 
 type NavigationProp = NativeStackNavigationProp<ListingPostStackParamList>;
+type ScreenRouteProp = RouteProp<ListingPostStackParamList, 'ListingPostBasicInfo'>;
 
 const TOTAL_STEPS = LISTING_FORM_STEPS.length;
 
 export const BasicInfoScreen = () => {
   const navigation = useNavigation<NavigationProp>();
-  const { step1, setStep1 } = useListingPostStore();
+  const route = useRoute<ScreenRouteProp>();
+  const {
+    step1,
+    setStep1,
+    setEditingListingId,
+    setLocalImages,
+    setUploadedImages,
+    setStep3,
+    setSelectedAmenityIds,
+  } = useListingPostStore();
   const [isRoomTypeModalVisible, setIsRoomTypeModalVisible] = useState(false);
 
   const {
     control,
     handleSubmit,
+    reset: resetForm,
     setValue,
     watch,
     formState: { errors },
@@ -50,6 +61,71 @@ export const BasicInfoScreen = () => {
       deposit: step1.deposit,
     },
   });
+
+  useEffect(() => {
+    const listing = route.params?.listing;
+
+    if (!listing) {
+      setEditingListingId(null);
+
+      return;
+    }
+
+    const basicInfo: BasicInfoFormValues = {
+      title: listing.title,
+      roomType: listing.roomType ?? '',
+      price: String(listing.price),
+      area: String(listing.area),
+      maxOccupants: String(listing.maxOccupants ?? ''),
+      description: listing.description ?? '',
+      electricPrice: String(listing.electricPrice ?? ''),
+      waterPrice: String(listing.waterPrice ?? ''),
+      deposit: String(listing.deposit ?? ''),
+    };
+    const imageUrls = listing.imageUrls ?? (listing.imageUrl ? [listing.imageUrl] : []);
+
+    setEditingListingId(route.params?.listingId ?? listing.id);
+    setStep1(basicInfo);
+    resetForm(basicInfo);
+    setLocalImages(
+      imageUrls.map((uri, index) => ({
+        uri,
+        isCover: index === 0,
+        sortOrder: index,
+        fileName: `listing-${listing.id}-${index}.jpg`,
+        contentType: 'image/jpeg',
+      }))
+    );
+    setUploadedImages(
+      imageUrls.map((publicUrl, index) => ({
+        publicUrl,
+        key: publicUrl,
+        isCover: index === 0,
+        sortOrder: index,
+      }))
+    );
+    setStep3({
+      streetAddress: listing.streetAddress ?? '',
+      provinceCode: listing.provinceCode ?? '',
+      provinceName: listing.provinceName ?? '',
+      wardCode: listing.wardCode ?? '',
+      wardName: listing.wardName ?? '',
+      latitude: listing.latitude ?? null,
+      longitude: listing.longitude ?? null,
+    });
+    setSelectedAmenityIds(listing.amenityIds ?? []);
+  }, [
+    route.params?.listing,
+    route.params?.listingId,
+    resetForm,
+    setEditingListingId,
+    setLocalImages,
+    setSelectedAmenityIds,
+    setStep1,
+    setStep3,
+    setUploadedImages,
+    setValue,
+  ]);
 
   const selectedRoomType = watch('roomType');
   const selectedRoomTypeLabel =
@@ -74,7 +150,7 @@ export const BasicInfoScreen = () => {
   return (
     <ScreenContainer applyTopInset applyBottomInset={false} keyboardAvoiding={false}>
       <HeaderBar
-        title="Đăng tin mới"
+        title={route.params?.listing ? 'Chỉnh sửa tin đăng' : 'Đăng tin mới'}
         onBack={() => navigation.goBack()}
         subtitle={`Bước 1 / ${TOTAL_STEPS}: Thông tin cơ bản`}
         alignTitle="left"
