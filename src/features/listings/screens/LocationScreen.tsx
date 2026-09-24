@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import {
   View,
   StyleSheet,
@@ -10,7 +10,6 @@ import {
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import MapView, { Marker, MapPressEvent } from 'react-native-maps';
 import * as Location from 'expo-location';
 import { MapPin, ChevronDown, Search, Navigation } from 'lucide-react-native';
 import { THEME_COLORS, SPACING_TOKENS, BORDER_RADIUS_TOKENS } from '@theme';
@@ -24,6 +23,7 @@ import {
 } from '@features/auth/services/locationsService';
 import { useListingPostStore } from '../store/listingPostStore';
 import { LISTING_FORM_STEPS } from '../types/constants';
+import { LocationMap, type MapCoordinate } from '../components/LocationMap';
 
 type NavigationProp = NativeStackNavigationProp<ListingPostStackParamList>;
 
@@ -78,8 +78,6 @@ export const LocationScreen = () => {
   const [provinceSearch, setProvinceSearch] = useState('');
   const [wardSearch, setWardSearch] = useState('');
 
-  const mapRef = useRef<MapView>(null);
-
   useEffect(() => {
     let isMounted = true;
 
@@ -130,10 +128,6 @@ export const LocationScreen = () => {
     setWardSearch('');
   }, []);
 
-  const handleMapPress = useCallback((event: MapPressEvent) => {
-    setMarkerCoord(event.nativeEvent.coordinate);
-  }, []);
-
   const handleCurrentLocation = useCallback(async () => {
     try {
       const { status } = await Location.requestForegroundPermissionsAsync();
@@ -150,10 +144,6 @@ export const LocationScreen = () => {
       const coord = { latitude: location.coords.latitude, longitude: location.coords.longitude };
 
       setMarkerCoord(coord);
-      mapRef.current?.animateToRegion(
-        { ...coord, latitudeDelta: 0.008, longitudeDelta: 0.008 },
-        500
-      );
       toast.success('Đã lấy vị trí hiện tại');
     } catch {
       toast.error('Không thể lấy vị trí hiện tại. Vui lòng chạm vào bản đồ để chọn.');
@@ -358,33 +348,11 @@ export const LocationScreen = () => {
             </TouchableOpacity>
           </View>
 
-          <MapView
-            ref={mapRef}
-            style={styles.map}
-            initialRegion={
-              markerCoord
-                ? { ...markerCoord, latitudeDelta: 0.01, longitudeDelta: 0.01 }
-                : DEFAULT_REGION
-            }
-            onPress={handleMapPress}
-            showsUserLocation={true}
-            showsMyLocationButton={false}
-            showsCompass={true}
-            loadingEnabled={true}
-            loadingIndicatorColor={THEME_COLORS.PRIMARY}
-            loadingBackgroundColor={THEME_COLORS.SURFACE}
-          >
-            {markerCoord ? (
-              <Marker
-                coordinate={markerCoord}
-                pinColor={THEME_COLORS.PRIMARY}
-                draggable
-                onDragEnd={(e) => setMarkerCoord(e.nativeEvent.coordinate)}
-                title="Vị trí phòng trọ"
-                description="Kéo thả marker để chọn vị trí chính xác"
-              />
-            ) : null}
-          </MapView>
+          <LocationMap
+            coordinate={markerCoord}
+            defaultRegion={DEFAULT_REGION}
+            onCoordinateChange={(coordinate: MapCoordinate) => setMarkerCoord(coordinate)}
+          />
 
           <View style={styles.coordCard}>
             <MapPin
@@ -649,10 +617,6 @@ const styles = StyleSheet.create({
   locationBtnText: {
     marginLeft: 2,
     fontWeight: '600',
-  },
-  map: {
-    flex: 1,
-    minHeight: 220,
   },
   coordCard: {
     flexDirection: 'row',

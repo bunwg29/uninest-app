@@ -46,4 +46,10 @@ export const listingService = {
 
     return unwrapData<ListingResponse>(response.data);
   },
+
+  async updateListing(id: string, dto: CreateListingPayload): Promise<ListingResponse> {
+    const response = await apiClient.put(`/landlord/listings/${id}`, dto);
+
+    return unwrapData<ListingResponse>(response.data);
+  },
 };

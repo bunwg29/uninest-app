@@ -1,8 +1,9 @@
 import type { NavigatorScreenParams } from '@react-navigation/native';
 import type { UserRole } from '@features/auth';
+import type { LandlordListing } from '@features/listings';
 
 export type ListingPostStackParamList = {
-  ListingPostBasicInfo: undefined;
+  ListingPostBasicInfo: { listingId?: string; listing?: LandlordListing } | undefined;
   ListingPostImages: undefined;
   ListingPostLocation: undefined;
   ListingPostAmenities: undefined;
@@ -46,6 +47,14 @@ export type MainTabParamList = {
   Community?: undefined;
 };
 
+export type LandlordTabParamList = {
+  Overview: undefined;
+  Listings: undefined;
+  CreateListing: undefined;
+  Appointments: undefined;
+  Messages: undefined;
+};
+
 export type RootStackParamList = {
   Splash: undefined;
   Auth: NavigatorScreenParams<AuthStackParamList> | undefined;
@@ -54,6 +63,13 @@ export type RootStackParamList = {
   ProfileEdit: undefined;
   ChangePassword: undefined;
   Settings: undefined;
+  LandlordListingDetail: { listing: LandlordListing };
+  LandlordAnalytics: undefined;
+  PremiumPlans: undefined;
+  PremiumCheckout: { planId: string };
+  PremiumStatus: { state?: 'active' | 'expired' } | undefined;
+  LandlordReviews: undefined;
+  LandlordPublicProfile: undefined;
   OtpVerification: {
     target: string;
     flow?: 'register' | 'forgot_password';

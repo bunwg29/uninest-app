@@ -9,7 +9,11 @@ import {
   SettingsScreen,
   SplashScreen,
   useAuth,
+  LandlordPublicProfileScreen,
 } from '@features/auth';
+import { LandlordAnalyticsScreen, LandlordListingDetailScreen } from '@features/listings';
+import { PremiumCheckoutScreen, PremiumPlansScreen, PremiumStatusScreen } from '@features/payment';
+import { LandlordReviewsScreen } from '@features/reviews';
 import type { RootStackParamList } from './types';
 import { AuthNavigator, MainTabNavigator, ListingPostNavigator } from './navigators';
 
@@ -43,6 +47,13 @@ export const RootNavigator = () => {
             <Stack.Screen name="ProfileEdit" component={ProfileEditScreen} />
             <Stack.Screen name="ChangePassword" component={ChangePasswordScreen} />
             <Stack.Screen name="Settings" component={SettingsScreen} />
+            <Stack.Screen name="LandlordListingDetail" component={LandlordListingDetailScreen} />
+            <Stack.Screen name="LandlordAnalytics" component={LandlordAnalyticsScreen} />
+            <Stack.Screen name="PremiumPlans" component={PremiumPlansScreen} />
+            <Stack.Screen name="PremiumCheckout" component={PremiumCheckoutScreen} />
+            <Stack.Screen name="PremiumStatus" component={PremiumStatusScreen} />
+            <Stack.Screen name="LandlordReviews" component={LandlordReviewsScreen} />
+            <Stack.Screen name="LandlordPublicProfile" component={LandlordPublicProfileScreen} />
             <Stack.Screen name="OtpVerification" component={OtpScreen} />
             <Stack.Screen name="ResetPassword" component={ResetPasswordScreen} />
           </>

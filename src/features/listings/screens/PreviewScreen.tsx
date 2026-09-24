@@ -27,7 +27,7 @@ import {
 import { useToast } from '@hooks';
 import type { ListingPostStackParamList } from '@navigation';
 import { useListingPostStore } from '../store/listingPostStore';
-import { useCreateListing } from '../hooks/useCreateListing';
+import { useCreateListing, useUpdateListing } from '../hooks/useCreateListing';
 import { useUploadImages } from '../hooks/useUploadImages';
 import {
   ROOM_TYPE_OPTIONS,
@@ -69,10 +69,12 @@ export const PreviewScreen = () => {
     localImages,
     selectedAmenityIds,
     viewingSchedule,
+    editingListingId,
     reset,
   } = useListingPostStore();
 
   const { mutate: createListing, isPending } = useCreateListing();
+  const { mutate: updateListing, isPending: isUpdating } = useUpdateListing();
   const { uploadAll, isUploading: isUploadingImages, uploadProgress } = useUploadImages();
 
   const roomTypeLabel = useMemo(() => {
@@ -175,21 +177,25 @@ export const PreviewScreen = () => {
       amenityIds: selectedAmenityIds,
     };
 
-    createListing(payload, {
-      onSuccess: (response) => {
-        navigation.navigate('ListingPostSuccess', {
-          listingId: response.id,
-        });
+    const onSuccess = (response: { id: string }) => {
+      navigation.navigate('ListingPostSuccess', { listingId: response.id });
 
-        // Store reset AFTER transition completes
-        InteractionManager.runAfterInteractions(() => {
-          reset();
-        });
-      },
-      onError: (error) => {
-        toast.error(error.message || 'Không thể tạo tin đăng. Vui lòng thử lại.');
-      },
-    });
+      InteractionManager.runAfterInteractions(() => {
+        reset();
+      });
+    };
+
+    const onError = (error: { message?: string }) => {
+      toast.error(error.message || 'Không thể lưu tin đăng. Vui lòng thử lại.');
+    };
+
+    if (editingListingId) {
+      updateListing({ id: editingListingId, dto: payload }, { onSuccess, onError });
+
+      return;
+    }
+
+    createListing(payload, { onSuccess, onError });
   }, [
     localImages,
     uploadedImages,
@@ -198,6 +204,7 @@ export const PreviewScreen = () => {
     step1,
     step3,
     selectedAmenityIds,
+    editingListingId,
     createListing,
     navigation,
     reset,
@@ -445,25 +452,25 @@ export const PreviewScreen = () => {
           variant="outline"
           onPress={() => navigation.goBack()}
           style={styles.editButton}
-          disabled={isPending || isUploadingImages}
+          disabled={isPending || isUpdating || isUploadingImages}
         />
         <Button
           title={
             isUploadingImages
               ? `Đang tải ảnh (${uploadProgress}%)...`
-              : isPending
+              : isPending || isUpdating
                 ? 'Đang đăng...'
                 : 'Đăng tin'
           }
           variant="primary"
           onPress={handleSubmit}
-          isLoading={isPending || isUploadingImages}
-          disabled={isPending || isUploadingImages}
+          isLoading={isPending || isUpdating || isUploadingImages}
+          disabled={isPending || isUpdating || isUploadingImages}
           style={styles.submitButton}
         />
       </View>
 
-      {(isPending || isUploadingImages) && (
+      {(isPending || isUpdating || isUploadingImages) && (
         <LoadingOverlay
           isFullScreen
           message={

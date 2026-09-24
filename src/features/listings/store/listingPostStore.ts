@@ -43,6 +43,7 @@ const buildInitialSchedule = (): ViewingSchedule => {
 };
 
 interface ListingPostState {
+  editingListingId: string | null;
   step1: ListingStep1State;
   localImages: LocalImageItem[];
   uploadedImages: UploadedImageItem[];
@@ -51,6 +52,7 @@ interface ListingPostState {
   viewingSchedule: ViewingSchedule;
 
   setStep1: (data: Partial<ListingStep1State>) => void;
+  setEditingListingId: (id: string | null) => void;
   setLocalImages: (images: LocalImageItem[]) => void;
   setUploadedImages: (images: UploadedImageItem[]) => void;
   setStep3: (data: Partial<ListingStep3State>) => void;
@@ -60,6 +62,7 @@ interface ListingPostState {
 }
 
 const INITIAL_STATE = {
+  editingListingId: null as string | null,
   step1: INITIAL_STEP1,
   localImages: [] as LocalImageItem[],
   uploadedImages: [] as UploadedImageItem[],
@@ -70,6 +73,8 @@ const INITIAL_STATE = {
 
 export const useListingPostStore = create<ListingPostState>((set) => ({
   ...INITIAL_STATE,
+
+  setEditingListingId: (editingListingId) => set({ editingListingId }),
 
   setStep1: (data) => set((state) => ({ step1: { ...state.step1, ...data } })),
 

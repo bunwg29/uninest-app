@@ -8,6 +8,7 @@ export * from './OtpScreen';
 export * from './ForgotPasswordScreen';
 export * from './ResetPasswordScreen';
 export * from './ProfileScreen';
+export * from './LandlordPublicProfileScreen';
 export * from './ProfileEditScreen';
 export * from './ChangePasswordScreen';
 export * from './SettingsScreen';

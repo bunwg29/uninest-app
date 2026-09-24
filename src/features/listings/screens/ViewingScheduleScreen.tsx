@@ -1,5 +1,5 @@
-import { useCallback } from 'react';
-import { View, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { useCallback, useState } from 'react';
+import { View, StyleSheet, ScrollView, TouchableOpacity, Switch } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { CalendarDays } from 'lucide-react-native';
@@ -18,7 +18,8 @@ type SlotKey = keyof ViewingSlot;
 
 export const ViewingScheduleScreen = () => {
   const navigation = useNavigation<NavigationProp>();
-  const { viewingSchedule, setViewingSchedule } = useListingPostStore();
+  const { viewingSchedule, setViewingSchedule, step1 } = useListingPostStore();
+  const [isOnlineHoldEnabled, setIsOnlineHoldEnabled] = useState(true);
 
   const handleToggleSlot = useCallback(
     (day: DayKey, slot: SlotKey) => {
@@ -121,12 +122,42 @@ export const ViewingScheduleScreen = () => {
           ))}
         </View>
 
-        <View style={styles.noteBanner}>
-          <Typography variant="caption" colorKey="TEXT_MUTED">
-            Lịch xem phòng giúp sinh viên biết thời gian phù hợp để đặt lịch. Thông tin này sẽ được
-            tích hợp đầy đủ trong phiên bản tiếp theo.
-          </Typography>
+        <Typography variant="caption" colorKey="TEXT_PLACEHOLDER" style={styles.scheduleHint}>
+          Sáng 8–11h · Chiều 14–17h · Tối 18:30–20:30
+        </Typography>
+
+        <View style={styles.holdRow}>
+          <View style={styles.holdCopy}>
+            <Typography variant="body2" weight="BOLD">
+              Cho phép giữ chỗ online
+            </Typography>
+            <Typography variant="caption" colorKey="TEXT_PLACEHOLDER">
+              Sinh viên chỉ đặt được khi cọc qua UniNest
+            </Typography>
+          </View>
+          <Switch
+            value={isOnlineHoldEnabled}
+            onValueChange={setIsOnlineHoldEnabled}
+            trackColor={{ false: THEME_COLORS.BORDER, true: THEME_COLORS.PRIMARY_LIGHT }}
+            thumbColor={isOnlineHoldEnabled ? THEME_COLORS.PRIMARY : THEME_COLORS.TEXT_PLACEHOLDER}
+          />
         </View>
+
+        {isOnlineHoldEnabled ? (
+          <View style={styles.depositField}>
+            <Typography variant="label" weight="BOLD">
+              Số tiền cọc
+            </Typography>
+            <View style={styles.depositValue}>
+              <Typography variant="body1">
+                {Number(step1.deposit || 2500000).toLocaleString('vi-VN')}
+              </Typography>
+              <Typography variant="body2" colorKey="TEXT_PLACEHOLDER">
+                đ
+              </Typography>
+            </View>
+          </View>
+        ) : null}
       </ScrollView>
 
       <View style={styles.bottomBar}>
@@ -254,6 +285,22 @@ const styles = StyleSheet.create({
     padding: SPACING_TOKENS.MD,
     backgroundColor: THEME_COLORS.SURFACE_MUTED,
     borderRadius: BORDER_RADIUS_TOKENS.MD,
+  },
+  scheduleHint: { marginBottom: SPACING_TOKENS.SM },
+  holdRow: { flexDirection: 'row', alignItems: 'center', marginTop: SPACING_TOKENS.SM },
+  holdCopy: { flex: 1 },
+  depositField: { marginTop: SPACING_TOKENS.MD },
+  depositValue: {
+    height: 52,
+    paddingHorizontal: SPACING_TOKENS.MD,
+    marginTop: 6,
+    borderWidth: 1,
+    borderColor: THEME_COLORS.BORDER,
+    borderRadius: BORDER_RADIUS_TOKENS.MD,
+    backgroundColor: THEME_COLORS.SURFACE,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
   bottomBar: {
     padding: SPACING_TOKENS.MD,
