@@ -21,5 +21,6 @@
       "@features": ["./src/features"],
       "@features/*": ["./src/features/*"]
     }
-  }
+  },
+  "exclude": ["dist", "node_modules"]
 }

@@ -20,7 +20,7 @@ const IMAGE_CELL_SIZE = 100;
 export const ImagesScreen = () => {
   const navigation = useNavigation<NavigationProp>();
   const toast = useToast();
-  const { localImages, setLocalImages } = useListingPostStore();
+  const { localImages, setLocalImages, editingListingId } = useListingPostStore();
 
   const handlePickImages = useCallback(async () => {
     if (localImages.length >= MAX_LISTING_IMAGES) {
@@ -103,7 +103,7 @@ export const ImagesScreen = () => {
   return (
     <ScreenContainer applyTopInset applyBottomInset={false} keyboardAvoiding={false}>
       <HeaderBar
-        title="Đăng tin mới"
+        title={editingListingId ? 'Chỉnh sửa tin đăng' : 'Đăng tin mới'}
         onBack={() => navigation.goBack()}
         subtitle={`Bước 2 / ${TOTAL_STEPS}: Ảnh phòng`}
         alignTitle="left"

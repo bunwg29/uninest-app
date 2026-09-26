@@ -10,6 +10,7 @@ import {
   SplashScreen,
   useAuth,
 } from '@features/auth';
+import { LandlordListingDetailScreen, StudentListingPreviewScreen } from '@features/listings';
 import type { RootStackParamList } from './types';
 import { AuthNavigator, MainTabNavigator, ListingPostNavigator } from './navigators';
 
@@ -43,6 +44,8 @@ export const RootNavigator = () => {
             <Stack.Screen name="ProfileEdit" component={ProfileEditScreen} />
             <Stack.Screen name="ChangePassword" component={ChangePasswordScreen} />
             <Stack.Screen name="Settings" component={SettingsScreen} />
+            <Stack.Screen name="LandlordListingDetail" component={LandlordListingDetailScreen} />
+            <Stack.Screen name="StudentListingPreview" component={StudentListingPreviewScreen} />
             <Stack.Screen name="OtpVerification" component={OtpScreen} />
             <Stack.Screen name="ResetPassword" component={ResetPasswordScreen} />
           </>

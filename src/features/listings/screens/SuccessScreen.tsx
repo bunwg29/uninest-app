@@ -6,6 +6,7 @@ import { CheckCircle2, ShieldCheck, Clock, Home, PlusCircle } from 'lucide-react
 import { THEME_COLORS, SPACING_TOKENS, BORDER_RADIUS_TOKENS } from '@theme';
 import { Button, Typography, ScreenContainer, Badge } from '@ui';
 import type { ListingPostStackParamList, RootStackParamList } from '@navigation';
+import { useListingPostStore } from '../store/listingPostStore';
 
 type NavigationProp = NativeStackNavigationProp<ListingPostStackParamList>;
 type ScreenRouteProp = RouteProp<ListingPostStackParamList, 'ListingPostSuccess'>;
@@ -16,13 +17,12 @@ export const SuccessScreen = () => {
   const listingId = route.params?.listingId;
 
   const handleGoHome = useCallback(() => {
-    // Reset to Main Tab
     const rootNav = navigation.getParent<NativeStackNavigationProp<RootStackParamList>>();
 
     if (rootNav) {
       rootNav.reset({
         index: 0,
-        routes: [{ name: 'Main' }],
+        routes: [{ name: 'Main', params: { screen: 'Listings' } }],
       });
     } else {
       navigation.navigate('ListingPostBasicInfo');
@@ -30,6 +30,7 @@ export const SuccessScreen = () => {
   }, [navigation]);
 
   const handlePostAnother = useCallback(() => {
+    useListingPostStore.getState().initCreate();
     navigation.reset({
       index: 0,
       routes: [{ name: 'ListingPostBasicInfo' }],
@@ -50,7 +51,7 @@ export const SuccessScreen = () => {
           </View>
 
           <Typography variant="h2" weight="BOLD" colorKey="TEXT_PRIMARY" style={styles.title}>
-            Đã gửi tin đi duyệt!
+            Đã gửi tin đi duyệt
           </Typography>
 
           <View style={styles.badgeWrapper}>
@@ -58,8 +59,8 @@ export const SuccessScreen = () => {
           </View>
 
           <Typography variant="body2" colorKey="TEXT_SECONDARY" style={styles.subtitle}>
-            Tin đăng phòng trọ của bạn đã được tiếp nhận thành công và chuyển tới đội ngũ kiểm duyệt
-            UniNest.
+            Quản trị viên sẽ kiểm tra trong 4–8 giờ làm việc. Bạn nhận thông báo ngay khi có kết
+            quả.
           </Typography>
         </View>
 
@@ -82,7 +83,7 @@ export const SuccessScreen = () => {
                 Thời gian kiểm duyệt dự kiến
               </Typography>
               <Typography variant="body2" weight="MEDIUM" colorKey="TEXT_PRIMARY">
-                2 - 24 giờ làm việc
+                4 - 8 giờ làm việc
               </Typography>
             </View>
           </View>
@@ -139,7 +140,7 @@ export const SuccessScreen = () => {
           style={styles.anotherButton}
         />
         <Button
-          title="Về trang chủ"
+          title="Về danh sách tin đăng"
           variant="primary"
           leftIcon={<Home size={18} color={THEME_COLORS.SURFACE} />}
           onPress={handleGoHome}

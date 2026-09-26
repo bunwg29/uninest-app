@@ -20,6 +20,7 @@ import {
   LogOut,
   Settings2,
   Star,
+  Home,
 } from 'lucide-react-native';
 import { THEME_COLORS, SPACING_TOKENS, BORDER_RADIUS_TOKENS } from '@theme';
 import { Avatar, Button, ScreenContainer, Typography } from '@ui';
@@ -50,6 +51,7 @@ export const ProfileScreen = () => {
   });
 
   const profile = profileQuery.data;
+  const isLandlord = user?.role === 'landlord';
 
   const handleLogout = async () => {
     await logout();
@@ -71,7 +73,7 @@ export const ProfileScreen = () => {
     >
       <View style={styles.headerRow}>
         <Typography variant="h2" weight="BOLD">
-          Cá nhân
+          {isLandlord ? 'Hồ sơ chủ trọ' : 'Cá nhân'}
         </Typography>
 
         <View style={styles.headerSpacer} />
@@ -131,65 +133,86 @@ export const ProfileScreen = () => {
             </TouchableOpacity>
           </View>
 
-          <View style={styles.statsRow}>
-            <Stat label="Đã lưu" value={profile.stats.savedRooms} />
-            <Stat label="Lịch hẹn" value={profile.stats.appointments} />
-            <Stat label="Đánh giá" value={profile.stats.reviews} />
-          </View>
+          {!isLandlord ? (
+            <View style={styles.statsRow}>
+              <Stat label="Đã lưu" value={profile.stats.savedRooms} />
+              <Stat label="Lịch hẹn" value={profile.stats.appointments} />
+              <Stat label="Đánh giá" value={profile.stats.reviews} />
+            </View>
+          ) : null}
 
           <ProfileSection
-            title="HOẠT ĐỘNG"
-            items={[
-              {
-                label: 'Phòng đã lưu',
-                icon: Heart,
-                tone: ICON_TONES.RED,
-                detail: `${profile.stats.savedRooms}`,
-                onPress: () => toast.info('Tính năng danh sách phòng đã lưu đang phát triển'),
-              },
-              {
-                label: 'Lịch hẹn xem phòng',
-                icon: CalendarDays,
-                tone: ICON_TONES.AMBER,
-                detail:
-                  profile.stats.appointments > 0
-                    ? `${profile.stats.appointments} đang chờ`
-                    : undefined,
-                onPress: () => toast.info('Tính năng lịch hẹn xem phòng đang phát triển'),
-              },
-              {
-                label: 'Danh sách so sánh',
-                icon: Columns2,
-                tone: ICON_TONES.BLUE,
-                onPress: () => toast.info('Tính năng so sánh phòng đang phát triển'),
-              },
-              {
-                label: 'Lịch sử giao dịch',
-                icon: CreditCard,
-                tone: ICON_TONES.GREEN,
-                onPress: () => toast.info('Tính năng lịch sử giao dịch đang phát triển'),
-              },
-              {
-                label: 'Đánh giá của tôi',
-                icon: Star,
-                tone: ICON_TONES.AMBER,
-                detail: `${profile.stats.reviews}`,
-                onPress: () => toast.info('Tính năng đánh giá đang phát triển'),
-              },
-            ]}
+            title={isLandlord ? 'QUẢN LÝ CHỦ TRỌ' : 'HOẠT ĐỘNG'}
+            items={
+              isLandlord
+                ? [
+                    {
+                      label: 'Tin đăng của tôi',
+                      icon: Home,
+                      tone: ICON_TONES.BLUE,
+                      onPress: () => navigation.navigate('Main', { screen: 'Listings' }),
+                    },
+                    {
+                      label: 'Yêu cầu xem phòng',
+                      icon: CalendarDays,
+                      tone: ICON_TONES.AMBER,
+                      onPress: () => navigation.navigate('Main', { screen: 'Appointments' }),
+                    },
+                  ]
+                : [
+                    {
+                      label: 'Phòng đã lưu',
+                      icon: Heart,
+                      tone: ICON_TONES.RED,
+                      detail: `${profile.stats.savedRooms}`,
+                      onPress: () => toast.info('Tính năng danh sách phòng đã lưu đang phát triển'),
+                    },
+                    {
+                      label: 'Lịch hẹn xem phòng',
+                      icon: CalendarDays,
+                      tone: ICON_TONES.AMBER,
+                      detail:
+                        profile.stats.appointments > 0
+                          ? `${profile.stats.appointments} đang chờ`
+                          : undefined,
+                      onPress: () => toast.info('Tính năng lịch hẹn xem phòng đang phát triển'),
+                    },
+                    {
+                      label: 'Danh sách so sánh',
+                      icon: Columns2,
+                      tone: ICON_TONES.BLUE,
+                      onPress: () => toast.info('Tính năng so sánh phòng đang phát triển'),
+                    },
+                    {
+                      label: 'Lịch sử giao dịch',
+                      icon: CreditCard,
+                      tone: ICON_TONES.GREEN,
+                      onPress: () => toast.info('Tính năng lịch sử giao dịch đang phát triển'),
+                    },
+                    {
+                      label: 'Đánh giá của tôi',
+                      icon: Star,
+                      tone: ICON_TONES.AMBER,
+                      detail: `${profile.stats.reviews}`,
+                      onPress: () => toast.info('Tính năng đánh giá đang phát triển'),
+                    },
+                  ]
+            }
           />
 
-          <ProfileSection
-            title="CỘNG ĐỒNG"
-            items={[
-              {
-                label: 'Bài viết & bình luận',
-                icon: MessageSquare,
-                tone: ICON_TONES.SLATE,
-                onPress: () => toast.info('Tính năng cộng đồng đang phát triển'),
-              },
-            ]}
-          />
+          {!isLandlord ? (
+            <ProfileSection
+              title="CỘNG ĐỒNG"
+              items={[
+                {
+                  label: 'Bài viết & bình luận',
+                  icon: MessageSquare,
+                  tone: ICON_TONES.SLATE,
+                  onPress: () => toast.info('Tính năng cộng đồng đang phát triển'),
+                },
+              ]}
+            />
+          ) : null}
 
           <ProfileSection
             title="TÀI KHOẢN & HỆ THỐNG"

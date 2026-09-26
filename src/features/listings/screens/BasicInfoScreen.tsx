@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useEffect } from 'react';
 import {
   View,
   ScrollView,
@@ -9,7 +9,7 @@ import {
 } from 'react-native';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute, type RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { ChevronDown } from 'lucide-react-native';
 import { THEME_COLORS, SPACING_TOKENS, BORDER_RADIUS_TOKENS } from '@theme';
@@ -20,19 +20,24 @@ import type { ListingPostStackParamList } from '@navigation';
 import { useListingPostStore } from '../store/listingPostStore';
 import { basicInfoSchema, type BasicInfoFormValues } from '../validations/listingValidation';
 import { ROOM_TYPE_OPTIONS, LISTING_FORM_STEPS } from '../types/constants';
+import { INITIAL_STEP1 } from '../store/listingPostStore';
 
 type NavigationProp = NativeStackNavigationProp<ListingPostStackParamList>;
+type ScreenRouteProp = RouteProp<ListingPostStackParamList, 'ListingPostBasicInfo'>;
 
 const TOTAL_STEPS = LISTING_FORM_STEPS.length;
 
 export const BasicInfoScreen = () => {
   const navigation = useNavigation<NavigationProp>();
-  const { step1, setStep1 } = useListingPostStore();
+  const route = useRoute<ScreenRouteProp>();
+  const { step1, setStep1, editingListingId, initEdit, initCreate } = useListingPostStore();
+  const isEditing = Boolean(editingListingId);
   const [isRoomTypeModalVisible, setIsRoomTypeModalVisible] = useState(false);
 
   const {
     control,
     handleSubmit,
+    reset: resetForm,
     setValue,
     watch,
     formState: { errors },
@@ -50,6 +55,27 @@ export const BasicInfoScreen = () => {
       deposit: step1.deposit,
     },
   });
+
+  useEffect(() => {
+    const listing = route.params?.listing;
+
+    if (listing) {
+      initEdit(listing);
+      resetForm({
+        title: listing.title || '',
+        roomType: listing.roomType || '',
+        price: listing.price ? String(listing.price) : '',
+        area: listing.area ? String(listing.area) : '',
+        maxOccupants: listing.maxOccupants ? String(listing.maxOccupants) : '',
+        description: listing.description || '',
+        electricPrice: listing.electricPrice ? String(listing.electricPrice) : '',
+        waterPrice: listing.waterPrice ? String(listing.waterPrice) : '',
+        deposit: listing.deposit ? String(listing.deposit) : '',
+      });
+    } else if (!editingListingId) {
+      resetForm(INITIAL_STEP1);
+    }
+  }, [route.params?.listing, editingListingId, initEdit, resetForm]);
 
   const selectedRoomType = watch('roomType');
   const selectedRoomTypeLabel =
@@ -74,8 +100,11 @@ export const BasicInfoScreen = () => {
   return (
     <ScreenContainer applyTopInset applyBottomInset={false} keyboardAvoiding={false}>
       <HeaderBar
-        title="Đăng tin mới"
-        onBack={() => navigation.goBack()}
+        title={isEditing ? 'Chỉnh sửa tin đăng' : 'Đăng tin mới'}
+        onBack={() => {
+          initCreate();
+          navigation.goBack();
+        }}
         subtitle={`Bước 1 / ${TOTAL_STEPS}: Thông tin cơ bản`}
         alignTitle="left"
       />
