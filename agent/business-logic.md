@@ -22,7 +22,7 @@
 - **Listing Management (`FR-LISTING`, `FR-MANAGE`)**:
   - Landlord creates listing -> status defaults to `pending` -> Admin approves -> `active`.
   - Chủ trọ thiết lập lịch xem phòng theo buổi cho từng ngày trong tuần; lịch được giữ nguyên khi mở lại luồng chỉnh sửa.
-  - Media: Upload to Cloudflare R2 via presigned URL. Soft delete: 90 days retention.
+  - Media: Upload to Cloudflare R2 via presigned URL; database stores object keys while backend resolves public URLs for clients. Soft delete: 90 days retention.
 - **Search & Compare (`FR-SEARCH`, `FR-COMPARE`)**:
   - Spatial radius via PostGIS (`ST_DWithin`) around university.
   - Multi-filter: Price range, room type, amenities, distance. Sort: price, newest, nearest.

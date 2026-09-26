@@ -9,6 +9,7 @@ export interface LandlordListing {
   area: number;
   address?: string;
   imageUrl?: string;
+  imageKey?: string;
   status: LandlordListingStatus;
   isFeatured: boolean;
   viewCount: number;
@@ -33,6 +34,7 @@ export interface LandlordListing {
   latitude?: number;
   longitude?: number;
   imageUrls?: string[];
+  imageKeys?: string[];
   amenityIds?: number[];
   viewingSchedule?: ViewingSchedule;
 }

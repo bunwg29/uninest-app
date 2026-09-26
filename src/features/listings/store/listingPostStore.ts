@@ -100,7 +100,7 @@ const getDraftSnapshot = ({
       deposit: step1.deposit ? Number(step1.deposit) : null,
     },
     images: localImages.map((image) => ({
-      url: image.uploadedUrl ?? image.uri,
+      key: image.uploadedKey ?? image.uploadedUrl ?? image.uri,
       isCover: image.isCover,
       sortOrder: image.sortOrder,
     })),
@@ -161,6 +161,7 @@ export const useListingPostStore = create<ListingPostState>((set, get) => ({
     const localImages: LocalImageItem[] = imageUrls.map((uri, index) => ({
       uri,
       uploadedUrl: uri,
+      uploadedKey: listing.imageKeys?.[index] ?? listing.imageKey,
       isCover: index === 0,
       sortOrder: index,
       fileName: `listing-${listing.id}-${index}.jpg`,
@@ -169,7 +170,7 @@ export const useListingPostStore = create<ListingPostState>((set, get) => ({
 
     const uploadedImages: UploadedImageItem[] = imageUrls.map((publicUrl, index) => ({
       publicUrl,
-      key: publicUrl,
+      key: listing.imageKeys?.[index] ?? listing.imageKey ?? publicUrl,
       isCover: index === 0,
       sortOrder: index,
     }));
