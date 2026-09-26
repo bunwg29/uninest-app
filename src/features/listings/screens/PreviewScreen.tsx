@@ -173,9 +173,10 @@ export const PreviewScreen = () => {
     const syncedLocalImages = localImages.map((image) => ({
       ...image,
       uploadedUrl: image.uploadedUrl ?? uploadedBySortOrder.get(image.sortOrder)?.publicUrl,
+      uploadedKey: image.uploadedKey ?? uploadedBySortOrder.get(image.sortOrder)?.key,
     }));
 
-    if (syncedLocalImages.some((image) => !image.uploadedUrl)) {
+    if (syncedLocalImages.some((image) => !image.uploadedUrl || !image.uploadedKey)) {
       toast.error('Không thể xác định đầy đủ ảnh đã tải lên. Vui lòng thử lại.');
 
       return;
@@ -183,12 +184,12 @@ export const PreviewScreen = () => {
 
     const syncedUploadedImages = syncedLocalImages.map((image) => ({
       publicUrl: image.uploadedUrl as string,
-      key: uploadedBySortOrder.get(image.sortOrder)?.key ?? (image.uploadedUrl as string),
+      key: image.uploadedKey as string,
       isCover: image.isCover,
       sortOrder: image.sortOrder,
     }));
     const finalImages: CreateListingImagePayload[] = syncedUploadedImages.map((image) => ({
-      url: image.publicUrl,
+      key: image.key,
       isCover: image.isCover,
     }));
 

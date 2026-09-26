@@ -1,5 +1,5 @@
 export interface CreateListingImagePayload {
-  url: string;
+  key: string;
   isCover?: boolean;
 }
 
@@ -49,6 +49,7 @@ export interface PresignedUploadResponse {
 export interface LocalImageItem {
   uri: string;
   uploadedUrl?: string;
+  uploadedKey?: string;
   isCover: boolean;
   sortOrder: number;
   fileName: string;
