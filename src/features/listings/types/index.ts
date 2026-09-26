@@ -20,6 +20,7 @@ export interface CreateListingPayload {
   longitude: number;
   images?: CreateListingImagePayload[];
   amenityIds?: number[];
+  viewingSchedule?: ViewingSchedule;
 }
 
 export interface ListingResponse {
@@ -47,6 +48,7 @@ export interface PresignedUploadResponse {
 
 export interface LocalImageItem {
   uri: string;
+  uploadedUrl?: string;
   isCover: boolean;
   sortOrder: number;
   fileName: string;

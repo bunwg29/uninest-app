@@ -1,16 +1,26 @@
-import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { landlordListingsService } from '../services';
-import type { LandlordListingStatus } from '../types';
+import type { LandlordListing, LandlordListingStatus } from '../types';
 
 export const LANDLORD_LISTINGS_QUERY_KEY = ['landlord-listings'];
+export const LANDLORD_LISTING_DETAIL_QUERY_KEY = 'landlord-listing-detail';
 
-export const useLandlordListings = (status: LandlordListingStatus) => {
+export const useLandlordListings = (status: LandlordListingStatus, keyword?: string) => {
   return useInfiniteQuery({
-    queryKey: [...LANDLORD_LISTINGS_QUERY_KEY, status],
-    queryFn: ({ pageParam }) => landlordListingsService.getListings(status, pageParam),
+    queryKey: [...LANDLORD_LISTINGS_QUERY_KEY, status, keyword],
+    queryFn: ({ pageParam }) => landlordListingsService.getListings(status, pageParam, keyword),
     initialPageParam: 1,
     getNextPageParam: (lastPage) =>
       lastPage.page < lastPage.totalPages ? lastPage.page + 1 : undefined,
+  });
+};
+
+export const useLandlordListingDetail = (id: string, initialData?: LandlordListing) => {
+  return useQuery({
+    queryKey: [LANDLORD_LISTING_DETAIL_QUERY_KEY, id],
+    queryFn: () => landlordListingsService.getListing(id),
+    initialData,
+    enabled: Boolean(id),
   });
 };
 
@@ -25,8 +35,11 @@ export const useLandlordListingMutation = () => {
 
       return landlordListingsService.deleteListing(id);
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: LANDLORD_LISTINGS_QUERY_KEY });
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: LANDLORD_LISTINGS_QUERY_KEY });
     },
   });
 };
+
+export const useLandlordListingDetailMutation = () =>
+  useMutation({ mutationFn: landlordListingsService.getListing });

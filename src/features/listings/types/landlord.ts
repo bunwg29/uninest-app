@@ -1,3 +1,5 @@
+import type { ViewingSchedule } from './index';
+
 export type LandlordListingStatus = 'published' | 'pending' | 'rejected' | 'hidden' | 'expired';
 
 export interface LandlordListing {
@@ -5,6 +7,7 @@ export interface LandlordListing {
   title: string;
   price: number;
   area: number;
+  address?: string;
   imageUrl?: string;
   status: LandlordListingStatus;
   isFeatured: boolean;
@@ -16,6 +19,22 @@ export interface LandlordListing {
   holdExpireDate?: string;
   depositAmount?: number;
   rejectionReason?: string;
+  roomType?: string;
+  maxOccupants?: number;
+  description?: string;
+  electricPrice?: number;
+  waterPrice?: number;
+  deposit?: number;
+  streetAddress?: string;
+  provinceCode?: string;
+  provinceName?: string;
+  wardCode?: string;
+  wardName?: string;
+  latitude?: number;
+  longitude?: number;
+  imageUrls?: string[];
+  amenityIds?: number[];
+  viewingSchedule?: ViewingSchedule;
 }
 
 export interface LandlordListingCounters {
