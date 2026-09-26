@@ -1,3 +1,5 @@
+import type { ViewingSchedule } from './index';
+
 export type LandlordListingStatus = 'published' | 'pending' | 'rejected' | 'hidden' | 'expired';
 
 export interface LandlordListing {
@@ -32,6 +34,7 @@ export interface LandlordListing {
   longitude?: number;
   imageUrls?: string[];
   amenityIds?: number[];
+  viewingSchedule?: ViewingSchedule;
 }
 
 export interface LandlordListingCounters {
@@ -48,18 +51,4 @@ export interface LandlordListingsPage {
   counters: LandlordListingCounters;
   page: number;
   totalPages: number;
-}
-
-export interface LandlordDashboardStat {
-  label: string;
-  value: string;
-  trend: string;
-  tone: 'positive' | 'warning';
-}
-
-export interface LandlordDashboardTask {
-  id: string;
-  type: 'message' | 'review';
-  title: string;
-  description: string;
 }

@@ -1,8 +1,9 @@
-import { useMemo, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
   Image,
+  Keyboard,
   Modal as RNModal,
   RefreshControl,
   StyleSheet,
@@ -18,7 +19,7 @@ import {
   Search,
   X,
 } from 'lucide-react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { THEME_COLORS, BORDER_RADIUS_TOKENS, SPACING_TOKENS } from '@theme';
 import {
@@ -30,6 +31,7 @@ import type { LandlordListing, LandlordListingStatus } from '../types';
 import { Badge, Button, EmptyState, LoadingOverlay, Modal, SkeletonBox, Typography } from '@ui';
 import type { RootStackParamList } from '@navigation';
 import { useToast } from '@hooks';
+import { useListingPostStore } from '../store/listingPostStore';
 
 type StatusTab = {
   key: LandlordListingStatus;
@@ -85,18 +87,51 @@ export const LandlordListingsScreen = () => {
   );
   const counters = listingsQuery.data?.pages[0]?.counters;
 
+  const refetchRef = useRef(listingsQuery.refetch);
+
+  refetchRef.current = listingsQuery.refetch;
+
+  useFocusEffect(
+    useCallback(() => {
+      void refetchRef.current();
+    }, [])
+  );
+
   const handleRefresh = () => {
     void listingsQuery.refetch();
   };
 
+  const handleToggleSearch = () => {
+    if (isSearchVisible) {
+      Keyboard.dismiss();
+      setSearchText('');
+      setIsSearchVisible(false);
+
+      return;
+    }
+
+    setIsSearchVisible(true);
+  };
+
+  const handleCloseSearch = () => {
+    Keyboard.dismiss();
+    setSearchText('');
+    setIsSearchVisible(false);
+  };
+
   const handleCreateListing = () => {
-    navigation.getParent()?.navigate('ListingPost');
+    useListingPostStore.getState().initCreate();
+    navigation.getParent()?.navigate('ListingPost', {
+      screen: 'ListingPostBasicInfo',
+      params: undefined,
+    });
   };
 
   const handleEditListing = async (listing: LandlordListing) => {
     try {
       const listingDetail = await listingDetailMutation.mutateAsync(listing.id);
 
+      useListingPostStore.getState().initEdit(listingDetail);
       navigation.getParent()?.navigate('ListingPost', {
         screen: 'ListingPostBasicInfo',
         params: { listingId: listing.id, listing: listingDetail },
@@ -153,14 +188,15 @@ export const LandlordListingsScreen = () => {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
+      <View style={[styles.header, isSearchVisible && styles.headerWithSearch]}>
         <Typography variant="h1" weight="BOLD">
           Tin đăng của tôi
         </Typography>
 
         <TouchableOpacity
+          style={styles.searchButton}
           accessibilityLabel="Tìm kiếm tin đăng"
-          onPress={() => setIsSearchVisible((visible) => !visible)}
+          onPress={handleToggleSearch}
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
           <Search size={22} color={THEME_COLORS.TEXT_PRIMARY} />
@@ -178,7 +214,11 @@ export const LandlordListingsScreen = () => {
             placeholderTextColor={THEME_COLORS.TEXT_PLACEHOLDER}
             style={styles.searchField}
           />
-          <TouchableOpacity onPress={() => setSearchText('')} accessibilityLabel="Xoá tìm kiếm">
+          <TouchableOpacity
+            style={styles.closeSearchButton}
+            onPress={handleCloseSearch}
+            accessibilityLabel="Đóng tìm kiếm"
+          >
             <X size={18} color={THEME_COLORS.TEXT_MUTED} />
           </TouchableOpacity>
         </View>
@@ -569,6 +609,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
   },
+  headerWithSearch: {
+    paddingBottom: 0,
+  },
+  searchButton: {
+    width: 40,
+    height: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: BORDER_RADIUS_TOKENS.MD,
+  },
   listContent: { paddingBottom: 110 },
   tabsContainer: {
     backgroundColor: THEME_COLORS.SURFACE,
@@ -641,18 +691,32 @@ const styles = StyleSheet.create({
   retryButton: { marginTop: SPACING_TOKENS.LG, minWidth: 140 },
   searchFieldContainer: {
     marginHorizontal: SPACING_TOKENS.MD,
-    marginBottom: SPACING_TOKENS.SM,
-    paddingHorizontal: SPACING_TOKENS.SM,
-    height: 42,
+    marginTop: SPACING_TOKENS.MD,
+    marginBottom: SPACING_TOKENS.MD,
+    paddingLeft: SPACING_TOKENS.MD,
+    paddingRight: 6,
+    height: 48,
     flexDirection: 'row',
     alignItems: 'center',
-    borderRadius: BORDER_RADIUS_TOKENS.SM,
-    backgroundColor: THEME_COLORS.SURFACE_MUTED,
+    borderWidth: 1,
+    borderColor: THEME_COLORS.BORDER,
+    borderRadius: BORDER_RADIUS_TOKENS.MD,
+    backgroundColor: THEME_COLORS.SURFACE,
   },
   searchField: {
     flex: 1,
-    marginHorizontal: SPACING_TOKENS.SM,
+    height: 46,
+    marginLeft: SPACING_TOKENS.SM,
+    paddingVertical: 0,
+    fontSize: 15,
     color: THEME_COLORS.TEXT_PRIMARY,
+  },
+  closeSearchButton: {
+    width: 36,
+    height: 36,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: BORDER_RADIUS_TOKENS.FULL,
   },
   footerLoader: { paddingVertical: SPACING_TOKENS.LG },
   sheetBackdrop: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(23, 27, 34, 0.45)' },

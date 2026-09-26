@@ -64,12 +64,7 @@ export type RootStackParamList = {
   ChangePassword: undefined;
   Settings: undefined;
   LandlordListingDetail: { listing: LandlordListing };
-  LandlordAnalytics: undefined;
-  PremiumPlans: undefined;
-  PremiumCheckout: { planId: string };
-  PremiumStatus: { state?: 'active' | 'expired' } | undefined;
-  LandlordReviews: undefined;
-  LandlordPublicProfile: undefined;
+  StudentListingPreview: { listing: LandlordListing };
   OtpVerification: {
     target: string;
     flow?: 'register' | 'forgot_password';

@@ -17,7 +17,7 @@ const GROUPS = [...new Set(AMENITY_DISPLAY_LIST.map((a) => a.group))];
 
 export const AmenitiesScreen = () => {
   const navigation = useNavigation<NavigationProp>();
-  const { selectedAmenityIds, setSelectedAmenityIds } = useListingPostStore();
+  const { selectedAmenityIds, setSelectedAmenityIds, editingListingId } = useListingPostStore();
 
   const handleToggle = useCallback(
     (id: number) => {
@@ -37,7 +37,7 @@ export const AmenitiesScreen = () => {
   return (
     <ScreenContainer applyTopInset applyBottomInset={false} keyboardAvoiding={false}>
       <HeaderBar
-        title="Đăng tin mới"
+        title={editingListingId ? 'Chỉnh sửa tin đăng' : 'Đăng tin mới'}
         onBack={() => navigation.goBack()}
         subtitle={`Bước 4 / ${TOTAL_STEPS}: Tiện ích`}
         alignTitle="left"
