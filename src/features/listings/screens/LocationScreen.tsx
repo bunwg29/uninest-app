@@ -219,7 +219,7 @@ export const LocationScreen = () => {
   }, [selectedProvince, selectedWard, streetAddress, markerCoord, setStep3, navigation, toast]);
 
   return (
-    <ScreenContainer applyTopInset applyBottomInset={false} keyboardAvoiding={false}>
+    <ScreenContainer applyTopInset applyBottomInset keyboardAvoiding={false}>
       <HeaderBar
         title={editingListingId ? 'Chỉnh sửa tin đăng' : 'Đăng tin mới'}
         onBack={() => navigation.goBack()}

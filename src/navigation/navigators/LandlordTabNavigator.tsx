@@ -1,6 +1,7 @@
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { CalendarDays, Grid2X2, Home, MessageSquare, Plus } from 'lucide-react-native';
 import { useNavigation } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { LandlordAppointmentsScreen } from '@features/booking';
 import { LandlordListingsScreen, LandlordOverviewScreen } from '@features/listings';
@@ -17,6 +18,8 @@ const EmptyCreateScreen = () => null;
 
 export const LandlordTabNavigator = () => {
   const rootNavigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const insets = useSafeAreaInsets();
+  const bottomPadding = Math.max(insets.bottom, 8);
 
   return (
     <Tab.Navigator
@@ -26,7 +29,10 @@ export const LandlordTabNavigator = () => {
         tabBarActiveTintColor: THEME_COLORS.PRIMARY,
         tabBarInactiveTintColor: THEME_COLORS.TEXT_PLACEHOLDER,
         tabBarLabelStyle: BOTTOM_TAB_STYLES.label,
-        tabBarStyle: BOTTOM_TAB_STYLES.bar,
+        tabBarStyle: [
+          BOTTOM_TAB_STYLES.bar,
+          { height: 64 + bottomPadding, paddingBottom: bottomPadding },
+        ],
       }}
     >
       <Tab.Screen

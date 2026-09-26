@@ -5,6 +5,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { CheckCircle2, ShieldCheck, Clock, Home, PlusCircle } from 'lucide-react-native';
 import { THEME_COLORS, SPACING_TOKENS, BORDER_RADIUS_TOKENS } from '@theme';
 import { Button, Typography, ScreenContainer, Badge } from '@ui';
+import { useResponsiveLayout } from '@hooks';
 import type { ListingPostStackParamList, RootStackParamList } from '@navigation';
 import { useListingPostStore } from '../store/listingPostStore';
 
@@ -15,6 +16,7 @@ export const SuccessScreen = () => {
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<ScreenRouteProp>();
   const listingId = route.params?.listingId;
+  const { isCompact } = useResponsiveLayout();
 
   const handleGoHome = useCallback(() => {
     const rootNav = navigation.getParent<NativeStackNavigationProp<RootStackParamList>>();
@@ -38,7 +40,7 @@ export const SuccessScreen = () => {
   }, [navigation]);
 
   return (
-    <ScreenContainer applyTopInset applyBottomInset={false} keyboardAvoiding={false}>
+    <ScreenContainer applyTopInset applyBottomInset keyboardAvoiding={false}>
       <ScrollView
         style={styles.container}
         contentContainerStyle={styles.scrollContent}
@@ -131,7 +133,7 @@ export const SuccessScreen = () => {
       </ScrollView>
 
       {/* Bottom Actions */}
-      <View style={styles.bottomBar}>
+      <View style={[styles.bottomBar, isCompact && styles.bottomBarCompact]}>
         <Button
           title="Đăng tin khác"
           variant="outline"
@@ -241,6 +243,9 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: THEME_COLORS.DIVIDER,
     gap: SPACING_TOKENS.MD,
+  },
+  bottomBarCompact: {
+    flexDirection: 'column',
   },
   anotherButton: {
     flex: 1,

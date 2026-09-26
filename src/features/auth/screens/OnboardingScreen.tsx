@@ -3,7 +3,6 @@ import {
   View,
   StyleSheet,
   FlatList,
-  Dimensions,
   TouchableOpacity,
   NativeSyntheticEvent,
   NativeScrollEvent,
@@ -21,7 +20,8 @@ import {
   CheckCircle2,
 } from 'lucide-react-native';
 import { THEME_COLORS, SPACING_TOKENS, BORDER_RADIUS_TOKENS } from '@theme';
-import { Button, Typography } from '@ui';
+import { Button, ScreenContainer, Typography } from '@ui';
+import { useResponsiveLayout } from '@hooks';
 import type { AuthStackParamList } from '@navigation';
 import { useAuth } from '../hooks';
 
@@ -33,8 +33,6 @@ interface OnboardingSlide {
   description: string;
   iconType: 'search' | 'compare' | 'ai';
 }
-
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 const ONBOARDING_SLIDES: OnboardingSlide[] = [
   {
@@ -65,6 +63,9 @@ export const OnboardingScreen = () => {
   const { setOnboardingCompleted } = useAuth();
   const [currentIndex, setCurrentIndex] = useState(0);
   const flatListRef = useRef<FlatList<OnboardingSlide>>(null);
+  const { contentWidth, viewportHeight, isCompact } = useResponsiveLayout();
+  const useCompactIllustration = isCompact || viewportHeight < 700;
+  const illustrationSize = useCompactIllustration ? 190 : 240;
 
   const handleFinishOnboarding = useCallback(async () => {
     await setOnboardingCompleted(true);
@@ -89,7 +90,7 @@ export const OnboardingScreen = () => {
 
   const handleMomentumScrollEnd = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
     const offsetX = event.nativeEvent.contentOffset.x;
-    const index = Math.round(offsetX / SCREEN_WIDTH);
+    const index = Math.round(offsetX / contentWidth);
 
     if (index >= 0 && index < ONBOARDING_SLIDES.length) {
       setCurrentIndex(index);
@@ -99,7 +100,9 @@ export const OnboardingScreen = () => {
   const renderSlideIllustration = (type: OnboardingSlide['iconType']) => {
     if (type === 'search') {
       return (
-        <View style={styles.illustrationCard}>
+        <View
+          style={[styles.illustrationCard, { width: illustrationSize, height: illustrationSize }]}
+        >
           <View style={styles.primaryCircle}>
             <Search size={52} color={THEME_COLORS.SURFACE} />
           </View>
@@ -135,7 +138,9 @@ export const OnboardingScreen = () => {
 
     if (type === 'compare') {
       return (
-        <View style={styles.illustrationCard}>
+        <View
+          style={[styles.illustrationCard, { width: illustrationSize, height: illustrationSize }]}
+        >
           <View style={styles.secondaryCircle}>
             <SlidersHorizontal size={52} color={THEME_COLORS.SURFACE} />
           </View>
@@ -170,7 +175,9 @@ export const OnboardingScreen = () => {
     }
 
     return (
-      <View style={styles.illustrationCard}>
+      <View
+        style={[styles.illustrationCard, { width: illustrationSize, height: illustrationSize }]}
+      >
         <View style={styles.aiCircle}>
           <Bot size={52} color={THEME_COLORS.SURFACE} />
         </View>
@@ -199,8 +206,21 @@ export const OnboardingScreen = () => {
 
   const renderSlide = ({ item }: { item: OnboardingSlide }) => {
     return (
-      <View style={styles.slideContainer}>
-        <View style={styles.illustrationWrapper}>{renderSlideIllustration(item.iconType)}</View>
+      <View
+        style={[
+          styles.slideContainer,
+          { width: contentWidth },
+          useCompactIllustration && styles.compactSlide,
+        ]}
+      >
+        <View
+          style={[
+            styles.illustrationWrapper,
+            useCompactIllustration && styles.compactIllustrationWrapper,
+          ]}
+        >
+          {renderSlideIllustration(item.iconType)}
+        </View>
 
         <View style={styles.textContent}>
           <Typography variant="h1" weight="BOLD" style={styles.title}>
@@ -220,7 +240,7 @@ export const OnboardingScreen = () => {
   };
 
   return (
-    <View style={styles.container}>
+    <ScreenContainer style={styles.container} keyboardAvoiding={false}>
       <View style={styles.header}>
         <TouchableOpacity
           onPress={handleFinishOnboarding}
@@ -244,6 +264,12 @@ export const OnboardingScreen = () => {
         onMomentumScrollEnd={handleMomentumScrollEnd}
         bounces={false}
         style={styles.flatList}
+        extraData={contentWidth}
+        getItemLayout={(_, index) => ({
+          length: contentWidth,
+          offset: contentWidth * index,
+          index,
+        })}
       />
 
       <View style={styles.footer}>
@@ -270,7 +296,7 @@ export const OnboardingScreen = () => {
           {currentIndex === ONBOARDING_SLIDES.length - 1 ? 'Bắt đầu' : 'Tiếp tục'}
         </Button>
       </View>
-    </View>
+    </ScreenContainer>
   );
 };
 
@@ -280,7 +306,7 @@ const styles = StyleSheet.create({
     backgroundColor: THEME_COLORS.BACKGROUND,
   },
   header: {
-    paddingTop: SPACING_TOKENS.XXL,
+    paddingTop: SPACING_TOKENS.SM,
     paddingHorizontal: SPACING_TOKENS.LG,
     alignItems: 'flex-end',
     height: 80,
@@ -294,10 +320,12 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   slideContainer: {
-    width: SCREEN_WIDTH,
     paddingHorizontal: SPACING_TOKENS.XL,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  compactSlide: {
+    paddingHorizontal: SPACING_TOKENS.MD,
   },
   illustrationWrapper: {
     width: '100%',
@@ -305,13 +333,14 @@ const styles = StyleSheet.create({
     marginBottom: SPACING_TOKENS.XXL,
   },
   illustrationCard: {
-    width: 240,
-    height: 240,
     borderRadius: BORDER_RADIUS_TOKENS.FULL,
     backgroundColor: '#EFF4FF',
     justifyContent: 'center',
     alignItems: 'center',
     position: 'relative',
+  },
+  compactIllustrationWrapper: {
+    marginBottom: SPACING_TOKENS.LG,
   },
   primaryCircle: {
     width: 120,
@@ -394,7 +423,7 @@ const styles = StyleSheet.create({
   },
   footer: {
     paddingHorizontal: SPACING_TOKENS.LG,
-    paddingBottom: SPACING_TOKENS.XXL,
+    paddingBottom: SPACING_TOKENS.MD,
     alignItems: 'center',
   },
   paginationRow: {

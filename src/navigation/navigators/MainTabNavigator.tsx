@@ -1,4 +1,5 @@
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Home, Search, Sparkles, MessageSquare, User } from 'lucide-react-native';
 import { THEME_COLORS } from '@theme';
 import type { MainTabParamList } from '../types';
@@ -17,6 +18,8 @@ const TAB_ICON_SIZE = 22;
 
 export const MainTabNavigator = () => {
   const { isLandlord } = useRoleGuard();
+  const insets = useSafeAreaInsets();
+  const bottomPadding = Math.max(insets.bottom, 8);
 
   if (isLandlord) {
     return <LandlordTabNavigator />;
@@ -30,7 +33,10 @@ export const MainTabNavigator = () => {
         tabBarActiveTintColor: THEME_COLORS.PRIMARY,
         tabBarInactiveTintColor: THEME_COLORS.TEXT_PLACEHOLDER,
         tabBarLabelStyle: BOTTOM_TAB_STYLES.label,
-        tabBarStyle: BOTTOM_TAB_STYLES.bar,
+        tabBarStyle: [
+          BOTTOM_TAB_STYLES.bar,
+          { height: 64 + bottomPadding, paddingBottom: bottomPadding },
+        ],
       }}
     >
       <Tab.Screen

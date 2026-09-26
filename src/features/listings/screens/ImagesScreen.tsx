@@ -6,7 +6,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { Plus, X, Star } from 'lucide-react-native';
 import { THEME_COLORS, SPACING_TOKENS, BORDER_RADIUS_TOKENS } from '@theme';
 import { Button, Typography, HeaderBar, ScreenContainer } from '@ui';
-import { useToast } from '@hooks';
+import { useResponsiveLayout, useToast } from '@hooks';
 import type { ListingPostStackParamList } from '@navigation';
 import { useListingPostStore } from '../store/listingPostStore';
 import type { LocalImageItem } from '../types';
@@ -15,11 +15,17 @@ import { MAX_LISTING_IMAGES, LISTING_FORM_STEPS } from '../types/constants';
 type NavigationProp = NativeStackNavigationProp<ListingPostStackParamList>;
 
 const TOTAL_STEPS = LISTING_FORM_STEPS.length;
-const IMAGE_CELL_SIZE = 100;
 
 export const ImagesScreen = () => {
   const navigation = useNavigation<NavigationProp>();
   const toast = useToast();
+  const { contentWidth } = useResponsiveLayout();
+  const columnCount = contentWidth >= 700 ? 5 : contentWidth >= 500 ? 4 : 3;
+  const gridHorizontalPadding = SPACING_TOKENS.SM * 2;
+  const cellMargins = SPACING_TOKENS.XS * 2 * columnCount;
+  const imageCellSize = Math.floor(
+    (contentWidth - gridHorizontalPadding - cellMargins) / columnCount
+  );
   const { localImages, setLocalImages, editingListingId } = useListingPostStore();
 
   const handlePickImages = useCallback(async () => {
@@ -101,7 +107,7 @@ export const ImagesScreen = () => {
   }, [localImages, navigation, toast]);
 
   return (
-    <ScreenContainer applyTopInset applyBottomInset={false} keyboardAvoiding={false}>
+    <ScreenContainer applyTopInset applyBottomInset keyboardAvoiding={false}>
       <HeaderBar
         title={editingListingId ? 'Chỉnh sửa tin đăng' : 'Đăng tin mới'}
         onBack={() => navigation.goBack()}
@@ -115,7 +121,8 @@ export const ImagesScreen = () => {
         <FlatList
           data={localImages}
           keyExtractor={(item) => item.uri}
-          numColumns={3}
+          key={`image-grid-${columnCount}`}
+          numColumns={columnCount}
           contentContainerStyle={styles.grid}
           showsVerticalScrollIndicator={false}
           ListHeaderComponent={
@@ -128,7 +135,7 @@ export const ImagesScreen = () => {
           ListFooterComponent={
             localImages.length < MAX_LISTING_IMAGES ? (
               <TouchableOpacity
-                style={styles.addCell}
+                style={[styles.addCell, { width: imageCellSize, height: imageCellSize }]}
                 onPress={handlePickImages}
                 activeOpacity={0.7}
               >
@@ -140,7 +147,7 @@ export const ImagesScreen = () => {
             ) : null
           }
           renderItem={({ item, index }) => (
-            <View style={styles.imageCell}>
+            <View style={[styles.imageCell, { width: imageCellSize, height: imageCellSize }]}>
               <Image source={{ uri: item.uri }} style={styles.image} resizeMode="cover" />
 
               <TouchableOpacity
@@ -237,8 +244,6 @@ const styles = StyleSheet.create({
     paddingBottom: SPACING_TOKENS.XL,
   },
   imageCell: {
-    width: IMAGE_CELL_SIZE,
-    height: IMAGE_CELL_SIZE,
     margin: SPACING_TOKENS.XS,
     borderRadius: BORDER_RADIUS_TOKENS.SM,
     overflow: 'hidden',
@@ -287,8 +292,6 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   addCell: {
-    width: IMAGE_CELL_SIZE,
-    height: IMAGE_CELL_SIZE,
     margin: SPACING_TOKENS.XS,
     borderRadius: BORDER_RADIUS_TOKENS.SM,
     borderWidth: 1.5,

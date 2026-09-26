@@ -1,11 +1,12 @@
-import { View, Text, StyleSheet } from 'react-native';
+import { Text, StyleSheet } from 'react-native';
 import { THEME_COLORS } from '@theme';
+import { ScreenContainer } from '@ui';
 
 export const CommunityScreen = () => {
   return (
-    <View style={styles.container}>
+    <ScreenContainer style={styles.container} keyboardAvoiding={false}>
       <Text style={styles.title}>Cộng đồng</Text>
-    </View>
+    </ScreenContainer>
   );
 };
 

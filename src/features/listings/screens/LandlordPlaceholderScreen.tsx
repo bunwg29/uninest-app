@@ -1,16 +1,16 @@
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet } from 'react-native';
 import { SPACING_TOKENS, THEME_COLORS } from '@theme';
-import { Typography } from '@ui';
+import { ScreenContainer, Typography } from '@ui';
 
 export const LandlordPlaceholderScreen = () => (
-  <View style={styles.container}>
+  <ScreenContainer style={styles.container} applyBottomInset={false} keyboardAvoiding={false}>
     <Typography variant="h2" weight="BOLD">
       Tính năng đang được hoàn thiện
     </Typography>
     <Typography variant="body2" colorKey="TEXT_MUTED" align="center" style={styles.description}>
       Màn hình này sẽ được kết nối với luồng nghiệp vụ tương ứng.
     </Typography>
-  </View>
+  </ScreenContainer>
 );
 
 const styles = StyleSheet.create({

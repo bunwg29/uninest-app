@@ -1,11 +1,12 @@
-import { View, Text, StyleSheet } from 'react-native';
+import { Text, StyleSheet } from 'react-native';
 import { THEME_COLORS } from '@theme';
+import { ScreenContainer } from '@ui';
 
 export const MessagesScreen = () => {
   return (
-    <View style={styles.container}>
+    <ScreenContainer style={styles.container} applyBottomInset={false} keyboardAvoiding={false}>
       <Text style={styles.title}>Tin nhắn</Text>
-    </View>
+    </ScreenContainer>
   );
 };
 

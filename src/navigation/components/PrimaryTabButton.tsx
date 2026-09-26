@@ -5,9 +5,8 @@ import { BORDER_RADIUS_TOKENS, THEME_COLORS } from '@theme';
 
 export const BOTTOM_TAB_STYLES = StyleSheet.create({
   bar: {
-    height: 72,
+    minHeight: 72,
     paddingTop: 7,
-    paddingBottom: 8,
     backgroundColor: THEME_COLORS.SURFACE,
     borderTopWidth: 1,
     borderTopColor: THEME_COLORS.BORDER,
