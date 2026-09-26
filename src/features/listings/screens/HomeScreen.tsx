@@ -16,6 +16,7 @@ import { THEME_COLORS, SPACING_TOKENS, BORDER_RADIUS_TOKENS } from '@theme';
 import { Avatar, Button, Typography } from '@ui';
 import { useAuth, useRoleGuard } from '@features/auth';
 import type { MainTabParamList, RootStackParamList } from '@navigation';
+import { useListingPostStore } from '../store/listingPostStore';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList & MainTabParamList>;
 
@@ -68,7 +69,11 @@ export const HomeScreen = () => {
   };
 
   const handleGoToListingPost = () => {
-    navigation.navigate('ListingPost');
+    useListingPostStore.getState().initCreate();
+    navigation.navigate('ListingPost', {
+      screen: 'ListingPostBasicInfo',
+      params: undefined,
+    });
   };
 
   const handleGoToListings = () => {

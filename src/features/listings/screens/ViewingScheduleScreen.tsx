@@ -18,7 +18,7 @@ type SlotKey = keyof ViewingSlot;
 
 export const ViewingScheduleScreen = () => {
   const navigation = useNavigation<NavigationProp>();
-  const { viewingSchedule, setViewingSchedule, step1 } = useListingPostStore();
+  const { viewingSchedule, setViewingSchedule, step1, editingListingId } = useListingPostStore();
   const [isOnlineHoldEnabled, setIsOnlineHoldEnabled] = useState(true);
 
   const handleToggleSlot = useCallback(
@@ -48,7 +48,7 @@ export const ViewingScheduleScreen = () => {
   return (
     <ScreenContainer applyTopInset applyBottomInset={false} keyboardAvoiding={false}>
       <HeaderBar
-        title="Đăng tin mới"
+        title={editingListingId ? 'Chỉnh sửa tin đăng' : 'Đăng tin mới'}
         onBack={() => navigation.goBack()}
         subtitle={`Bước 5 / ${TOTAL_STEPS}: Lịch xem phòng`}
         alignTitle="left"

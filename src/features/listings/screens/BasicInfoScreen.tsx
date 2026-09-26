@@ -20,6 +20,7 @@ import type { ListingPostStackParamList } from '@navigation';
 import { useListingPostStore } from '../store/listingPostStore';
 import { basicInfoSchema, type BasicInfoFormValues } from '../validations/listingValidation';
 import { ROOM_TYPE_OPTIONS, LISTING_FORM_STEPS } from '../types/constants';
+import { INITIAL_STEP1 } from '../store/listingPostStore';
 
 type NavigationProp = NativeStackNavigationProp<ListingPostStackParamList>;
 type ScreenRouteProp = RouteProp<ListingPostStackParamList, 'ListingPostBasicInfo'>;
@@ -29,15 +30,8 @@ const TOTAL_STEPS = LISTING_FORM_STEPS.length;
 export const BasicInfoScreen = () => {
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<ScreenRouteProp>();
-  const {
-    step1,
-    setStep1,
-    setEditingListingId,
-    setLocalImages,
-    setUploadedImages,
-    setStep3,
-    setSelectedAmenityIds,
-  } = useListingPostStore();
+  const { step1, setStep1, editingListingId, initEdit, initCreate } = useListingPostStore();
+  const isEditing = Boolean(editingListingId);
   const [isRoomTypeModalVisible, setIsRoomTypeModalVisible] = useState(false);
 
   const {
@@ -65,67 +59,23 @@ export const BasicInfoScreen = () => {
   useEffect(() => {
     const listing = route.params?.listing;
 
-    if (!listing) {
-      setEditingListingId(null);
-
-      return;
+    if (listing) {
+      initEdit(listing);
+      resetForm({
+        title: listing.title || '',
+        roomType: listing.roomType || '',
+        price: listing.price ? String(listing.price) : '',
+        area: listing.area ? String(listing.area) : '',
+        maxOccupants: listing.maxOccupants ? String(listing.maxOccupants) : '',
+        description: listing.description || '',
+        electricPrice: listing.electricPrice ? String(listing.electricPrice) : '',
+        waterPrice: listing.waterPrice ? String(listing.waterPrice) : '',
+        deposit: listing.deposit ? String(listing.deposit) : '',
+      });
+    } else if (!editingListingId) {
+      resetForm(INITIAL_STEP1);
     }
-
-    const basicInfo: BasicInfoFormValues = {
-      title: listing.title,
-      roomType: listing.roomType ?? '',
-      price: String(listing.price),
-      area: String(listing.area),
-      maxOccupants: String(listing.maxOccupants ?? ''),
-      description: listing.description ?? '',
-      electricPrice: String(listing.electricPrice ?? ''),
-      waterPrice: String(listing.waterPrice ?? ''),
-      deposit: String(listing.deposit ?? ''),
-    };
-    const imageUrls = listing.imageUrls ?? (listing.imageUrl ? [listing.imageUrl] : []);
-
-    setEditingListingId(route.params?.listingId ?? listing.id);
-    setStep1(basicInfo);
-    resetForm(basicInfo);
-    setLocalImages(
-      imageUrls.map((uri, index) => ({
-        uri,
-        isCover: index === 0,
-        sortOrder: index,
-        fileName: `listing-${listing.id}-${index}.jpg`,
-        contentType: 'image/jpeg',
-      }))
-    );
-    setUploadedImages(
-      imageUrls.map((publicUrl, index) => ({
-        publicUrl,
-        key: publicUrl,
-        isCover: index === 0,
-        sortOrder: index,
-      }))
-    );
-    setStep3({
-      streetAddress: listing.streetAddress ?? '',
-      provinceCode: listing.provinceCode ?? '',
-      provinceName: listing.provinceName ?? '',
-      wardCode: listing.wardCode ?? '',
-      wardName: listing.wardName ?? '',
-      latitude: listing.latitude ?? null,
-      longitude: listing.longitude ?? null,
-    });
-    setSelectedAmenityIds(listing.amenityIds ?? []);
-  }, [
-    route.params?.listing,
-    route.params?.listingId,
-    resetForm,
-    setEditingListingId,
-    setLocalImages,
-    setSelectedAmenityIds,
-    setStep1,
-    setStep3,
-    setUploadedImages,
-    setValue,
-  ]);
+  }, [route.params?.listing, editingListingId, initEdit, resetForm]);
 
   const selectedRoomType = watch('roomType');
   const selectedRoomTypeLabel =
@@ -150,8 +100,11 @@ export const BasicInfoScreen = () => {
   return (
     <ScreenContainer applyTopInset applyBottomInset={false} keyboardAvoiding={false}>
       <HeaderBar
-        title={route.params?.listing ? 'Chỉnh sửa tin đăng' : 'Đăng tin mới'}
-        onBack={() => navigation.goBack()}
+        title={isEditing ? 'Chỉnh sửa tin đăng' : 'Đăng tin mới'}
+        onBack={() => {
+          initCreate();
+          navigation.goBack();
+        }}
         subtitle={`Bước 1 / ${TOTAL_STEPS}: Thông tin cơ bản`}
         alignTitle="left"
       />

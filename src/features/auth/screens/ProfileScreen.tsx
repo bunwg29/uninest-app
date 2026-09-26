@@ -21,8 +21,6 @@ import {
   Settings2,
   Star,
   Home,
-  BadgeDollarSign,
-  UserRound,
 } from 'lucide-react-native';
 import { THEME_COLORS, SPACING_TOKENS, BORDER_RADIUS_TOKENS } from '@theme';
 import { Avatar, Button, ScreenContainer, Typography } from '@ui';
@@ -135,17 +133,13 @@ export const ProfileScreen = () => {
             </TouchableOpacity>
           </View>
 
-          <View style={styles.statsRow}>
-            <Stat
-              label={isLandlord ? 'Phòng' : 'Đã lưu'}
-              value={isLandlord ? 12 : profile.stats.savedRooms}
-            />
-            <Stat
-              label={isLandlord ? 'Tin hiển thị' : 'Lịch hẹn'}
-              value={isLandlord ? 4 : profile.stats.appointments}
-            />
-            <Stat label="Đánh giá" value={profile.stats.reviews} />
-          </View>
+          {!isLandlord ? (
+            <View style={styles.statsRow}>
+              <Stat label="Đã lưu" value={profile.stats.savedRooms} />
+              <Stat label="Lịch hẹn" value={profile.stats.appointments} />
+              <Stat label="Đánh giá" value={profile.stats.reviews} />
+            </View>
+          ) : null}
 
           <ProfileSection
             title={isLandlord ? 'QUẢN LÝ CHỦ TRỌ' : 'HOẠT ĐỘNG'}
@@ -156,35 +150,13 @@ export const ProfileScreen = () => {
                       label: 'Tin đăng của tôi',
                       icon: Home,
                       tone: ICON_TONES.BLUE,
-                      detail: '4 đang hiển thị',
                       onPress: () => navigation.navigate('Main', { screen: 'Listings' }),
                     },
                     {
                       label: 'Yêu cầu xem phòng',
                       icon: CalendarDays,
                       tone: ICON_TONES.AMBER,
-                      detail: '2 đang chờ',
                       onPress: () => navigation.navigate('Main', { screen: 'Appointments' }),
-                    },
-                    {
-                      label: 'Gói Nổi bật',
-                      icon: BadgeDollarSign,
-                      tone: ICON_TONES.AMBER,
-                      detail: 'Còn 3 ngày',
-                      onPress: () => navigation.navigate('PremiumPlans'),
-                    },
-                    {
-                      label: 'Đánh giá từ sinh viên',
-                      icon: Star,
-                      tone: ICON_TONES.AMBER,
-                      detail: `${profile.stats.reviews}`,
-                      onPress: () => navigation.navigate('LandlordReviews'),
-                    },
-                    {
-                      label: 'Xem hồ sơ công khai',
-                      icon: UserRound,
-                      tone: ICON_TONES.GREEN,
-                      onPress: () => navigation.navigate('LandlordPublicProfile'),
                     },
                   ]
                 : [

@@ -10,4 +10,4 @@ export * from './LandlordListingsScreen';
 export * from './LandlordPlaceholderScreen';
 export * from './LandlordOverviewScreen';
 export * from './LandlordListingDetailScreen';
-export * from './LandlordAnalyticsScreen';
+export * from './StudentListingPreviewScreen';

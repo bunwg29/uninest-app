@@ -6,6 +6,7 @@ import { CheckCircle2, ShieldCheck, Clock, Home, PlusCircle } from 'lucide-react
 import { THEME_COLORS, SPACING_TOKENS, BORDER_RADIUS_TOKENS } from '@theme';
 import { Button, Typography, ScreenContainer, Badge } from '@ui';
 import type { ListingPostStackParamList, RootStackParamList } from '@navigation';
+import { useListingPostStore } from '../store/listingPostStore';
 
 type NavigationProp = NativeStackNavigationProp<ListingPostStackParamList>;
 type ScreenRouteProp = RouteProp<ListingPostStackParamList, 'ListingPostSuccess'>;
@@ -16,13 +17,12 @@ export const SuccessScreen = () => {
   const listingId = route.params?.listingId;
 
   const handleGoHome = useCallback(() => {
-    // Reset to Main Tab
     const rootNav = navigation.getParent<NativeStackNavigationProp<RootStackParamList>>();
 
     if (rootNav) {
       rootNav.reset({
         index: 0,
-        routes: [{ name: 'Main' }],
+        routes: [{ name: 'Main', params: { screen: 'Listings' } }],
       });
     } else {
       navigation.navigate('ListingPostBasicInfo');
@@ -30,6 +30,7 @@ export const SuccessScreen = () => {
   }, [navigation]);
 
   const handlePostAnother = useCallback(() => {
+    useListingPostStore.getState().initCreate();
     navigation.reset({
       index: 0,
       routes: [{ name: 'ListingPostBasicInfo' }],

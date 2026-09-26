@@ -38,7 +38,7 @@ const DEFAULT_REGION = {
 export const LocationScreen = () => {
   const navigation = useNavigation<NavigationProp>();
   const toast = useToast();
-  const { step3, setStep3 } = useListingPostStore();
+  const { step3, setStep3, editingListingId } = useListingPostStore();
 
   const [streetAddress, setStreetAddress] = useState(step3.streetAddress);
   const [selectedProvince, setSelectedProvince] = useState<LocationProvince | null>(
@@ -221,7 +221,7 @@ export const LocationScreen = () => {
   return (
     <ScreenContainer applyTopInset applyBottomInset={false} keyboardAvoiding={false}>
       <HeaderBar
-        title="Đăng tin mới"
+        title={editingListingId ? 'Chỉnh sửa tin đăng' : 'Đăng tin mới'}
         onBack={() => navigation.goBack()}
         subtitle={`Bước 3 / ${TOTAL_STEPS}: Vị trí`}
         alignTitle="left"

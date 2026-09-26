@@ -1,5 +1,5 @@
 import { useCallback, useMemo } from 'react';
-import { View, StyleSheet, ScrollView, Image, Dimensions, InteractionManager } from 'react-native';
+import { View, StyleSheet, ScrollView, Image, Dimensions } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import {
@@ -25,7 +25,7 @@ import {
   LoadingOverlay,
 } from '@ui';
 import { useToast } from '@hooks';
-import type { ListingPostStackParamList } from '@navigation';
+import type { ListingPostStackParamList, RootStackParamList } from '@navigation';
 import { useListingPostStore } from '../store/listingPostStore';
 import { useCreateListing, useUpdateListing } from '../hooks/useCreateListing';
 import { useUploadImages } from '../hooks/useUploadImages';
@@ -39,6 +39,7 @@ import type {
   CreateListingPayload,
   CreateListingImagePayload,
   DayKey,
+  UploadedImageItem,
   ViewingSlot,
 } from '../types';
 
@@ -64,12 +65,13 @@ export const PreviewScreen = () => {
   const {
     step1,
     step3,
-    uploadedImages,
     setUploadedImages,
     localImages,
+    setLocalImages,
     selectedAmenityIds,
     viewingSchedule,
     editingListingId,
+    hasEditChanges,
     reset,
   } = useListingPostStore();
 
@@ -129,34 +131,70 @@ export const PreviewScreen = () => {
       return;
     }
 
-    let finalImages: CreateListingImagePayload[] = [];
+    if (editingListingId && !hasEditChanges()) {
+      const rootNavigation = navigation.getParent<NativeStackNavigationProp<RootStackParamList>>();
 
-    if (uploadedImages.length === localImages.length && uploadedImages.length > 0) {
-      finalImages = uploadedImages.map((img) => ({
-        url: img.publicUrl,
-        isCover: img.isCover,
-      }));
-    } else {
+      toast.info('Tin đăng không có thay đổi');
+      reset();
+
+      if (rootNavigation) {
+        rootNavigation.reset({
+          index: 0,
+          routes: [{ name: 'Main', params: { screen: 'Listings' } }],
+        });
+      } else {
+        navigation.goBack();
+      }
+
+      return;
+    }
+
+    const imagesNeedingUpload = localImages.filter((image) => !image.uploadedUrl);
+    let uploadedImages: UploadedImageItem[] = [];
+
+    if (imagesNeedingUpload.length > 0) {
       try {
-        const uploaded = await uploadAll(localImages);
+        uploadedImages = await uploadAll(imagesNeedingUpload);
 
-        if (uploaded.length !== localImages.length) {
+        if (uploadedImages.length !== imagesNeedingUpload.length) {
           toast.error('Tải ảnh lên máy chủ thất bại. Vui lòng kiểm tra kết nối và thử lại.');
 
           return;
         }
-
-        setUploadedImages(uploaded);
-        finalImages = uploaded.map((img) => ({
-          url: img.publicUrl,
-          isCover: img.isCover,
-        }));
       } catch {
-        toast.error('Lỗi khi tải ảnh lên Cloudflare R2. Vui lòng thử lại.');
+        toast.error('Tải ảnh lên thất bại. Vui lòng thử lại.');
 
         return;
       }
     }
+
+    const uploadedBySortOrder = new Map(
+      uploadedImages.map((image) => [image.sortOrder, image] as const)
+    );
+    const syncedLocalImages = localImages.map((image) => ({
+      ...image,
+      uploadedUrl: image.uploadedUrl ?? uploadedBySortOrder.get(image.sortOrder)?.publicUrl,
+    }));
+
+    if (syncedLocalImages.some((image) => !image.uploadedUrl)) {
+      toast.error('Không thể xác định đầy đủ ảnh đã tải lên. Vui lòng thử lại.');
+
+      return;
+    }
+
+    const syncedUploadedImages = syncedLocalImages.map((image) => ({
+      publicUrl: image.uploadedUrl as string,
+      key: uploadedBySortOrder.get(image.sortOrder)?.key ?? (image.uploadedUrl as string),
+      isCover: image.isCover,
+      sortOrder: image.sortOrder,
+    }));
+    const finalImages: CreateListingImagePayload[] = syncedUploadedImages.map((image) => ({
+      url: image.publicUrl,
+      isCover: image.isCover,
+    }));
+
+    setLocalImages(syncedLocalImages);
+    setUploadedImages(syncedUploadedImages);
 
     const payload: CreateListingPayload = {
       title: step1.title.trim(),
@@ -175,14 +213,21 @@ export const PreviewScreen = () => {
       longitude: step3.longitude ?? 0,
       images: finalImages,
       amenityIds: selectedAmenityIds,
+      viewingSchedule,
     };
 
     const onSuccess = (response: { id: string }) => {
       navigation.navigate('ListingPostSuccess', { listingId: response.id });
 
-      InteractionManager.runAfterInteractions(() => {
-        reset();
-      });
+      if (typeof requestIdleCallback !== 'undefined') {
+        requestIdleCallback(() => {
+          reset();
+        });
+      } else {
+        setTimeout(() => {
+          reset();
+        }, 0);
+      }
     };
 
     const onError = (error: { message?: string }) => {
@@ -198,13 +243,15 @@ export const PreviewScreen = () => {
     createListing(payload, { onSuccess, onError });
   }, [
     localImages,
-    uploadedImages,
     uploadAll,
     setUploadedImages,
+    setLocalImages,
     step1,
     step3,
     selectedAmenityIds,
+    viewingSchedule,
     editingListingId,
+    hasEditChanges,
     createListing,
     navigation,
     reset,
@@ -459,8 +506,12 @@ export const PreviewScreen = () => {
             isUploadingImages
               ? `Đang tải ảnh (${uploadProgress}%)...`
               : isPending || isUpdating
-                ? 'Đang đăng...'
-                : 'Đăng tin'
+                ? editingListingId
+                  ? 'Đang sửa...'
+                  : 'Đang đăng...'
+                : editingListingId
+                  ? 'Sửa tin'
+                  : 'Đăng tin'
           }
           variant="primary"
           onPress={handleSubmit}
@@ -475,8 +526,10 @@ export const PreviewScreen = () => {
           isFullScreen
           message={
             isUploadingImages
-              ? `Đang tải ảnh lên Cloudflare R2 (${uploadProgress}%)...`
-              : 'Đang gửi tin đăng tới máy chủ...'
+              ? `Đang tải ảnh lên (${uploadProgress}%)...`
+              : editingListingId
+                ? 'Đang cập nhật tin đăng...'
+                : 'Đang gửi tin đăng tới máy chủ...'
           }
         />
       )}

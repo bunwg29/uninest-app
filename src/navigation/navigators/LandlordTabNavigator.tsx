@@ -4,6 +4,7 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { LandlordAppointmentsScreen } from '@features/booking';
 import { LandlordListingsScreen, LandlordOverviewScreen } from '@features/listings';
+import { useListingPostStore } from '@features/listings/store/listingPostStore';
 import { MessagesScreen } from '@features/chat';
 import { THEME_COLORS } from '@theme';
 import type { LandlordTabParamList, RootStackParamList } from '../types';
@@ -50,7 +51,11 @@ export const LandlordTabNavigator = () => {
         listeners={{
           tabPress: (event) => {
             event.preventDefault();
-            rootNavigation.navigate('ListingPost');
+            useListingPostStore.getState().initCreate();
+            rootNavigation.navigate('ListingPost', {
+              screen: 'ListingPostBasicInfo',
+              params: undefined,
+            });
           },
         }}
         options={{
