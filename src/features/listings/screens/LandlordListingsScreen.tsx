@@ -28,9 +28,18 @@ import {
   useLandlordListings,
 } from '../hooks';
 import type { LandlordListing, LandlordListingStatus } from '../types';
-import { Badge, Button, EmptyState, LoadingOverlay, Modal, SkeletonBox, Typography } from '@ui';
+import {
+  Badge,
+  Button,
+  EmptyState,
+  LoadingOverlay,
+  Modal,
+  ScreenContainer,
+  SkeletonBox,
+  Typography,
+} from '@ui';
 import type { RootStackParamList } from '@navigation';
-import { useToast } from '@hooks';
+import { useResponsiveLayout, useToast } from '@hooks';
 import { useListingPostStore } from '../store/listingPostStore';
 
 type StatusTab = {
@@ -187,7 +196,7 @@ export const LandlordListingsScreen = () => {
   };
 
   return (
-    <View style={styles.container}>
+    <ScreenContainer style={styles.container} applyBottomInset={false} keyboardAvoiding={false}>
       <View style={[styles.header, isSearchVisible && styles.headerWithSearch]}>
         <Typography variant="h1" weight="BOLD">
           Tin đăng của tôi
@@ -351,7 +360,7 @@ export const LandlordListingsScreen = () => {
       {(listingMutation.isPending && !confirmAction) || listingDetailMutation.isPending ? (
         <LoadingOverlay isFullScreen message="Đang cập nhật tin đăng..." />
       ) : null}
-    </View>
+    </ScreenContainer>
   );
 };
 
@@ -405,11 +414,16 @@ const LandlordListingCard = ({
   onMenuPress: () => void;
 }) => {
   const [hasImageError, setHasImageError] = useState(false);
+  const { isCompact } = useResponsiveLayout();
 
   return (
-    <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.9}>
+    <TouchableOpacity
+      style={[styles.card, isCompact && styles.cardCompact]}
+      onPress={onPress}
+      activeOpacity={0.9}
+    >
       <View style={styles.cardTopRow}>
-        <View style={styles.thumbnail}>
+        <View style={[styles.thumbnail, isCompact && styles.thumbnailCompact]}>
           {listing.imageUrl && !hasImageError ? (
             <Image
               source={{ uri: listing.imageUrl }}
@@ -452,7 +466,7 @@ const LandlordListingCard = ({
         </TouchableOpacity>
       </View>
 
-      <View style={styles.statsRow}>
+      <View style={[styles.statsRow, isCompact && styles.statsRowCompact]}>
         <Stat label="Lượt xem" value={listing.viewCount} />
         <View style={styles.statDivider} />
         <Stat label="Liên hệ" value={listing.contactCount} />
@@ -645,6 +659,10 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: THEME_COLORS.BORDER,
   },
+  cardCompact: {
+    marginHorizontal: SPACING_TOKENS.SM,
+    padding: SPACING_TOKENS.SM,
+  },
   cardTopRow: { flexDirection: 'row', alignItems: 'flex-start' },
   thumbnail: {
     width: 92,
@@ -652,6 +670,10 @@ const styles = StyleSheet.create({
     borderRadius: BORDER_RADIUS_TOKENS.MD,
     overflow: 'hidden',
     backgroundColor: THEME_COLORS.SURFACE_MUTED,
+  },
+  thumbnailCompact: {
+    width: 76,
+    height: 76,
   },
   thumbnailImage: { width: '100%', height: '100%' },
   thumbnailPlaceholder: {
@@ -671,6 +693,9 @@ const styles = StyleSheet.create({
     paddingVertical: SPACING_TOKENS.SM,
     borderRadius: BORDER_RADIUS_TOKENS.SM,
     backgroundColor: THEME_COLORS.SURFACE_MUTED,
+  },
+  statsRowCompact: {
+    paddingHorizontal: 0,
   },
   stat: { flex: 1, alignItems: 'center' },
   statDivider: { width: 1, height: 30, backgroundColor: THEME_COLORS.DIVIDER },

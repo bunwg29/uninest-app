@@ -98,7 +98,7 @@ export const BasicInfoScreen = () => {
   );
 
   return (
-    <ScreenContainer applyTopInset applyBottomInset={false} keyboardAvoiding={false}>
+    <ScreenContainer applyTopInset applyBottomInset keyboardAvoiding={false}>
       <HeaderBar
         title={isEditing ? 'Chỉnh sửa tin đăng' : 'Đăng tin mới'}
         onBack={() => {

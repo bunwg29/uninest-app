@@ -1,5 +1,5 @@
 import { useCallback, useMemo } from 'react';
-import { View, StyleSheet, ScrollView, Image, Dimensions } from 'react-native';
+import { View, StyleSheet, ScrollView, Image } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import {
@@ -24,7 +24,7 @@ import {
   Divider,
   LoadingOverlay,
 } from '@ui';
-import { useToast } from '@hooks';
+import { useResponsiveLayout, useToast } from '@hooks';
 import type { ListingPostStackParamList, RootStackParamList } from '@navigation';
 import { useListingPostStore } from '../store/listingPostStore';
 import { useCreateListing, useUpdateListing } from '../hooks/useCreateListing';
@@ -45,10 +45,6 @@ import type {
 
 type NavigationProp = NativeStackNavigationProp<ListingPostStackParamList>;
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const IMAGE_WIDTH = SCREEN_WIDTH - SPACING_TOKENS.MD * 2;
-const IMAGE_HEIGHT = Math.round(IMAGE_WIDTH * 0.6);
-
 const formatVND = (value: string | number | undefined): string => {
   if (!value) return '0 ₫';
 
@@ -62,6 +58,9 @@ const formatVND = (value: string | number | undefined): string => {
 export const PreviewScreen = () => {
   const navigation = useNavigation<NavigationProp>();
   const toast = useToast();
+  const { contentWidth, isCompact } = useResponsiveLayout();
+  const imageWidth = Math.max(contentWidth - SPACING_TOKENS.MD * 2, 1);
+  const imageHeight = Math.min(Math.round(imageWidth * 0.6), 420);
   const {
     step1,
     step3,
@@ -259,7 +258,7 @@ export const PreviewScreen = () => {
   ]);
 
   return (
-    <ScreenContainer applyTopInset applyBottomInset={false} keyboardAvoiding={false}>
+    <ScreenContainer applyTopInset applyBottomInset keyboardAvoiding={false}>
       <HeaderBar
         title="Xem trước tin đăng"
         onBack={() => navigation.goBack()}
@@ -274,17 +273,20 @@ export const PreviewScreen = () => {
       >
         {/* Images Preview */}
         {imagesToDisplay.length > 0 ? (
-          <View style={styles.imageSection}>
+          <View style={[styles.imageSection, { height: imageHeight }]}>
             <ScrollView
               horizontal
               pagingEnabled
               showsHorizontalScrollIndicator={false}
               nestedScrollEnabled
-              style={{ height: IMAGE_HEIGHT }}
-              contentContainerStyle={{ height: IMAGE_HEIGHT }}
+              style={{ height: imageHeight }}
+              contentContainerStyle={{ height: imageHeight }}
             >
               {imagesToDisplay.map((item, index) => (
-                <View key={`preview-img-${index}`} style={styles.imageSlide}>
+                <View
+                  key={`preview-img-${index}`}
+                  style={[styles.imageSlide, { width: imageWidth, height: imageHeight }]}
+                >
                   <Image
                     source={{ uri: item.url }}
                     style={styles.previewImage}
@@ -493,7 +495,7 @@ export const PreviewScreen = () => {
       </ScrollView>
 
       {/* Bottom Actions */}
-      <View style={styles.bottomBar}>
+      <View style={[styles.bottomBar, isCompact && styles.bottomBarCompact]}>
         <Button
           title="Chỉnh sửa"
           variant="outline"
@@ -548,14 +550,11 @@ const styles = StyleSheet.create({
     gap: SPACING_TOKENS.MD,
   },
   imageSection: {
-    height: IMAGE_HEIGHT,
     borderRadius: BORDER_RADIUS_TOKENS.LG,
     overflow: 'hidden',
     marginBottom: SPACING_TOKENS.XS,
   },
   imageSlide: {
-    width: IMAGE_WIDTH,
-    height: IMAGE_HEIGHT,
     position: 'relative',
   },
   previewImage: {
@@ -693,6 +692,9 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: THEME_COLORS.DIVIDER,
     gap: SPACING_TOKENS.MD,
+  },
+  bottomBarCompact: {
+    flexDirection: 'column',
   },
   editButton: {
     flex: 1,

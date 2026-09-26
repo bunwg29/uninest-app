@@ -8,7 +8,6 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute, type RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import {
@@ -22,9 +21,10 @@ import {
   X,
   XCircle,
 } from 'lucide-react-native';
-import { Badge, Button, HeaderBar, Typography } from '@ui';
+import { Badge, Button, HeaderBar, ScreenContainer, Typography } from '@ui';
 import { BORDER_RADIUS_TOKENS, SPACING_TOKENS, THEME_COLORS } from '@theme';
 import type { RootStackParamList } from '@navigation';
+import { useResponsiveLayout } from '@hooks';
 import { useLandlordListingDetail } from '../hooks';
 import type { LandlordListing, LandlordListingStatus } from '../types';
 import { useListingPostStore } from '../store/listingPostStore';
@@ -60,6 +60,7 @@ export const LandlordListingDetailScreen = () => {
   const currentListing = detailQuery.data ?? listing;
   const [hasImageError, setHasImageError] = useState(false);
   const [isMenuVisible, setIsMenuVisible] = useState(false);
+  const { isCompact } = useResponsiveLayout();
 
   const isRejected = currentListing.status === 'rejected';
 
@@ -98,7 +99,7 @@ export const LandlordListingDetailScreen = () => {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={['top']}>
+    <ScreenContainer style={styles.safeArea} keyboardAvoiding={false}>
       <HeaderBar
         title={getHeaderTitle()}
         alignTitle="left"
@@ -195,7 +196,7 @@ export const LandlordListingDetailScreen = () => {
         )}
       </ScrollView>
 
-      <View style={styles.bottomBar}>
+      <View style={[styles.bottomBar, isCompact && styles.bottomBarCompact]}>
         {currentListing.status !== 'pending' ? (
           <Button
             title={isRejected ? 'Quay lại' : 'Đánh dấu đã cho thuê'}
@@ -252,7 +253,7 @@ export const LandlordListingDetailScreen = () => {
           </View>
         </TouchableOpacity>
       </RNModal>
-    </SafeAreaView>
+    </ScreenContainer>
   );
 };
 
@@ -592,6 +593,9 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: THEME_COLORS.BORDER,
     backgroundColor: THEME_COLORS.SURFACE,
+  },
+  bottomBarCompact: {
+    flexDirection: 'column',
   },
   secondaryButton: { flex: 1 },
   primaryButton: { flex: 1.45 },

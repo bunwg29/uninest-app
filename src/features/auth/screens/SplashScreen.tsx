@@ -4,7 +4,7 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { THEME_COLORS, SPACING_TOKENS, BORDER_RADIUS_TOKENS } from '@theme';
 import { tokenStorage, APP_CONFIG } from '@core';
-import { Typography } from '@ui';
+import { ScreenContainer, Typography } from '@ui';
 import type { AuthStackParamList, RootStackParamList } from '@navigation';
 import { useAuth } from '../hooks';
 
@@ -64,7 +64,7 @@ export const SplashScreen = ({ onFinish }: SplashScreenProps) => {
   }, [isInitialized, isAuthenticated, navigation, onFinish]);
 
   return (
-    <View style={styles.container}>
+    <ScreenContainer style={styles.container} keyboardAvoiding={false}>
       <View style={styles.content}>
         <View style={styles.logoContainer}>
           <Image source={APP_LOGO} style={styles.logoImage} resizeMode="cover" />
@@ -103,7 +103,7 @@ export const SplashScreen = ({ onFinish }: SplashScreenProps) => {
           {`Phiên bản ${APP_CONFIG.VERSION}`}
         </Typography>
       </View>
-    </View>
+    </ScreenContainer>
   );
 };
 

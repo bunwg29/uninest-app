@@ -1,11 +1,12 @@
-import { View, Text, StyleSheet } from 'react-native';
+import { Text, StyleSheet } from 'react-native';
 import { THEME_COLORS } from '@theme';
+import { ScreenContainer } from '@ui';
 
 export const SearchScreen = () => {
   return (
-    <View style={styles.container}>
+    <ScreenContainer style={styles.container} applyBottomInset={false} keyboardAvoiding={false}>
       <Text style={styles.title}>Tìm kiếm</Text>
-    </View>
+    </ScreenContainer>
   );
 };
 

@@ -1,11 +1,11 @@
 import { View, StyleSheet } from 'react-native';
 import { Sparkles, Bot } from 'lucide-react-native';
 import { THEME_COLORS, SPACING_TOKENS, BORDER_RADIUS_TOKENS } from '@theme';
-import { Typography } from '@ui';
+import { ScreenContainer, Typography } from '@ui';
 
 export const AiChatScreen = () => {
   return (
-    <View style={styles.container}>
+    <ScreenContainer style={styles.container} applyBottomInset={false} keyboardAvoiding={false}>
       <View style={styles.iconCircle}>
         <Bot size={44} color={THEME_COLORS.PRIMARY} />
       </View>
@@ -35,7 +35,7 @@ export const AiChatScreen = () => {
         Bạn cần tìm phòng như thế nào? Cứ nhập yêu cầu bằng ngôn ngữ tự nhiên, ví dụ: "Tìm phòng
         dưới 2 triệu 5 gần Bách Khoa, có chỗ để xe".
       </Typography>
-    </View>
+    </ScreenContainer>
   );
 };
 

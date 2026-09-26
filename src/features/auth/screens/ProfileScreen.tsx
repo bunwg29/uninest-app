@@ -66,6 +66,7 @@ export const ProfileScreen = () => {
   return (
     <ScreenContainer
       scrollable
+      applyBottomInset={false}
       style={styles.container}
       refreshControl={
         <RefreshControl refreshing={profileQuery.isRefetching} onRefresh={profileQuery.refetch} />

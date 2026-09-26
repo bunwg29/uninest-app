@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Dimensions, Image, ScrollView, StyleSheet, View } from 'react-native';
+import { Image, ScrollView, StyleSheet, View } from 'react-native';
 import { useNavigation, useRoute, type RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import {
@@ -14,6 +14,7 @@ import {
 import type { RootStackParamList } from '@navigation';
 import { BORDER_RADIUS_TOKENS, SPACING_TOKENS, THEME_COLORS } from '@theme';
 import { Badge, Button, HeaderBar, ScreenContainer, Typography } from '@ui';
+import { useResponsiveLayout } from '@hooks';
 import {
   AMENITY_DISPLAY_LIST,
   DAYS_OF_WEEK,
@@ -26,14 +27,13 @@ type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 type ScreenRouteProp = RouteProp<RootStackParamList, 'StudentListingPreview'>;
 type SlotKey = keyof ViewingSlot;
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const IMAGE_HEIGHT = Math.round(SCREEN_WIDTH * 0.62);
-
 export const StudentListingPreviewScreen = () => {
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<ScreenRouteProp>();
   const { listing } = route.params;
   const [failedImageUrls, setFailedImageUrls] = useState<string[]>([]);
+  const { contentWidth, isCompact } = useResponsiveLayout();
+  const imageHeight = Math.min(Math.round(contentWidth * 0.62), 440);
 
   const imageUrls = useMemo(() => {
     if (listing.imageUrls?.length) return listing.imageUrls;
@@ -61,7 +61,7 @@ export const StudentListingPreviewScreen = () => {
   });
 
   return (
-    <ScreenContainer applyTopInset applyBottomInset={false} keyboardAvoiding={false}>
+    <ScreenContainer applyTopInset applyBottomInset keyboardAvoiding={false}>
       <HeaderBar
         title="Xem tin như sinh viên"
         subtitle="Bản xem trước của tin đăng"
@@ -83,11 +83,14 @@ export const StudentListingPreviewScreen = () => {
           </View>
         ) : null}
 
-        <View style={styles.imageGallery}>
+        <View style={[styles.imageGallery, { width: contentWidth, height: imageHeight }]}>
           {imageUrls.length ? (
             <ScrollView horizontal pagingEnabled showsHorizontalScrollIndicator={false}>
               {imageUrls.map((imageUrl, index) => (
-                <View key={`${imageUrl}-${index}`} style={styles.imageSlide}>
+                <View
+                  key={`${imageUrl}-${index}`}
+                  style={[styles.imageSlide, { width: contentWidth, height: imageHeight }]}
+                >
                   {!failedImageUrls.includes(imageUrl) ? (
                     <Image
                       source={{ uri: imageUrl }}
@@ -210,7 +213,7 @@ export const StudentListingPreviewScreen = () => {
         </View>
       </ScrollView>
 
-      <View style={styles.bottomBar}>
+      <View style={[styles.bottomBar, isCompact && styles.bottomBarCompact]}>
         <Button
           title="Nhắn chủ trọ"
           variant="outline"
@@ -298,11 +301,9 @@ const styles = StyleSheet.create({
     backgroundColor: THEME_COLORS.WARNING_LIGHT,
   },
   imageGallery: {
-    width: SCREEN_WIDTH,
-    height: IMAGE_HEIGHT,
     backgroundColor: THEME_COLORS.SURFACE_MUTED,
   },
-  imageSlide: { width: SCREEN_WIDTH, height: IMAGE_HEIGHT },
+  imageSlide: { position: 'relative' },
   image: { width: '100%', height: '100%' },
   imagePlaceholder: {
     width: '100%',
@@ -379,6 +380,9 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: THEME_COLORS.DIVIDER,
     backgroundColor: THEME_COLORS.SURFACE,
+  },
+  bottomBarCompact: {
+    flexDirection: 'column',
   },
   secondaryButton: { flex: 1 },
   primaryButton: { flex: 1.35 },

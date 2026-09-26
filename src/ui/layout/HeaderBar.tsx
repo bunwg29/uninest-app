@@ -65,12 +65,13 @@ export const HeaderBar = ({
 
 const styles = StyleSheet.create({
   container: {
-    height: 56,
+    minHeight: 56,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     backgroundColor: THEME_COLORS.SURFACE,
     paddingHorizontal: SPACING_TOKENS.MD,
+    paddingVertical: SPACING_TOKENS.XS,
   },
   bottomBorder: {
     borderBottomWidth: 1,

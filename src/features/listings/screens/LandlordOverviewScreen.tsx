@@ -1,11 +1,10 @@
 import { StyleSheet, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { Construction } from 'lucide-react-native';
 import { BORDER_RADIUS_TOKENS, SPACING_TOKENS, THEME_COLORS } from '@theme';
-import { Typography } from '@ui';
+import { ScreenContainer, Typography } from '@ui';
 
 export const LandlordOverviewScreen = () => (
-  <SafeAreaView style={styles.safeArea} edges={['top']}>
+  <ScreenContainer style={styles.safeArea} applyBottomInset={false} keyboardAvoiding={false}>
     <View style={styles.container}>
       <View style={styles.iconContainer}>
         <Construction size={34} color={THEME_COLORS.PRIMARY} />
@@ -17,7 +16,7 @@ export const LandlordOverviewScreen = () => (
         Số liệu vận hành và các công việc cần xử lý sẽ được bổ sung trong phiên bản tiếp theo.
       </Typography>
     </View>
-  </SafeAreaView>
+  </ScreenContainer>
 );
 
 const styles = StyleSheet.create({

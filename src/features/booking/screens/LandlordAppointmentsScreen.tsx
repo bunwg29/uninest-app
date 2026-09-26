@@ -1,11 +1,10 @@
 import { CalendarDays } from 'lucide-react-native';
 import { StyleSheet, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { SPACING_TOKENS, THEME_COLORS } from '@theme';
-import { Typography } from '@ui';
+import { ScreenContainer, Typography } from '@ui';
 
 export const LandlordAppointmentsScreen = () => (
-  <SafeAreaView style={styles.safeArea} edges={['top']}>
+  <ScreenContainer style={styles.safeArea} applyBottomInset={false} keyboardAvoiding={false}>
     <View style={styles.header}>
       <Typography variant="h1" weight="BOLD">
         Lịch hẹn
@@ -18,7 +17,7 @@ export const LandlordAppointmentsScreen = () => (
         Tính năng đang phát triển
       </Typography>
     </View>
-  </SafeAreaView>
+  </ScreenContainer>
 );
 
 const styles = StyleSheet.create({

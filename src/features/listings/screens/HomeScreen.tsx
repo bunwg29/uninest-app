@@ -1,4 +1,4 @@
-import { View, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, useWindowDimensions } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import {
@@ -13,7 +13,7 @@ import {
   Users2,
 } from 'lucide-react-native';
 import { THEME_COLORS, SPACING_TOKENS, BORDER_RADIUS_TOKENS } from '@theme';
-import { Avatar, Button, Typography } from '@ui';
+import { Avatar, Button, ScreenContainer, Typography } from '@ui';
 import { useAuth, useRoleGuard } from '@features/auth';
 import type { MainTabParamList, RootStackParamList } from '@navigation';
 import { useListingPostStore } from '../store/listingPostStore';
@@ -55,6 +55,8 @@ export const HomeScreen = () => {
   const navigation = useNavigation<NavigationProp>();
   const { user } = useAuth();
   const { isLandlord } = useRoleGuard();
+  const { width } = useWindowDimensions();
+  const isCompact = width < 375;
 
   const handleGoToProfile = () => {
     navigation.navigate('Profile' as never);
@@ -84,10 +86,11 @@ export const HomeScreen = () => {
   const locationText = user?.streetAddress || user?.fullAddress || 'Đà Nẵng, Việt Nam';
 
   return (
-    <ScrollView
+    <ScreenContainer
+      scrollable
+      applyBottomInset={false}
       style={styles.container}
       contentContainerStyle={styles.contentContainer}
-      showsVerticalScrollIndicator={false}
     >
       <View style={styles.header}>
         <TouchableOpacity
@@ -161,14 +164,14 @@ export const HomeScreen = () => {
           </Typography>
         </View>
 
-        <View style={styles.categoriesGrid}>
+        <View style={[styles.categoriesGrid, isCompact && styles.categoriesGridCompact]}>
           {QUICK_CATEGORIES.map((cat) => {
             const Icon = cat.icon;
 
             return (
               <TouchableOpacity
                 key={cat.id}
-                style={styles.categoryItem}
+                style={[styles.categoryItem, isCompact && styles.categoryItemCompact]}
                 onPress={handleGoToSearch}
                 activeOpacity={0.7}
               >
@@ -208,7 +211,7 @@ export const HomeScreen = () => {
             Đăng tin phòng trọ của bạn để tiếp cận sinh viên đang tìm kiếm phòng ở.
           </Typography>
 
-          <View style={styles.landlordButtonsRow}>
+          <View style={[styles.landlordButtonsRow, isCompact && styles.landlordButtonsColumn]}>
             <Button
               title="Đăng tin cho thuê"
               variant="primary"
@@ -228,7 +231,7 @@ export const HomeScreen = () => {
           </View>
         </View>
       ) : null}
-    </ScrollView>
+    </ScreenContainer>
   );
 };
 
@@ -321,9 +324,16 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
   },
+  categoriesGridCompact: {
+    flexWrap: 'wrap',
+    rowGap: SPACING_TOKENS.MD,
+  },
   categoryItem: {
     flex: 1,
     alignItems: 'center',
+  },
+  categoryItemCompact: {
+    flexBasis: '50%',
   },
   categoryIconCircle: {
     width: 48,
@@ -358,6 +368,9 @@ const styles = StyleSheet.create({
   landlordButtonsRow: {
     flexDirection: 'row',
     gap: SPACING_TOKENS.SM,
+  },
+  landlordButtonsColumn: {
+    flexDirection: 'column',
   },
   actionBtn: {
     flex: 1,
