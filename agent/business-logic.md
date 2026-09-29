@@ -33,7 +33,10 @@
   - Auto-expire: Expires automatically after 24h if landlord does not respond (BullMQ).
 - **Realtime Chat (`FR-CHAT`)**:
   - 1-1 conversation bound to a listing. WebSocket connection.
-  - Media attachment via R2 presigned URLs. Push notification when recipient is offline.
+  - Media attachment via R2 presigned URLs (folder `chat/`, tối đa 5 ảnh/tin). Push notification when recipient is offline.
+  - Màn hình: `Messages` (danh sách hội thoại, lọc Tất cả/Chưa đọc, trạng thái rỗng), `ChatRoom` (khung chat ghim tin đăng, trạng thái đã đọc, thu hồi/sao chép tin qua long press), `ChatImagePreview` (xem trước ảnh + chú thích trước khi gửi).
+  - Offline: tin nhắn soạn dở và tin chờ gửi được lưu bằng AsyncStorage (`chatStore`), gửi lại tự động khi có mạng, chống trùng nhờ `clientMessageId`. Tin gửi lỗi hiển thị nút "Thử lại".
+  - Điểm vào từ trang chi tiết phòng: gọi `useStartConversation().mutateAsync(listingId)` rồi `navigation.navigate('ChatRoom', { conversationId })`.
 - **Community Forum (`FR-FORUM`)**:
   - Categories (roommate search, neighborhood tips, Q&A).
   - Client & backend profanity filter before publish. Auto-hide when report threshold reached.

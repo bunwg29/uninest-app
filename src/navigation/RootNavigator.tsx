@@ -10,6 +10,7 @@ import {
   SplashScreen,
   useAuth,
 } from '@features/auth';
+import { ChatImagePreviewScreen, ChatRoomScreen, useChatRealtime } from '@features/chat';
 import { LandlordListingDetailScreen, StudentListingPreviewScreen } from '@features/listings';
 import type { RootStackParamList } from './types';
 import { AuthNavigator, MainTabNavigator, ListingPostNavigator } from './navigators';
@@ -17,8 +18,10 @@ import { AuthNavigator, MainTabNavigator, ListingPostNavigator } from './navigat
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export const RootNavigator = () => {
-  const { isAuthenticated, isInitialized } = useAuth();
+  const { isAuthenticated, isInitialized, user } = useAuth();
   const [isSplashDone, setIsSplashDone] = useState(false);
+
+  useChatRealtime(isAuthenticated ? (user?.id ?? null) : null);
 
   const showSplash = !isInitialized || !isSplashDone;
 
@@ -44,6 +47,12 @@ export const RootNavigator = () => {
             <Stack.Screen name="ProfileEdit" component={ProfileEditScreen} />
             <Stack.Screen name="ChangePassword" component={ChangePasswordScreen} />
             <Stack.Screen name="Settings" component={SettingsScreen} />
+            <Stack.Screen name="ChatRoom" component={ChatRoomScreen} />
+            <Stack.Screen
+              name="ChatImagePreview"
+              component={ChatImagePreviewScreen}
+              options={{ animation: 'slide_from_bottom' }}
+            />
             <Stack.Screen name="LandlordListingDetail" component={LandlordListingDetailScreen} />
             <Stack.Screen name="StudentListingPreview" component={StudentListingPreviewScreen} />
             <Stack.Screen name="OtpVerification" component={OtpScreen} />
