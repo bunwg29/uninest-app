@@ -33,7 +33,7 @@
   - Auto-expire: Expires automatically after 24h if landlord does not respond (BullMQ).
 - **Realtime Chat (`FR-CHAT`)**:
   - 1-1 conversation bound to a listing. WebSocket connection.
-  - Media attachment via R2 presigned URLs (folder `chat/`, tối đa 5 ảnh/tin). Push notification when recipient is offline.
+  - Media attachment via R2 presigned URLs (folder `chat/`, tối đa 10 ảnh/tin; tin nhiều ảnh hiển thị dạng lưới như Messenger, không có nền bong bóng, từ ảnh thứ 6 trở đi gộp thành ô "+N"). Push notification when recipient is offline.
   - Màn hình: `Messages` (danh sách hội thoại, lọc Tất cả/Chưa đọc, trạng thái rỗng), `ChatRoom` (khung chat ghim tin đăng, trạng thái đã đọc, thu hồi/sao chép tin qua long press), `ChatImagePreview` (xem trước ảnh + chú thích trước khi gửi).
   - Danh sách hội thoại tải từng trang 20 mục khi cuộn; tìm kiếm gọi API (`keyword`, debounce 400ms), không lọc phía client. Mở đoạn chat mới tải 30 tin đầu, kéo lên để tải tiếp.
   - Nhấn giữ tin của mình: Sao chép, Chỉnh sửa (tin có chữ, trong 24 giờ, hiển thị "đã chỉnh sửa"), Thu hồi. Xoá đoạn chat bằng nhấn giữ trong danh sách hoặc menu ⋮ ở đầu khung chat (chỉ xoá phía mình).
