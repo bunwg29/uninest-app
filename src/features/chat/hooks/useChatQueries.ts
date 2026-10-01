@@ -1,4 +1,5 @@
 import {
+  keepPreviousData,
   useInfiniteQuery,
   useMutation,
   useQuery,
@@ -11,7 +12,7 @@ import { CHAT_QUERY_KEYS } from '../types';
 
 const SUMMARY_STALE_TIME_MS = 30 * 1000;
 
-export const useConversations = (filter: ConversationFilter) =>
+export const useConversations = (filter: ConversationFilter, keyword: string) =>
   useInfiniteQuery<
     ConversationsPage,
     Error,
@@ -19,8 +20,9 @@ export const useConversations = (filter: ConversationFilter) =>
     ReturnType<typeof CHAT_QUERY_KEYS.conversationList>,
     number
   >({
-    queryKey: CHAT_QUERY_KEYS.conversationList(filter),
-    queryFn: ({ pageParam }) => chatService.getConversations(filter, pageParam),
+    queryKey: CHAT_QUERY_KEYS.conversationList(filter, keyword),
+    queryFn: ({ pageParam }) => chatService.getConversations(filter, pageParam, keyword),
+    placeholderData: keepPreviousData,
     initialPageParam: 1,
     getNextPageParam: (lastPage) => (lastPage.hasMore ? lastPage.page + 1 : undefined),
     staleTime: 0,
@@ -76,6 +78,32 @@ export const useStartConversation = () => {
     mutationFn: (listingId: string) => chatService.startConversation(listingId),
     onSuccess: (conversation) => {
       queryClient.setQueryData(CHAT_QUERY_KEYS.conversation(conversation.id), conversation);
+    },
+  });
+};
+
+export const useEditMessage = (conversationId: string) => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ messageId, content }: { messageId: string; content: string }) =>
+      chatService.editMessage(conversationId, messageId, content),
+    onSuccess: (message) => {
+      upsertMessageInCache(queryClient, message);
+      invalidateChatLists(queryClient);
+    },
+  });
+};
+
+export const useDeleteConversation = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (conversationId: string) => chatService.deleteConversation(conversationId),
+    onSuccess: (_result, conversationId) => {
+      queryClient.removeQueries({ queryKey: CHAT_QUERY_KEYS.messages(conversationId) });
+      queryClient.removeQueries({ queryKey: CHAT_QUERY_KEYS.conversation(conversationId) });
+      invalidateChatLists(queryClient);
     },
   });
 };

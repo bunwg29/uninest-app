@@ -2,6 +2,7 @@ export * from './ChatComposer';
 export * from './ChatRoomHeader';
 export * from './ConversationListItem';
 export * from './DateSeparator';
+export * from './DeleteConversationModal';
 export * from './EmptyConversations';
 export * from './ImageViewerModal';
 export * from './ListingPinBar';

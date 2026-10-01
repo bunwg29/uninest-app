@@ -26,6 +26,7 @@ const toSentDisplayMessage = (message: ChatMessage, userId: string): DisplayMess
   imageUrls: message.imageUrls,
   isRecalled: message.isRecalled,
   readAt: message.readAt,
+  editedAt: message.editedAt,
   createdAt: message.createdAt,
   deliveryState: 'sent',
 });
@@ -41,6 +42,7 @@ const toPendingDisplayMessage = (item: OutboxMessage): DisplayMessage => ({
   imageUrls: item.imageUris,
   isRecalled: false,
   readAt: null,
+  editedAt: null,
   createdAt: item.createdAt,
   deliveryState: item.status,
   errorMessage: item.errorMessage,

@@ -15,10 +15,15 @@ import { THEME_COLORS, SPACING_TOKENS, BORDER_RADIUS_TOKENS, TYPOGRAPHY_TOKENS }
 import { EmptyState, FilterChip, ScreenContainer, Typography } from '@ui';
 import { useAuth, useRoleGuard } from '@features/auth';
 import type { RootStackParamList } from '@navigation/types';
-import { ConversationListItem, EmptyConversations } from '../components';
-import { useChatSummary, useConversations } from '../hooks';
-import { matchesConversationSearch } from '../services';
+import { ConversationListItem, DeleteConversationModal, EmptyConversations } from '../components';
+import {
+  useChatSummary,
+  useConversations,
+  useDebouncedValue,
+  useDeleteConversation,
+} from '../hooks';
 import type { Conversation, ConversationFilter } from '../types';
+import { CHAT_LIMITS } from '../types';
 
 export const MessagesScreen = () => {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
@@ -30,16 +35,25 @@ export const MessagesScreen = () => {
   const [isSearching, setIsSearching] = useState(false);
   const [keyword, setKeyword] = useState('');
 
-  const summaryQuery = useChatSummary();
-  const conversationsQuery = useConversations(filter);
+  const [conversationToDelete, setConversationToDelete] = useState<Conversation | null>(null);
 
-  const conversations = useMemo(
-    () =>
-      (conversationsQuery.data?.pages.flatMap((page) => page.items) ?? []).filter((conversation) =>
-        matchesConversationSearch(conversation, keyword)
-      ),
-    [conversationsQuery.data, keyword]
-  );
+  const debouncedKeyword = useDebouncedValue(keyword.trim(), CHAT_LIMITS.SEARCH_DEBOUNCE_MS);
+
+  const summaryQuery = useChatSummary();
+  const conversationsQuery = useConversations(filter, debouncedKeyword);
+  const deleteMutation = useDeleteConversation();
+
+  const conversations = useMemo(() => {
+    const uniqueConversations = new Map<string, Conversation>();
+
+    for (const page of conversationsQuery.data?.pages ?? []) {
+      for (const conversation of page.items) {
+        uniqueConversations.set(conversation.id, conversation);
+      }
+    }
+
+    return [...uniqueConversations.values()];
+  }, [conversationsQuery.data]);
 
   const handleOpenConversation = useCallback(
     (conversation: Conversation) => {
@@ -47,6 +61,16 @@ export const MessagesScreen = () => {
     },
     [navigation]
   );
+
+  const handleConfirmDelete = useCallback(() => {
+    if (!conversationToDelete) {
+      return;
+    }
+
+    deleteMutation.mutate(conversationToDelete.id, {
+      onSettled: () => setConversationToDelete(null),
+    });
+  }, [conversationToDelete, deleteMutation]);
 
   const handleFindRoom = useCallback(() => {
     navigation.navigate('Main', { screen: 'Search' });
@@ -70,7 +94,7 @@ export const MessagesScreen = () => {
 
   const totalCount = summaryQuery.data?.totalConversations;
   const unreadCount = summaryQuery.data?.unreadConversations;
-  const isPristine = filter === 'all' && !keyword.trim();
+  const isPristine = filter === 'all' && !debouncedKeyword;
   const isInboxEmpty = summaryQuery.data?.totalConversations === 0 && isPristine;
 
   const renderEmpty = () => {
@@ -99,9 +123,11 @@ export const MessagesScreen = () => {
 
     return (
       <EmptyState
-        title={filter === 'unread' && !keyword.trim() ? 'Không có tin chưa đọc' : 'Không tìm thấy'}
+        title={
+          filter === 'unread' && !debouncedKeyword ? 'Không có tin chưa đọc' : 'Không tìm thấy'
+        }
         description={
-          filter === 'unread' && !keyword.trim()
+          filter === 'unread' && !debouncedKeyword
             ? 'Bạn đã đọc hết tất cả tin nhắn.'
             : 'Không có cuộc trò chuyện nào khớp với từ khoá.'
         }
@@ -168,6 +194,7 @@ export const MessagesScreen = () => {
             conversation={item}
             currentUserId={currentUserId}
             onPress={handleOpenConversation}
+            onLongPress={setConversationToDelete}
           />
         )}
         ListEmptyComponent={renderEmpty()}
@@ -189,6 +216,13 @@ export const MessagesScreen = () => {
         onEndReached={handleEndReached}
         onEndReachedThreshold={0.4}
         keyboardShouldPersistTaps="handled"
+      />
+
+      <DeleteConversationModal
+        isVisible={conversationToDelete !== null}
+        isLoading={deleteMutation.isPending}
+        onClose={() => setConversationToDelete(null)}
+        onConfirm={handleConfirmDelete}
       />
     </ScreenContainer>
   );

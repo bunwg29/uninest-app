@@ -30,6 +30,7 @@ const MessageBubbleComponent = ({
   const isPending = deliveryState === 'queued' || deliveryState === 'sending';
   const isFailed = deliveryState === 'failed';
   const hasImages = message.imageUrls.length > 0;
+  const isEdited = message.editedAt !== null && !isRecalled;
   const imageSize = message.imageUrls.length === 1 ? IMAGE_SIZE_SINGLE : IMAGE_SIZE_GRID;
 
   const textColor = isRecalled
@@ -116,10 +117,12 @@ const MessageBubbleComponent = ({
 
           <Clock size={12} color={THEME_COLORS.TEXT_PLACEHOLDER} style={styles.footerIcon} />
         </View>
-      ) : shouldShowTime ? (
+      ) : shouldShowTime || isEdited ? (
         <View style={styles.footer}>
           <Typography variant="tiny" colorKey="TEXT_PLACEHOLDER">
-            {formatClockTime(message.createdAt)}
+            {isEdited
+              ? `${formatClockTime(message.createdAt)} · đã chỉnh sửa`
+              : formatClockTime(message.createdAt)}
           </Typography>
 
           {isMine && !isRecalled ? (
@@ -221,6 +224,7 @@ const areBubblePropsEqual = (previous: MessageBubbleProps, next: MessageBubblePr
   previous.message.deliveryState === next.message.deliveryState &&
   previous.message.readAt === next.message.readAt &&
   previous.message.isRecalled === next.message.isRecalled &&
+  previous.message.editedAt === next.message.editedAt &&
   previous.message.content === next.message.content &&
   previous.message.errorMessage === next.message.errorMessage &&
   previous.message.imageUrls.length === next.message.imageUrls.length;
