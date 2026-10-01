@@ -16,6 +16,7 @@ export interface ChatMessage {
   imageUrls: string[];
   isRecalled: boolean;
   readAt: string | null;
+  editedAt: string | null;
   createdAt: string;
 }
 
@@ -113,6 +114,7 @@ export interface DisplayMessage {
   imageUrls: string[];
   isRecalled: boolean;
   readAt: string | null;
+  editedAt: string | null;
   createdAt: string;
   deliveryState: DeliveryState;
   errorMessage?: string;

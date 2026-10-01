@@ -20,6 +20,7 @@ import {
   ChatComposer,
   ChatRoomHeader,
   DateSeparator,
+  DeleteConversationModal,
   ImageViewerModal,
   ListingPinBar,
   MessageActionSheet,
@@ -31,6 +32,8 @@ import {
   useChatImagePicker,
   useChatRoom,
   useConversation,
+  useDeleteConversation,
+  useEditMessage,
   useNetworkStatus,
   useRecallMessage,
 } from '../hooks';
@@ -58,6 +61,8 @@ export const ChatRoomScreen = ({ navigation, route }: ChatRoomScreenProps) => {
   const conversationQuery = useConversation(conversationId);
   const room = useChatRoom(conversationId, currentUserId);
   const recallMutation = useRecallMessage(conversationId);
+  const editMutation = useEditMessage(conversationId);
+  const deleteMutation = useDeleteConversation();
   const { pickFromLibrary, takePhoto } = useChatImagePicker();
 
   const draft = useChatStore((state) => state.drafts[conversationId] ?? '');
@@ -66,6 +71,9 @@ export const ChatRoomScreen = ({ navigation, route }: ChatRoomScreenProps) => {
   const [selectedMessage, setSelectedMessage] = useState<DisplayMessage | null>(null);
   const [viewer, setViewer] = useState<ViewerState | null>(null);
   const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
+  const [editingMessage, setEditingMessage] = useState<DisplayMessage | null>(null);
+  const [editText, setEditText] = useState('');
+  const [isDeleteVisible, setIsDeleteVisible] = useState(false);
 
   const conversation = conversationQuery.data;
 
@@ -82,15 +90,73 @@ export const ChatRoomScreen = ({ navigation, route }: ChatRoomScreenProps) => {
     };
   }, []);
 
-  const handleChangeDraft = useCallback(
-    (text: string) => setDraft(conversationId, text),
-    [conversationId, setDraft]
+  const handleChangeText = useCallback(
+    (text: string) => (editingMessage ? setEditText(text) : setDraft(conversationId, text)),
+    [editingMessage, conversationId, setDraft]
   );
 
+  const handleCancelEdit = useCallback(() => {
+    setEditingMessage(null);
+    setEditText('');
+  }, []);
+
   const handleSend = useCallback(() => {
+    if (editingMessage?.id) {
+      const content = editText.trim();
+
+      if (!content) {
+        return;
+      }
+
+      if (content === editingMessage.content) {
+        handleCancelEdit();
+
+        return;
+      }
+
+      editMutation.mutate(
+        { messageId: editingMessage.id, content },
+        {
+          onSuccess: handleCancelEdit,
+          onError: (error) => toast.error(error.message || 'Không thể chỉnh sửa tin nhắn'),
+        }
+      );
+
+      return;
+    }
+
     room.sendMessage(draft);
     setDraft(conversationId, '');
-  }, [room, draft, conversationId, setDraft]);
+  }, [
+    editingMessage,
+    editText,
+    editMutation,
+    handleCancelEdit,
+    toast,
+    room,
+    draft,
+    conversationId,
+    setDraft,
+  ]);
+
+  const handleStartEdit = useCallback(() => {
+    if (selectedMessage) {
+      setEditingMessage(selectedMessage);
+      setEditText(selectedMessage.content ?? '');
+    }
+
+    setSelectedMessage(null);
+  }, [selectedMessage]);
+
+  const handleConfirmDeleteConversation = useCallback(() => {
+    deleteMutation.mutate(conversationId, {
+      onSuccess: () => navigation.goBack(),
+      onError: (error) => {
+        setIsDeleteVisible(false);
+        toast.error(error.message || 'Không thể xoá đoạn chat');
+      },
+    });
+  }, [deleteMutation, conversationId, navigation, toast]);
 
   const handlePressQuickReply = useCallback(
     (text: string) => setDraft(conversationId, text),
@@ -165,6 +231,12 @@ export const ChatRoomScreen = ({ navigation, route }: ChatRoomScreenProps) => {
     selectedMessage.isMine &&
     Date.now() - new Date(selectedMessage.createdAt).getTime() <= CHAT_LIMITS.RECALL_WINDOW_MS;
 
+  const canEditSelected =
+    selectedMessage !== null &&
+    selectedMessage.isMine &&
+    Boolean(selectedMessage.content) &&
+    Date.now() - new Date(selectedMessage.createdAt).getTime() <= CHAT_LIMITS.EDIT_WINDOW_MS;
+
   const renderMessage = ({ item, index }: { item: DisplayMessage; index: number }) => {
     const newerMessage = room.messages[index - 1];
     const olderMessage = room.messages[index + 1];
@@ -230,6 +302,7 @@ export const ChatRoomScreen = ({ navigation, route }: ChatRoomScreenProps) => {
       <ChatRoomHeader
         counterpart={conversation?.counterpart ?? null}
         onBack={() => navigation.goBack()}
+        onPressMenu={() => setIsDeleteVisible(true)}
       />
 
       {!isOnline ? <OfflineBanner /> : null}
@@ -269,8 +342,10 @@ export const ChatRoomScreen = ({ navigation, route }: ChatRoomScreenProps) => {
           style={[styles.composerWrapper, { paddingBottom: isKeyboardVisible ? 0 : insets.bottom }]}
         >
           <ChatComposer
-            value={draft}
-            onChangeText={handleChangeDraft}
+            value={editingMessage ? editText : draft}
+            onChangeText={handleChangeText}
+            isEditing={editingMessage !== null}
+            onCancelEdit={handleCancelEdit}
             onSend={handleSend}
             onPickImages={() => void handlePickImages()}
             onTakePhoto={() => void handleTakePhoto()}
@@ -283,10 +358,19 @@ export const ChatRoomScreen = ({ navigation, route }: ChatRoomScreenProps) => {
       <MessageActionSheet
         isVisible={selectedMessage !== null}
         canCopy={Boolean(selectedMessage?.content)}
+        canEdit={canEditSelected}
         canRecall={canRecallSelected}
         onClose={() => setSelectedMessage(null)}
         onCopy={() => void handleCopy()}
+        onEdit={handleStartEdit}
         onRecall={handleRecall}
+      />
+
+      <DeleteConversationModal
+        isVisible={isDeleteVisible}
+        isLoading={deleteMutation.isPending}
+        onClose={() => setIsDeleteVisible(false)}
+        onConfirm={handleConfirmDeleteConversation}
       />
 
       <ImageViewerModal

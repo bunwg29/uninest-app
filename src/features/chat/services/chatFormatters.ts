@@ -1,4 +1,4 @@
-import type { ChatLastMessage, Conversation } from '../types';
+import type { ChatLastMessage } from '../types';
 
 const MINUTE_MS = 60 * 1000;
 const HOUR_MS = 60 * MINUTE_MS;
@@ -107,17 +107,4 @@ export const getLastMessagePreview = (lastMessage: ChatLastMessage): string => {
   }
 
   return lastMessage.content ?? '';
-};
-
-export const matchesConversationSearch = (conversation: Conversation, keyword: string): boolean => {
-  const normalized = keyword.trim().toLowerCase();
-
-  if (!normalized) {
-    return true;
-  }
-
-  return (
-    conversation.counterpart.fullName.toLowerCase().includes(normalized) ||
-    conversation.listing.title.toLowerCase().includes(normalized)
-  );
 };

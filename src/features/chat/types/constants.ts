@@ -2,6 +2,8 @@ export const CHAT_LIMITS = {
   MAX_CONTENT_LENGTH: 2000,
   MAX_IMAGES_PER_MESSAGE: 5,
   RECALL_WINDOW_MS: 24 * 60 * 60 * 1000,
+  EDIT_WINDOW_MS: 24 * 60 * 60 * 1000,
+  SEARCH_DEBOUNCE_MS: 400,
   MESSAGE_PAGE_SIZE: 30,
   CONVERSATION_PAGE_SIZE: 20,
   SOCKET_ACK_TIMEOUT_MS: 8000,
@@ -14,14 +16,17 @@ export const CHAT_SOCKET_EVENTS = {
   MARK_READ: 'conversation.read',
   NEW_MESSAGE: 'message.new',
   MESSAGE_RECALLED: 'message.recalled',
+  MESSAGE_UPDATED: 'message.updated',
   MESSAGES_READ: 'conversation.read',
+  CONVERSATION_DELETED: 'conversation.deleted',
 } as const;
 
 export const CHAT_QUERY_KEYS = {
   ALL: ['chat'] as const,
   CONVERSATIONS: ['chat', 'conversations'] as const,
   SUMMARY: ['chat', 'summary'] as const,
-  conversationList: (filter: string) => ['chat', 'conversations', filter] as const,
+  conversationList: (filter: string, keyword: string) =>
+    ['chat', 'conversations', filter, keyword] as const,
   conversation: (conversationId: string) => ['chat', 'conversation', conversationId] as const,
   messages: (conversationId: string) => ['chat', 'messages', conversationId] as const,
 };

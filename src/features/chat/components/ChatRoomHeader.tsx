@@ -1,5 +1,5 @@
 import { View, TouchableOpacity, StyleSheet } from 'react-native';
-import { ChevronLeft } from 'lucide-react-native';
+import { ChevronLeft, MoreVertical } from 'lucide-react-native';
 import { THEME_COLORS, SPACING_TOKENS } from '@theme';
 import { Avatar, Typography } from '@ui';
 import { formatPresence } from '../services/chatFormatters';
@@ -8,9 +8,10 @@ import type { ChatCounterpart } from '../types';
 export interface ChatRoomHeaderProps {
   counterpart: ChatCounterpart | null;
   onBack: () => void;
+  onPressMenu: () => void;
 }
 
-export const ChatRoomHeader = ({ counterpart, onBack }: ChatRoomHeaderProps) => (
+export const ChatRoomHeader = ({ counterpart, onBack, onPressMenu }: ChatRoomHeaderProps) => (
   <View style={styles.container}>
     <TouchableOpacity
       style={styles.backButton}
@@ -43,6 +44,15 @@ export const ChatRoomHeader = ({ counterpart, onBack }: ChatRoomHeaderProps) => 
         </Typography>
       ) : null}
     </View>
+
+    <TouchableOpacity
+      style={styles.menuButton}
+      onPress={onPressMenu}
+      accessibilityLabel="Tuỳ chọn đoạn chat"
+      hitSlop={8}
+    >
+      <MoreVertical size={20} color={THEME_COLORS.TEXT_PRIMARY} />
+    </TouchableOpacity>
   </View>
 );
 
@@ -63,5 +73,11 @@ const styles = StyleSheet.create({
   },
   info: {
     flex: 1,
+  },
+  menuButton: {
+    width: 36,
+    height: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });

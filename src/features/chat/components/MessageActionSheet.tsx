@@ -1,5 +1,5 @@
 import { Modal, View, TouchableOpacity, TouchableWithoutFeedback, StyleSheet } from 'react-native';
-import { Clock, Copy, Trash2 } from 'lucide-react-native';
+import { Clock, Copy, Pencil, Trash2 } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { THEME_COLORS, SPACING_TOKENS, BORDER_RADIUS_TOKENS } from '@theme';
 import { Button, Typography } from '@ui';
@@ -7,18 +7,22 @@ import { Button, Typography } from '@ui';
 export interface MessageActionSheetProps {
   isVisible: boolean;
   canCopy: boolean;
+  canEdit: boolean;
   canRecall: boolean;
   onClose: () => void;
   onCopy: () => void;
+  onEdit: () => void;
   onRecall: () => void;
 }
 
 export const MessageActionSheet = ({
   isVisible,
   canCopy,
+  canEdit,
   canRecall,
   onClose,
   onCopy,
+  onEdit,
   onRecall,
 }: MessageActionSheetProps) => {
   const insets = useSafeAreaInsets();
@@ -42,6 +46,16 @@ export const MessageActionSheet = ({
           </TouchableOpacity>
         ) : null}
 
+        {canEdit ? (
+          <TouchableOpacity style={styles.action} onPress={onEdit} activeOpacity={0.7}>
+            <Pencil size={20} color={THEME_COLORS.TEXT_SECONDARY} />
+
+            <Typography variant="body1" weight="MEDIUM">
+              Chỉnh sửa
+            </Typography>
+          </TouchableOpacity>
+        ) : null}
+
         {canRecall ? (
           <TouchableOpacity style={styles.action} onPress={onRecall} activeOpacity={0.7}>
             <Trash2 size={20} color={THEME_COLORS.ERROR} />
@@ -56,7 +70,7 @@ export const MessageActionSheet = ({
           <Clock size={16} color={THEME_COLORS.WARNING} />
 
           <Typography variant="body2" color={THEME_COLORS.WARNING} style={styles.noticeText}>
-            Chỉ thu hồi được tin nhắn của bạn, trong vòng 24 giờ sau khi gửi.
+            Chỉ chỉnh sửa hoặc thu hồi được tin nhắn của bạn, trong vòng 24 giờ sau khi gửi.
           </Typography>
         </View>
 

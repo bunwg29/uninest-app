@@ -49,9 +49,18 @@ export const chatService = {
     return unwrapData<Conversation>(response.data);
   },
 
-  async getConversations(filter: ConversationFilter, page: number): Promise<ConversationsPage> {
+  async getConversations(
+    filter: ConversationFilter,
+    page: number,
+    keyword: string
+  ): Promise<ConversationsPage> {
     const response = await apiClient.get('/conversations', {
-      params: { filter, page, limit: CHAT_LIMITS.CONVERSATION_PAGE_SIZE },
+      params: {
+        filter,
+        page,
+        limit: CHAT_LIMITS.CONVERSATION_PAGE_SIZE,
+        keyword: keyword || undefined,
+      },
     });
 
     return unwrapData<ConversationsPage>(response.data);
@@ -96,6 +105,23 @@ export const chatService = {
     );
 
     return unwrapData<ChatMessage>(response.data);
+  },
+
+  async editMessage(
+    conversationId: string,
+    messageId: string,
+    content: string
+  ): Promise<ChatMessage> {
+    const response = await apiClient.patch(
+      `/conversations/${conversationId}/messages/${messageId}`,
+      { content }
+    );
+
+    return unwrapData<ChatMessage>(response.data);
+  },
+
+  async deleteConversation(conversationId: string): Promise<void> {
+    await apiClient.delete(`/conversations/${conversationId}`);
   },
 
   async uploadImage(uri: string): Promise<string> {

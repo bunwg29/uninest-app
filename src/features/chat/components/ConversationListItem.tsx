@@ -12,12 +12,14 @@ export interface ConversationListItemProps {
   conversation: Conversation;
   currentUserId: string;
   onPress: (conversation: Conversation) => void;
+  onLongPress: (conversation: Conversation) => void;
 }
 
 const ConversationListItemComponent = ({
   conversation,
   currentUserId,
   onPress,
+  onLongPress,
 }: ConversationListItemProps) => {
   const { counterpart, listing, lastMessage, unreadCount } = conversation;
   const isUnread = unreadCount > 0;
@@ -29,6 +31,7 @@ const ConversationListItemComponent = ({
     <TouchableOpacity
       style={[styles.container, isUnread && styles.unreadContainer]}
       onPress={() => onPress(conversation)}
+      onLongPress={() => onLongPress(conversation)}
       activeOpacity={0.8}
     >
       <Avatar
