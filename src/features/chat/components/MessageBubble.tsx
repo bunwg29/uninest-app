@@ -1,8 +1,9 @@
 import { memo } from 'react';
-import { View, TouchableOpacity, Image, StyleSheet } from 'react-native';
+import { View, TouchableOpacity, StyleSheet } from 'react-native';
 import { AlertCircle, Check, CheckCheck, Clock } from 'lucide-react-native';
 import { THEME_COLORS, SPACING_TOKENS, BORDER_RADIUS_TOKENS } from '@theme';
 import { Typography } from '@ui';
+import { ImageCollage } from './ImageCollage';
 import { formatClockTime } from '../services/chatFormatters';
 import type { DisplayMessage } from '../types';
 
@@ -15,9 +16,6 @@ export interface MessageBubbleProps {
   onPressImage: (imageUrls: string[], index: number) => void;
 }
 
-const IMAGE_SIZE_SINGLE = 200;
-const IMAGE_SIZE_GRID = 110;
-
 const MessageBubbleComponent = ({
   message,
   shouldShowTime,
@@ -29,9 +27,10 @@ const MessageBubbleComponent = ({
   const { isMine, deliveryState, isRecalled } = message;
   const isPending = deliveryState === 'queued' || deliveryState === 'sending';
   const isFailed = deliveryState === 'failed';
-  const hasImages = message.imageUrls.length > 0;
+  const hasImages = message.imageUrls.length > 0 && !isRecalled;
+  const hasTextBubble = isRecalled || Boolean(message.content);
+  const isInteractive = !isFailed && !isPending;
   const isEdited = message.editedAt !== null && !isRecalled;
-  const imageSize = message.imageUrls.length === 1 ? IMAGE_SIZE_SINGLE : IMAGE_SIZE_GRID;
 
   const textColor = isRecalled
     ? THEME_COLORS.TEXT_PLACEHOLDER
@@ -41,40 +40,29 @@ const MessageBubbleComponent = ({
 
   return (
     <View style={[styles.wrapper, isMine ? styles.mineWrapper : styles.theirsWrapper]}>
-      <TouchableOpacity
-        activeOpacity={0.9}
-        onLongPress={() => onLongPress(message)}
-        disabled={isFailed || isPending}
-        style={[
-          styles.bubble,
-          isMine ? styles.mineBubble : styles.theirsBubble,
-          isRecalled && styles.recalledBubble,
-          isPending && styles.pendingBubble,
-          isFailed && styles.failedBubble,
-        ]}
-      >
-        {hasImages && !isRecalled ? (
-          <View style={styles.imageGrid}>
-            {message.imageUrls.map((uri, index) => (
-              <TouchableOpacity
-                key={`${uri}-${index}`}
-                activeOpacity={0.9}
-                onPress={() => onPressImage(message.imageUrls, index)}
-              >
-                <Image
-                  source={{ uri }}
-                  style={{
-                    width: imageSize,
-                    height: imageSize,
-                    borderRadius: BORDER_RADIUS_TOKENS.MD,
-                  }}
-                />
-              </TouchableOpacity>
-            ))}
-          </View>
-        ) : null}
+      {hasImages ? (
+        <ImageCollage
+          imageUrls={message.imageUrls}
+          onPressImage={(index) => onPressImage(message.imageUrls, index)}
+          onLongPress={isInteractive ? () => onLongPress(message) : undefined}
+          style={[isPending && styles.pendingMedia, isFailed && styles.failedMedia]}
+        />
+      ) : null}
 
-        {isRecalled || message.content ? (
+      {hasTextBubble ? (
+        <TouchableOpacity
+          activeOpacity={0.9}
+          onLongPress={() => onLongPress(message)}
+          disabled={!isInteractive}
+          style={[
+            styles.bubble,
+            hasImages && styles.captionBubble,
+            isMine ? styles.mineBubble : styles.theirsBubble,
+            isRecalled && styles.recalledBubble,
+            isPending && styles.pendingBubble,
+            isFailed && styles.failedBubble,
+          ]}
+        >
           <Typography
             variant="body2"
             color={textColor}
@@ -82,8 +70,8 @@ const MessageBubbleComponent = ({
           >
             {isRecalled ? 'Tin nhắn đã được thu hồi' : (message.content ?? '')}
           </Typography>
-        ) : null}
-      </TouchableOpacity>
+        </TouchableOpacity>
+      ) : null}
 
       {isFailed ? (
         <View style={styles.footer}>
@@ -186,10 +174,15 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: THEME_COLORS.ERROR,
   },
-  imageGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: SPACING_TOKENS.XS,
+  captionBubble: {
+    marginTop: SPACING_TOKENS.XS,
+  },
+  pendingMedia: {
+    opacity: 0.6,
+  },
+  failedMedia: {
+    borderWidth: 1,
+    borderColor: THEME_COLORS.ERROR,
   },
   text: {
     lineHeight: 21,
@@ -227,6 +220,7 @@ const areBubblePropsEqual = (previous: MessageBubbleProps, next: MessageBubblePr
   previous.message.editedAt === next.message.editedAt &&
   previous.message.content === next.message.content &&
   previous.message.errorMessage === next.message.errorMessage &&
-  previous.message.imageUrls.length === next.message.imageUrls.length;
+  previous.message.imageUrls.length === next.message.imageUrls.length &&
+  previous.message.imageUrls[0] === next.message.imageUrls[0];
 
 export const MessageBubble = memo(MessageBubbleComponent, areBubblePropsEqual);

@@ -4,6 +4,7 @@ export * from './ConversationListItem';
 export * from './DateSeparator';
 export * from './DeleteConversationModal';
 export * from './EmptyConversations';
+export * from './ImageCollage';
 export * from './ImageViewerModal';
 export * from './ListingPinBar';
 export * from './MessageActionSheet';
