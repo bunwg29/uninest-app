@@ -22,6 +22,7 @@ import {
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '@navigation';
+import { formatVND } from '@core';
 import { THEME_COLORS, BORDER_RADIUS_TOKENS, SPACING_TOKENS } from '@theme';
 import {
   useLandlordListingDetailMutation,
@@ -48,10 +49,11 @@ type StatusTab = {
 };
 
 const STATUS_TABS: StatusTab[] = [
-  { key: 'published', label: 'Đang hiện' },
+  { key: 'published', label: 'Đang hiển thị' },
   { key: 'pending', label: 'Chờ duyệt' },
   { key: 'rejected', label: 'Bị từ chối' },
   { key: 'hidden', label: 'Đã ẩn' },
+  { key: 'expired', label: 'Đã cho thuê' },
 ];
 
 const STATUS_LABELS: Record<LandlordListingStatus, string> = {
@@ -59,7 +61,7 @@ const STATUS_LABELS: Record<LandlordListingStatus, string> = {
   pending: 'CHỜ DUYỆT',
   rejected: 'BỊ TỪ CHỐI',
   hidden: 'ĐÃ ẨN',
-  expired: 'HẾT HẠN',
+  expired: 'ĐÃ CHO THUÊ',
 };
 
 const STATUS_VARIANTS: Record<LandlordListingStatus, 'available' | 'holding' | 'neutral'> = {
@@ -95,6 +97,7 @@ export const LandlordListingsScreen = () => {
     [listingsQuery.data]
   );
   const counters = listingsQuery.data?.pages[0]?.counters;
+  const hasAnyListings = counters ? Object.values(counters).some((count) => count > 0) : false;
 
   const refetchRef = useRef(listingsQuery.refetch);
 
@@ -199,7 +202,7 @@ export const LandlordListingsScreen = () => {
     <ScreenContainer style={styles.container} applyBottomInset={false} keyboardAvoiding={false}>
       <View style={[styles.header, isSearchVisible && styles.headerWithSearch]}>
         <Typography variant="h1" weight="BOLD">
-          Tin đăng của tôi
+          Tin đăng
         </Typography>
 
         <TouchableOpacity
@@ -272,10 +275,28 @@ export const LandlordListingsScreen = () => {
               <ListingsSkeleton />
             ) : (
               <EmptyState
-                title={getEmptyTitle(activeStatus)}
-                description={getEmptyDescription(activeStatus)}
-                actionTitle={activeStatus === 'published' ? 'Đăng tin ngay' : undefined}
-                onAction={activeStatus === 'published' ? handleCreateListing : undefined}
+                title={
+                  normalizedSearchText
+                    ? 'Không tìm thấy tin đăng'
+                    : hasAnyListings
+                      ? getEmptyTitle(activeStatus)
+                      : 'Chưa có tin đăng nào'
+                }
+                description={
+                  normalizedSearchText
+                    ? 'Thử tìm với từ khóa khác.'
+                    : getEmptyDescription(activeStatus)
+                }
+                actionTitle={
+                  activeStatus === 'published' && !normalizedSearchText
+                    ? 'Đăng tin ngay'
+                    : undefined
+                }
+                onAction={
+                  activeStatus === 'published' && !normalizedSearchText
+                    ? handleCreateListing
+                    : undefined
+                }
                 style={styles.emptyState}
               />
             )
@@ -389,21 +410,22 @@ const StatusTabs = ({
       contentContainerStyle={styles.tabsContent}
       renderItem={({ item }) => {
         const isActive = item.key === activeStatus;
-        const count = counters?.[item.key] ?? 0;
+        const count = counters?.[item.key];
 
         return (
           <TouchableOpacity
             style={[styles.tab, isActive && styles.activeTab]}
             onPress={() => onChange(item.key)}
+            accessibilityRole="button"
+            accessibilityState={{ selected: isActive }}
           >
             <Typography
               variant="caption"
               weight={isActive ? 'SEMIBOLD' : 'REGULAR'}
-              color={isActive ? THEME_COLORS.PRIMARY : THEME_COLORS.TEXT_MUTED}
+              color={isActive ? THEME_COLORS.PRIMARY : THEME_COLORS.TEXT_PRIMARY}
             >
-              {item.label}
+              {count === undefined ? item.label : `${item.label} ${count}`}
             </Typography>
-            <Badge label={count} variant={isActive ? 'primary' : 'neutral'} size="sm" />
           </TouchableOpacity>
         );
       }}
@@ -457,36 +479,29 @@ const LandlordListingCard = ({
           <Typography variant="body1" weight="SEMIBOLD" numberOfLines={2} style={styles.cardTitle}>
             {listing.title}
           </Typography>
-          <Typography variant="body2" weight="SEMIBOLD" colorKey="PRIMARY_DARK">
-            {formatCurrency(listing.price)} ₫/tháng · {listing.area} m²
-          </Typography>
-          <Typography variant="caption" colorKey="TEXT_MUTED" numberOfLines={1}>
-            {listing.address || 'Chưa cập nhật địa chỉ'}
-          </Typography>
+          <View style={styles.priceRow}>
+            <Typography variant="body2" weight="BOLD" colorKey="PRIMARY">
+              {formatListingPrice(listing.price)}
+            </Typography>
+            <Typography variant="caption" colorKey="TEXT_MUTED">
+              {`/ tháng${Number.isFinite(listing.area) ? ` · ${listing.area} m²` : ''}`}
+            </Typography>
+          </View>
         </View>
 
         <TouchableOpacity
+          style={styles.menuButton}
           onPress={onMenuPress}
-          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          accessibilityLabel={`Thao tác với tin ${listing.title}`}
+          hitSlop={SPACING_TOKENS.XS}
         >
           <EllipsisVertical size={21} color={THEME_COLORS.TEXT_MUTED} />
         </TouchableOpacity>
       </View>
 
-      <View style={[styles.statsRow, isCompact && styles.statsRowCompact]}>
-        <Stat label="Lượt xem" value={listing.viewCount} />
-        <View style={styles.statDivider} />
-        <Stat label="Liên hệ" value={listing.contactCount} />
-        <View style={styles.statDivider} />
-        <Stat label="Đã lưu" value={listing.saveCount} />
-      </View>
-
-      {listing.holdingStatus ? (
-        <View style={styles.holdingBanner}>
-          <Typography variant="caption" colorKey="WARNING">
-            Bạn {listing.holderName} giữ chỗ tới {listing.holdExpireDate} · đã cọc{' '}
-            {formatCurrency(listing.depositAmount || 0)} ₫
-          </Typography>
+      {listing.status === 'published' && Number.isFinite(listing.viewCount) ? (
+        <View style={styles.statsRow}>
+          <Stat label="Lượt xem" value={listing.viewCount} />
         </View>
       ) : null}
     </TouchableOpacity>
@@ -495,11 +510,11 @@ const LandlordListingCard = ({
 
 const Stat = ({ label, value }: { label: string; value: number }) => (
   <View style={styles.stat}>
-    <Typography variant="caption" colorKey="TEXT_MUTED">
-      {label}
-    </Typography>
     <Typography variant="body2" weight="SEMIBOLD">
       {value.toLocaleString('vi-VN')}
+    </Typography>
+    <Typography variant="caption" colorKey="TEXT_MUTED">
+      {label}
     </Typography>
   </View>
 );
@@ -599,14 +614,14 @@ const ListingsSkeleton = () => (
   </View>
 );
 
-function formatCurrency(value: number): string {
-  return value.toLocaleString('vi-VN');
+function formatListingPrice(value: number): string {
+  return Number.isFinite(value) ? formatVND(value).replace(' ₫', 'đ') : 'Chưa cập nhật giá';
 }
 
 function getEmptyTitle(status: LandlordListingStatus): string {
   return status === 'hidden'
     ? 'Bạn chưa ẩn tin nào'
-    : `Chưa có tin ${STATUS_TABS.find((tab) => tab.key === status)?.label.toLowerCase()}`;
+    : `Không có tin đăng ở trạng thái ${STATUS_TABS.find((tab) => tab.key === status)?.label.toLowerCase()}`;
 }
 
 function getEmptyDescription(status: LandlordListingStatus): string {
@@ -619,8 +634,8 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: THEME_COLORS.BACKGROUND },
   header: {
     paddingHorizontal: SPACING_TOKENS.MD,
-    paddingTop: SPACING_TOKENS.MD,
-    paddingBottom: SPACING_TOKENS.SM,
+    paddingTop: SPACING_TOKENS.SM,
+    paddingBottom: SPACING_TOKENS.XS,
     backgroundColor: THEME_COLORS.SURFACE,
     flexDirection: 'row',
     alignItems: 'center',
@@ -630,53 +645,63 @@ const styles = StyleSheet.create({
     paddingBottom: 0,
   },
   searchButton: {
-    width: 40,
-    height: 40,
+    width: 36,
+    height: 36,
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: BORDER_RADIUS_TOKENS.MD,
+    borderWidth: 1,
+    borderColor: THEME_COLORS.BORDER,
   },
-  listContent: { paddingBottom: 110 },
+  listContent: { paddingBottom: SPACING_TOKENS.LG },
   tabsContainer: {
     backgroundColor: THEME_COLORS.SURFACE,
     borderBottomWidth: 1,
     borderBottomColor: THEME_COLORS.DIVIDER,
   },
-  tabsContent: { paddingHorizontal: SPACING_TOKENS.MD, paddingVertical: SPACING_TOKENS.SM },
-  tab: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: SPACING_TOKENS.XS,
-    paddingHorizontal: SPACING_TOKENS.SM + 2,
+  tabsContent: {
+    paddingHorizontal: SPACING_TOKENS.SM,
     paddingVertical: SPACING_TOKENS.SM,
-    marginRight: SPACING_TOKENS.SM,
-    borderRadius: BORDER_RADIUS_TOKENS.FULL,
+    gap: SPACING_TOKENS.XS,
   },
-  activeTab: { backgroundColor: THEME_COLORS.PRIMARY_LIGHT },
-  card: {
-    marginHorizontal: SPACING_TOKENS.MD,
-    marginTop: SPACING_TOKENS.SM,
-    padding: SPACING_TOKENS.SM + 2,
-    backgroundColor: THEME_COLORS.SURFACE,
-    borderRadius: BORDER_RADIUS_TOKENS.MD,
+  tab: {
+    minHeight: 30,
+    justifyContent: 'center',
+    paddingHorizontal: SPACING_TOKENS.SM + SPACING_TOKENS.XS,
+    paddingVertical: SPACING_TOKENS.XS,
+    borderRadius: BORDER_RADIUS_TOKENS.FULL,
     borderWidth: 1,
     borderColor: THEME_COLORS.BORDER,
+    backgroundColor: THEME_COLORS.SURFACE,
+  },
+  activeTab: {
+    borderColor: THEME_COLORS.PRIMARY,
+    backgroundColor: THEME_COLORS.PRIMARY_LIGHT,
+  },
+  card: {
+    marginHorizontal: SPACING_TOKENS.SM + SPACING_TOKENS.XS,
+    marginTop: SPACING_TOKENS.SM + SPACING_TOKENS.XS,
+    padding: SPACING_TOKENS.SM + SPACING_TOKENS.XS,
+    backgroundColor: THEME_COLORS.SURFACE,
+    borderRadius: BORDER_RADIUS_TOKENS.LG,
+    borderWidth: 1,
+    borderColor: THEME_COLORS.DIVIDER,
   },
   cardCompact: {
     marginHorizontal: SPACING_TOKENS.SM,
     padding: SPACING_TOKENS.SM,
   },
-  cardTopRow: { flexDirection: 'row', alignItems: 'flex-start' },
+  cardTopRow: { flexDirection: 'row', alignItems: 'center' },
   thumbnail: {
-    width: 92,
-    height: 92,
+    width: 72,
+    height: 72,
     borderRadius: BORDER_RADIUS_TOKENS.MD,
     overflow: 'hidden',
     backgroundColor: THEME_COLORS.SURFACE_MUTED,
   },
   thumbnailCompact: {
-    width: 76,
-    height: 76,
+    width: 64,
+    height: 64,
   },
   thumbnailImage: { width: '100%', height: '100%' },
   thumbnailPlaceholder: {
@@ -685,29 +710,32 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     backgroundColor: THEME_COLORS.SURFACE_MUTED,
   },
-  cardDetails: { flex: 1, marginHorizontal: SPACING_TOKENS.SM },
-  badgesRow: { flexDirection: 'row', flexWrap: 'wrap', gap: SPACING_TOKENS.XS, marginBottom: 5 },
-  cardTitle: { marginBottom: 4 },
+  cardDetails: { flex: 1, minWidth: 0, marginLeft: SPACING_TOKENS.SM },
+  badgesRow: { flexDirection: 'row', flexWrap: 'wrap', gap: SPACING_TOKENS.XS, marginBottom: 4 },
+  cardTitle: { marginBottom: SPACING_TOKENS.XS },
+  priceRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignItems: 'baseline',
+    gap: SPACING_TOKENS.XS,
+  },
+  menuButton: {
+    width: 32,
+    height: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginLeft: SPACING_TOKENS.XS,
+  },
   statsRow: {
     flexDirection: 'row',
-    marginTop: SPACING_TOKENS.SM,
+    marginTop: SPACING_TOKENS.SM + SPACING_TOKENS.XS,
     alignItems: 'center',
-    paddingHorizontal: SPACING_TOKENS.XS,
+    paddingHorizontal: SPACING_TOKENS.SM,
     paddingVertical: SPACING_TOKENS.SM,
     borderRadius: BORDER_RADIUS_TOKENS.SM,
-    backgroundColor: THEME_COLORS.SURFACE_MUTED,
+    backgroundColor: THEME_COLORS.BACKGROUND,
   },
-  statsRowCompact: {
-    paddingHorizontal: 0,
-  },
-  stat: { flex: 1, alignItems: 'center' },
-  statDivider: { width: 1, height: 30, backgroundColor: THEME_COLORS.DIVIDER },
-  holdingBanner: {
-    marginTop: SPACING_TOKENS.SM,
-    padding: SPACING_TOKENS.SM,
-    borderRadius: BORDER_RADIUS_TOKENS.SM,
-    backgroundColor: THEME_COLORS.WARNING_LIGHT,
-  },
+  stat: { alignItems: 'center', minWidth: 72 },
   emptyState: { flex: 1, minHeight: 420 },
   errorState: {
     flex: 1,

@@ -1,3 +1,4 @@
+import { useState, type ReactNode } from 'react';
 import {
   Image,
   ScrollView,
@@ -12,7 +13,7 @@ import { ImageOff, Scale, Star, Trash2, Users } from 'lucide-react-native';
 import { formatVND } from '@core';
 import type { RootStackParamList } from '@navigation';
 import { BORDER_RADIUS_TOKENS, SPACING_TOKENS, THEME_COLORS } from '@theme';
-import { Button, EmptyState, HeaderBar, Typography } from '@ui';
+import { Button, EmptyState, HeaderBar, ScreenContainer, Typography } from '@ui';
 import type { ComparisonItem } from '../types';
 import { MAX_COMPARISON_ITEMS, useComparisonStore } from '../store';
 
@@ -26,12 +27,22 @@ export const ComparisonScreen = () => {
   const clear = useComparisonStore((state) => state.clear);
   const columnWidth = Math.min(300, Math.max(220, width - SPACING_TOKENS.XL * 2));
 
+  const handleBack = () => {
+    if (navigation.canGoBack()) {
+      navigation.goBack();
+
+      return;
+    }
+
+    navigation.navigate('Main');
+  };
+
   return (
-    <View style={styles.screen}>
+    <ScreenContainer keyboardAvoiding={false}>
       <HeaderBar
         title="So sánh phòng"
         subtitle={`${items.length}/${MAX_COMPARISON_ITEMS} tin`}
-        onBack={() => navigation.goBack()}
+        onBack={handleBack}
         rightAction={
           items.length > 0 ? (
             <TouchableOpacity accessibilityLabel="Xoá danh sách so sánh" onPress={clear}>
@@ -47,7 +58,7 @@ export const ComparisonScreen = () => {
           description="Mở chi tiết phòng và chọn “Thêm vào so sánh”."
           icon={<Scale size={38} color={THEME_COLORS.TEXT_PLACEHOLDER} />}
           actionTitle="Quay lại"
-          onAction={() => navigation.goBack()}
+          onAction={handleBack}
           style={styles.emptyState}
         />
       ) : (
@@ -64,83 +75,138 @@ export const ComparisonScreen = () => {
             showsHorizontalScrollIndicator
             contentContainerStyle={styles.columns}
           >
-            {items.map((item) => (
-              <ComparisonColumn
-                key={item.id}
-                item={item}
-                width={columnWidth}
-                onRemove={() => remove(item.id)}
-                onOpen={() => navigation.navigate('ListingDetail', { id: item.id })}
-              />
-            ))}
+            <View style={[styles.table, { width: items.length * columnWidth + 2 }]}>
+              <ComparisonRow items={items} width={columnWidth} variant="image">
+                {(item) => <ComparisonImage item={item} />}
+              </ComparisonRow>
+              <ComparisonRow items={items} width={columnWidth} variant="title">
+                {(item) => (
+                  <Typography variant="body1" weight="BOLD" numberOfLines={3} ellipsizeMode="tail">
+                    {item.title}
+                  </Typography>
+                )}
+              </ComparisonRow>
+              <ComparisonRow items={items} width={columnWidth}>
+                {(item) => <Criterion label="Giá" value={formatComparisonPrice(item.price)} />}
+              </ComparisonRow>
+              <ComparisonRow items={items} width={columnWidth}>
+                {(item) => (
+                  <Criterion label="Diện tích" value={formatComparisonMeasure(item.area, 'm²')} />
+                )}
+              </ComparisonRow>
+              <ComparisonRow items={items} width={columnWidth}>
+                {(item) => (
+                  <Criterion
+                    label="Số người ở"
+                    value={formatComparisonMeasure(item.maxOccupants, 'người')}
+                    icon="users"
+                  />
+                )}
+              </ComparisonRow>
+              <ComparisonRow items={items} width={columnWidth}>
+                {(item) => (
+                  <Criterion label="Khoảng cách" value={formatDistance(item.distanceMeters)} />
+                )}
+              </ComparisonRow>
+              <ComparisonRow items={items} width={columnWidth}>
+                {(item) => (
+                  <Criterion
+                    label="Tiện ích"
+                    value={
+                      item.amenities?.length
+                        ? item.amenities.map((amenity) => amenity.name).join(', ')
+                        : 'Chưa có dữ liệu'
+                    }
+                  />
+                )}
+              </ComparisonRow>
+              <ComparisonRow items={items} width={columnWidth}>
+                {(item) => {
+                  const hasRating =
+                    item.averageRating !== null &&
+                    item.averageRating !== undefined &&
+                    Number.isFinite(item.averageRating);
+
+                  return (
+                    <Criterion
+                      label="Đánh giá"
+                      value={formatRating(item.averageRating)}
+                      icon={hasRating ? 'star' : undefined}
+                    />
+                  );
+                }}
+              </ComparisonRow>
+              <ComparisonRow items={items} width={columnWidth} variant="action">
+                {(item) => (
+                  <Button
+                    title="Xem chi tiết"
+                    variant="outline"
+                    onPress={() => navigation.navigate('ListingDetail', { id: item.id })}
+                    fullWidth
+                  />
+                )}
+              </ComparisonRow>
+              <ComparisonRow items={items} width={columnWidth} variant="action">
+                {(item) => (
+                  <Button
+                    title="Bỏ khỏi so sánh"
+                    variant="ghost"
+                    onPress={() => remove(item.id)}
+                    fullWidth
+                  />
+                )}
+              </ComparisonRow>
+            </View>
           </ScrollView>
         </ScrollView>
       )}
-    </View>
+    </ScreenContainer>
   );
 };
 
-const ComparisonColumn = ({
-  item,
+const ComparisonRow = ({
+  items,
   width,
-  onRemove,
-  onOpen,
+  variant,
+  children,
 }: {
-  item: ComparisonItem;
+  items: ComparisonItem[];
   width: number;
-  onRemove: () => void;
-  onOpen: () => void;
-}) => {
-  const coverImage = item.images.find((image) => image.isCover) ?? item.images[0];
-
-  return (
-    <View style={[styles.column, { width }]}>
-      {coverImage ? (
-        <Image source={{ uri: coverImage.url }} style={styles.image} resizeMode="cover" />
-      ) : (
-        <View style={styles.imageFallback}>
-          <ImageOff size={32} color={THEME_COLORS.TEXT_PLACEHOLDER} />
-        </View>
-      )}
-
-      <View style={styles.columnContent}>
-        <Typography variant="body1" weight="BOLD" numberOfLines={3} style={styles.title}>
-          {item.title}
-        </Typography>
-
-        <Criterion label="Giá" value={`${formatVND(item.price)}/tháng`} />
-        <Criterion label="Diện tích" value={`${item.area} m²`} />
-        <Criterion label="Số người ở" value={`${item.maxOccupants} người`} icon="users" />
-        <Criterion label="Khoảng cách" value={formatDistance(item.distanceMeters)} />
-        <Criterion
-          label="Tiện ích"
-          value={
-            item.amenities.length > 0
-              ? item.amenities.map((amenity) => amenity.name).join(', ')
-              : 'Chưa có dữ liệu'
-          }
-        />
-        <Criterion
-          label="Đánh giá"
-          value={
-            item.averageRating === null || item.averageRating === undefined
-              ? 'Chưa có dữ liệu'
-              : item.averageRating.toFixed(1)
-          }
-          icon={
-            item.averageRating === null || item.averageRating === undefined ? undefined : 'star'
-          }
-        />
-
-        <Button title="Xem chi tiết" variant="outline" onPress={onOpen} fullWidth />
-        <Button
-          title="Bỏ khỏi so sánh"
-          variant="ghost"
-          onPress={onRemove}
-          fullWidth
-          style={styles.removeButton}
-        />
+  variant?: 'image' | 'title' | 'action';
+  children: (item: ComparisonItem) => ReactNode;
+}) => (
+  <View style={styles.row}>
+    {items.map((item) => (
+      <View
+        key={item.id}
+        style={[
+          styles.cell,
+          { width },
+          variant === 'image' && styles.imageCell,
+          variant === 'title' && styles.titleCell,
+          variant === 'action' && styles.actionCell,
+        ]}
+      >
+        {children(item)}
       </View>
+    ))}
+  </View>
+);
+
+const ComparisonImage = ({ item }: { item: ComparisonItem }) => {
+  const [hasError, setHasError] = useState(false);
+  const coverImage = item.images?.find((image) => image.isCover) ?? item.images?.[0];
+
+  return coverImage?.url && !hasError ? (
+    <Image
+      source={{ uri: coverImage.url }}
+      style={styles.image}
+      resizeMode="cover"
+      onError={() => setHasError(true)}
+    />
+  ) : (
+    <View style={styles.imageFallback}>
+      <ImageOff size={32} color={THEME_COLORS.TEXT_PLACEHOLDER} />
     </View>
   );
 };
@@ -154,7 +220,7 @@ const Criterion = ({
   value: string;
   icon?: 'star' | 'users';
 }) => (
-  <View style={styles.criterion}>
+  <View>
     <Typography variant="caption" weight="SEMIBOLD" colorKey="TEXT_MUTED">
       {label}
     </Typography>
@@ -171,7 +237,7 @@ const Criterion = ({
 );
 
 const formatDistance = (distanceMeters?: number): string => {
-  if (distanceMeters === undefined) {
+  if (distanceMeters === undefined || !Number.isFinite(distanceMeters)) {
     return 'Chưa có dữ liệu';
   }
 
@@ -180,37 +246,52 @@ const formatDistance = (distanceMeters?: number): string => {
     : `${Math.round(distanceMeters)} m`;
 };
 
+const formatComparisonPrice = (price: number | null | undefined): string =>
+  price === null || price === undefined || !Number.isFinite(price)
+    ? 'Chưa có dữ liệu'
+    : `${formatVND(price)} / tháng`;
+
+const formatComparisonMeasure = (value: number | null | undefined, unit: string): string =>
+  value === null || value === undefined || !Number.isFinite(value)
+    ? 'Chưa có dữ liệu'
+    : `${value} ${unit}`;
+
+const formatRating = (rating: number | null | undefined): string =>
+  rating === null || rating === undefined || !Number.isFinite(rating)
+    ? 'Chưa có dữ liệu'
+    : rating.toFixed(1);
+
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: THEME_COLORS.BACKGROUND },
   emptyState: { flex: 1 },
   verticalContent: { paddingVertical: SPACING_TOKENS.MD },
   hint: { paddingHorizontal: SPACING_TOKENS.MD, marginBottom: SPACING_TOKENS.SM },
   columns: {
     paddingHorizontal: SPACING_TOKENS.MD,
     paddingBottom: SPACING_TOKENS.LG,
-    gap: SPACING_TOKENS.MD,
   },
-  column: {
-    alignSelf: 'flex-start',
+  table: {
     overflow: 'hidden',
     borderWidth: 1,
     borderColor: THEME_COLORS.BORDER,
     borderRadius: BORDER_RADIUS_TOKENS.LG,
     backgroundColor: THEME_COLORS.SURFACE,
   },
+  row: { flexDirection: 'row', alignItems: 'stretch' },
+  cell: {
+    padding: SPACING_TOKENS.MD,
+    borderRightWidth: 1,
+    borderTopWidth: 1,
+    borderColor: THEME_COLORS.DIVIDER,
+  },
+  imageCell: { padding: 0, borderTopWidth: 0 },
+  titleCell: { minHeight: 78 },
+  actionCell: { justifyContent: 'center' },
   image: { width: '100%', height: 160 },
   imageFallback: {
     height: 160,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: THEME_COLORS.SURFACE_MUTED,
-  },
-  columnContent: { padding: SPACING_TOKENS.MD },
-  title: { minHeight: 66, marginBottom: SPACING_TOKENS.SM },
-  criterion: {
-    paddingVertical: SPACING_TOKENS.SM,
-    borderTopWidth: 1,
-    borderTopColor: THEME_COLORS.DIVIDER,
   },
   valueRow: {
     flexDirection: 'row',
@@ -219,5 +300,4 @@ const styles = StyleSheet.create({
     marginTop: SPACING_TOKENS.XS,
   },
   valueText: { flex: 1 },
-  removeButton: { marginTop: SPACING_TOKENS.XS },
 });

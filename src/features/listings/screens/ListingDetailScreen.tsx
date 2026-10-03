@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
@@ -17,10 +17,11 @@ import { AppError, formatVND } from '@core';
 import { useToast } from '@hooks';
 import type { RootStackParamList } from '@navigation';
 import { BORDER_RADIUS_TOKENS, SPACING_TOKENS, THEME_COLORS } from '@theme';
-import { Avatar, Button, HeaderBar, Typography } from '@ui';
+import { Avatar, Button, HeaderBar, ScreenContainer, Typography } from '@ui';
 import { MAX_COMPARISON_ITEMS, useComparisonStore } from '@features/comparison';
 import { useListingDetail, useRecordListingView } from '../hooks';
 import type { ListingDetailImage } from '../types';
+import { ROOM_TYPE_OPTIONS } from '../types/constants';
 
 type DetailRoute = RouteProp<RootStackParamList, 'ListingDetail'>;
 type DetailNavigation = NativeStackNavigationProp<RootStackParamList>;
@@ -33,20 +34,30 @@ export const ListingDetailScreen = () => {
   const listingId = route.params.id;
   const detailQuery = useListingDetail(listingId);
   const viewMutation = useRecordListingView(listingId);
-  const hasRecordedView = useRef(false);
+  const recordedListingId = useRef<string | null>(null);
   const comparisonItems = useComparisonStore((state) => state.items);
   const addComparison = useComparisonStore((state) => state.add);
   const removeComparison = useComparisonStore((state) => state.remove);
   const isCompared = comparisonItems.some((item) => item.id === listingId);
 
-  useEffect(() => {
-    if (!detailQuery.data || hasRecordedView.current) {
+  const handleBack = () => {
+    if (navigation.canGoBack()) {
+      navigation.goBack();
+
       return;
     }
 
-    hasRecordedView.current = true;
+    navigation.navigate('Main');
+  };
+
+  useEffect(() => {
+    if (!detailQuery.data || recordedListingId.current === listingId) {
+      return;
+    }
+
+    recordedListingId.current = listingId;
     viewMutation.mutate();
-  }, [detailQuery.data, viewMutation]);
+  }, [detailQuery.data, listingId, viewMutation]);
 
   const handleToggleComparison = () => {
     if (!detailQuery.data) {
@@ -63,7 +74,9 @@ export const ListingDetailScreen = () => {
     const result = addComparison(detailQuery.data);
 
     if (result === 'limit-reached') {
-      toast.warning('Bạn chỉ có thể so sánh tối đa 4 tin. Hãy bỏ bớt một tin trước.');
+      toast.warning(
+        `Bạn chỉ có thể so sánh tối đa ${MAX_COMPARISON_ITEMS} phòng. Hãy bỏ bớt một phòng để thêm phòng khác.`
+      );
 
       return;
     }
@@ -75,12 +88,15 @@ export const ListingDetailScreen = () => {
 
   if (detailQuery.isLoading) {
     return (
-      <View style={styles.stateContainer}>
-        <ActivityIndicator size="large" color={THEME_COLORS.PRIMARY} />
-        <Typography variant="body2" colorKey="TEXT_MUTED" style={styles.stateText}>
-          Đang tải thông tin phòng...
-        </Typography>
-      </View>
+      <ScreenContainer keyboardAvoiding={false}>
+        <HeaderBar title="Chi tiết phòng" onBack={handleBack} />
+        <View style={styles.stateContainer}>
+          <ActivityIndicator size="large" color={THEME_COLORS.PRIMARY} />
+          <Typography variant="body2" colorKey="TEXT_MUTED" style={styles.stateText}>
+            Đang tải thông tin phòng...
+          </Typography>
+        </View>
+      </ScreenContainer>
     );
   }
 
@@ -89,8 +105,8 @@ export const ListingDetailScreen = () => {
       detailQuery.error instanceof AppError && detailQuery.error.statusCode === 404;
 
     return (
-      <View style={styles.screen}>
-        <HeaderBar title="Chi tiết phòng" onBack={() => navigation.goBack()} />
+      <ScreenContainer keyboardAvoiding={false}>
+        <HeaderBar title="Chi tiết phòng" onBack={handleBack} />
         <View style={styles.stateContainer}>
           <ImageOff size={44} color={THEME_COLORS.TEXT_PLACEHOLDER} />
           <Typography variant="h3" weight="BOLD" align="center" style={styles.stateText}>
@@ -103,19 +119,21 @@ export const ListingDetailScreen = () => {
           </Typography>
           <Button title="Thử lại" onPress={() => void detailQuery.refetch()} style={styles.retry} />
         </View>
-      </View>
+      </ScreenContainer>
     );
   }
 
   const listing = detailQuery.data;
   const hasCoordinates =
     Number.isFinite(listing.location?.latitude) && Number.isFinite(listing.location?.longitude);
+  const roomTypeLabel =
+    ROOM_TYPE_OPTIONS.find((option) => option.value === listing.roomType)?.label ?? 'Chưa cập nhật';
 
   return (
-    <View style={styles.screen}>
+    <ScreenContainer keyboardAvoiding={false}>
       <HeaderBar
         title="Chi tiết phòng"
-        onBack={() => navigation.goBack()}
+        onBack={handleBack}
         rightAction={
           <TouchableOpacity
             accessibilityLabel="Mở danh sách so sánh"
@@ -140,15 +158,12 @@ export const ListingDetailScreen = () => {
         showsVerticalScrollIndicator={false}
         renderItem={() => (
           <View>
-            <ListingImageGallery images={listing.images} width={width} />
+            <ListingImageGallery images={listing.images ?? []} width={width} />
 
             <View style={styles.content}>
               <View style={styles.priceRow}>
                 <Typography variant="h2" weight="BOLD" colorKey="PRIMARY">
-                  {formatVND(listing.price)}
-                </Typography>
-                <Typography variant="body2" colorKey="TEXT_MUTED">
-                  /tháng
+                  {formatNullablePrice(listing.price, ' / tháng')}
                 </Typography>
               </View>
 
@@ -157,15 +172,15 @@ export const ListingDetailScreen = () => {
               </Typography>
 
               <View style={styles.metaRow}>
-                <InfoPill label={`${listing.area} m²`} />
-                <InfoPill label={`${listing.maxOccupants} người`} icon="users" />
-                <InfoPill label={`${listing.viewCount} lượt xem`} icon="eye" />
+                <InfoPill label={formatMeasuredValue(listing.area, 'm²')} />
+                <InfoPill label={formatMeasuredValue(listing.maxOccupants, 'người')} icon="users" />
+                <InfoPill label={formatMeasuredValue(listing.viewCount, 'lượt xem')} icon="eye" />
               </View>
 
               <View style={styles.addressRow}>
                 <MapPin size={18} color={THEME_COLORS.TEXT_MUTED} />
                 <Typography variant="body2" colorKey="TEXT_SECONDARY" style={styles.flexText}>
-                  {listing.address.fullAddress}
+                  {listing.address?.fullAddress || 'Chưa cập nhật địa chỉ'}
                 </Typography>
               </View>
 
@@ -176,14 +191,20 @@ export const ListingDetailScreen = () => {
               </Section>
 
               <Section title="Chi phí và thông tin phòng">
-                <DetailRow label="Loại phòng" value={listing.roomType} />
+                <DetailRow label="Loại phòng" value={roomTypeLabel} />
                 <DetailRow label="Tiền cọc" value={formatNullablePrice(listing.deposit)} />
-                <DetailRow label="Giá điện" value={formatNullablePrice(listing.electricPrice)} />
-                <DetailRow label="Giá nước" value={formatNullablePrice(listing.waterPrice)} />
+                <DetailRow
+                  label="Giá điện"
+                  value={formatNullablePrice(listing.electricPrice, ' / kWh')}
+                />
+                <DetailRow
+                  label="Giá nước"
+                  value={formatNullablePrice(listing.waterPrice, ' / m³')}
+                />
               </Section>
 
               <Section title="Tiện ích">
-                {listing.amenities.length > 0 ? (
+                {listing.amenities?.length ? (
                   <View style={styles.amenities}>
                     {listing.amenities.map((amenity) => (
                       <View key={amenity.id} style={styles.amenityChip}>
@@ -219,7 +240,7 @@ export const ListingDetailScreen = () => {
                       <Marker
                         coordinate={listing.location}
                         title={listing.title}
-                        description={listing.address.fullAddress}
+                        description={listing.address?.fullAddress}
                         pinColor={THEME_COLORS.PRIMARY}
                       />
                     </MapView>
@@ -232,32 +253,40 @@ export const ListingDetailScreen = () => {
               </Section>
 
               <Section title="Chủ trọ">
-                <View style={styles.landlordRow}>
-                  <Avatar
-                    uri={listing.landlord.avatarUrl}
-                    name={listing.landlord.fullName}
-                    size="lg"
-                  />
-                  <View style={styles.landlordInfo}>
-                    <View style={styles.landlordNameRow}>
-                      <Typography variant="body1" weight="BOLD">
-                        {listing.landlord.fullName}
-                      </Typography>
-                      {listing.landlord.isVerified ? (
-                        <ShieldCheck size={17} color={THEME_COLORS.SUCCESS} />
+                {listing.landlord ? (
+                  <View style={styles.landlordRow}>
+                    <Avatar
+                      uri={listing.landlord.avatarUrl}
+                      name={listing.landlord.fullName}
+                      size="lg"
+                    />
+                    <View style={styles.landlordInfo}>
+                      <View style={styles.landlordNameRow}>
+                        <Typography variant="body1" weight="BOLD">
+                          {listing.landlord.fullName}
+                        </Typography>
+                        {listing.landlord.isVerified ? (
+                          <ShieldCheck size={17} color={THEME_COLORS.SUCCESS} />
+                        ) : null}
+                      </View>
+                      {listing.landlord.bio ? (
+                        <Typography variant="caption" colorKey="TEXT_MUTED">
+                          {listing.landlord.bio}
+                        </Typography>
                       ) : null}
                     </View>
-                    {listing.landlord.bio ? (
-                      <Typography variant="caption" colorKey="TEXT_MUTED">
-                        {listing.landlord.bio}
-                      </Typography>
-                    ) : null}
                   </View>
-                </View>
+                ) : (
+                  <Typography variant="body2" colorKey="TEXT_MUTED">
+                    Chưa có thông tin chủ trọ.
+                  </Typography>
+                )}
               </Section>
 
               <Section title="Đánh giá">
-                {listing.averageRating === null || listing.averageRating === undefined ? (
+                {listing.averageRating === null ||
+                listing.averageRating === undefined ||
+                !Number.isFinite(listing.averageRating) ? (
                   <Typography variant="body2" colorKey="TEXT_MUTED">
                     Chưa có dữ liệu đánh giá.
                   </Typography>
@@ -301,7 +330,7 @@ export const ListingDetailScreen = () => {
           </View>
         )}
       />
-    </View>
+    </ScreenContainer>
   );
 };
 
@@ -313,8 +342,12 @@ const ListingImageGallery = ({
   width: number;
 }) => {
   const [activeIndex, setActiveIndex] = useState(0);
+  const orderedImages = useMemo(
+    () => [...images].sort((first, second) => Number(second.isCover) - Number(first.isCover)),
+    [images]
+  );
 
-  if (images.length === 0) {
+  if (orderedImages.length === 0) {
     return (
       <View style={[styles.imageFallback, { width }]}>
         <ImageOff size={42} color={THEME_COLORS.TEXT_PLACEHOLDER} />
@@ -330,7 +363,7 @@ const ListingImageGallery = ({
       <FlatList
         horizontal
         pagingEnabled
-        data={images}
+        data={orderedImages}
         keyExtractor={(item) => item.id}
         showsHorizontalScrollIndicator={false}
         onMomentumScrollEnd={(event) =>
@@ -340,7 +373,7 @@ const ListingImageGallery = ({
       />
       <View style={styles.imageCounter}>
         <Typography variant="caption" weight="SEMIBOLD" color={THEME_COLORS.WHITE}>
-          {`${activeIndex + 1}/${images.length}`}
+          {`${activeIndex + 1}/${orderedImages.length}`}
         </Typography>
       </View>
     </View>
@@ -349,8 +382,9 @@ const ListingImageGallery = ({
 
 const GalleryImage = ({ image, width }: { image: ListingDetailImage; width: number }) => {
   const [hasError, setHasError] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
-  return hasError ? (
+  return hasError || !image.url ? (
     <View style={[styles.imageFallback, { width }]}>
       <ImageOff size={42} color={THEME_COLORS.TEXT_PLACEHOLDER} />
       <Typography variant="caption" colorKey="TEXT_MUTED" style={styles.stateText}>
@@ -359,13 +393,20 @@ const GalleryImage = ({ image, width }: { image: ListingDetailImage; width: numb
     </View>
   ) : (
     <View style={[styles.galleryImageWrapper, { width }]}>
-      <ActivityIndicator style={styles.imageLoader} color={THEME_COLORS.PRIMARY} />
       <Image
         source={{ uri: image.url }}
         style={styles.galleryImage}
         resizeMode="cover"
         onError={() => setHasError(true)}
+        onLoadEnd={() => setIsLoading(false)}
       />
+      {isLoading ? (
+        <ActivityIndicator
+          pointerEvents="none"
+          style={styles.imageLoader}
+          color={THEME_COLORS.PRIMARY}
+        />
+      ) : null}
     </View>
   );
 };
@@ -400,11 +441,17 @@ const InfoPill = ({ label, icon }: { label: string; icon?: 'users' | 'eye' }) =>
   </View>
 );
 
-const formatNullablePrice = (value: number | null): string =>
-  value === null ? 'Chưa cập nhật' : formatVND(value);
+const formatNullablePrice = (value: number | null | undefined, suffix = ''): string =>
+  value === null || value === undefined || !Number.isFinite(value)
+    ? 'Chưa cập nhật'
+    : `${formatVND(value)}${suffix}`;
+
+const formatMeasuredValue = (value: number | null | undefined, unit: string): string =>
+  value === null || value === undefined || !Number.isFinite(value)
+    ? 'Chưa cập nhật'
+    : `${value} ${unit}`;
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: THEME_COLORS.BACKGROUND },
   stateContainer: {
     flex: 1,
     alignItems: 'center',
