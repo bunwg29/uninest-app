@@ -21,6 +21,7 @@ import {
 } from 'lucide-react-native';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { RootStackParamList } from '@navigation';
 import { THEME_COLORS, BORDER_RADIUS_TOKENS, SPACING_TOKENS } from '@theme';
 import {
   useLandlordListingDetailMutation,
@@ -38,7 +39,6 @@ import {
   SkeletonBox,
   Typography,
 } from '@ui';
-import type { RootStackParamList } from '@navigation';
 import { useResponsiveLayout, useToast } from '@hooks';
 import { useListingPostStore } from '../store/listingPostStore';
 
@@ -71,7 +71,7 @@ const STATUS_VARIANTS: Record<LandlordListingStatus, 'available' | 'holding' | '
 };
 
 type ListingAction = {
-  key: 'edit' | 'hide' | 'delete' | 'republish' | 'cancel';
+  key: 'viewDetail' | 'edit' | 'hide' | 'delete' | 'republish' | 'cancel';
   label: string;
   danger?: boolean;
 };
@@ -309,6 +309,13 @@ export const LandlordListingsScreen = () => {
           if (action === 'republish') {
             if (selectedListing) executeListingMutation(action, selectedListing.id);
 
+            setSelectedListing(null);
+
+            return;
+          }
+
+          if (action === 'viewDetail' && selectedListing) {
+            navigation.getParent()?.navigate('ListingDetail', { id: selectedListing.id });
             setSelectedListing(null);
 
             return;
@@ -554,31 +561,27 @@ const ListingActionSheet = ({
 
 function getListingActions(status: LandlordListingStatus): ListingAction[] {
   const commonDelete: ListingAction = { key: 'delete', label: 'Xoá tin', danger: true };
+  const viewDetail: ListingAction = { key: 'viewDetail', label: 'Xem chi tiết phòng' };
 
   if (status === 'published') {
-    return [
-      { key: 'edit', label: 'Sửa' },
-      { key: 'hide', label: 'Ẩn tin' },
-    ];
+    return [viewDetail, { key: 'edit', label: 'Sửa' }, { key: 'hide', label: 'Ẩn tin' }];
   }
 
   if (status === 'hidden') {
-    return [
-      { key: 'edit', label: 'Sửa' },
-      { key: 'republish', label: 'Hiện tin' },
-    ];
+    return [viewDetail, { key: 'edit', label: 'Sửa' }, { key: 'republish', label: 'Hiện tin' }];
   }
 
   if (status === 'rejected') {
-    return [{ key: 'edit', label: 'Sửa' }, commonDelete];
+    return [viewDetail, { key: 'edit', label: 'Sửa' }, commonDelete];
   }
 
   return status === 'pending'
     ? [
+        viewDetail,
         { key: 'edit', label: 'Sửa' },
         { key: 'cancel', label: 'Hủy gửi duyệt', danger: true },
       ]
-    : [{ key: 'edit', label: 'Sửa' }, commonDelete];
+    : [viewDetail, { key: 'edit', label: 'Sửa' }, commonDelete];
 }
 
 const ListingsSkeleton = () => (

@@ -1,3 +1,4 @@
 export * from './useCreateListing';
 export * from './useUploadImages';
+export * from './useListingDetail';
 export * from './useLandlordListings';
