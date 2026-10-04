@@ -37,6 +37,10 @@
 - **Community Forum (`FR-FORUM`)**:
   - Categories (roommate search, neighborhood tips, Q&A).
   - Client & backend profanity filter before publish. Auto-hide when report threshold reached.
+  - Screens (`@features/forum`): `Community` (feed theo chuyên mục, infinite scroll 10 bài/trang, bộ lọc ở ghép Nữ/Nam/Dưới 1,5tr/Còn chỗ), `ForumPostDetail` (chi tiết, like, bình luận trả lời 1 cấp), `ForumPostComposer` (đăng/sửa bài, lưu nháp, tối đa 10 ảnh upload R2 thư mục `forum`).
+  - Trước khi đăng, app gọi `POST /forum/moderation/check` và hiện popup cảnh báo (quay lại sửa / tự động xoá phần vi phạm / vẫn đăng nếu chỉ là cảnh báo).
+  - Báo cáo gửi `entityType` (`forum_post` | `forum_comment`) + `entityId`, `forumService.report` ánh xạ sang đúng endpoint của bài hoặc bình luận.
+  - Điểm vào: danh mục "Tìm ở ghép" ở Trang chủ, mục "Bài viết & bình luận" ở Cá nhân.
 - **Verified Review (`FR-REVIEW`)**:
   - 1 student reviews 1 listing 1 time (1-5 stars on cleanliness, security, landlord, price).
   - Landlord can reply publicly once.

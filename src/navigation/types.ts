@@ -1,5 +1,6 @@
 import type { NavigatorScreenParams } from '@react-navigation/native';
 import type { UserRole } from '@features/auth';
+import type { ForumCategory } from '@features/forum';
 import type { LandlordListing } from '@features/listings';
 
 export type ListingPostStackParamList = {
@@ -44,7 +45,6 @@ export type MainTabParamList = {
   Listings?: undefined;
   CreateListing?: undefined;
   Appointments?: undefined;
-  Community?: undefined;
 };
 
 export type LandlordTabParamList = {
@@ -72,4 +72,7 @@ export type RootStackParamList = {
     returnToChangePassword?: boolean;
   };
   ResetPassword: { target: string; otpCode: string };
+  Community: { category?: ForumCategory } | undefined;
+  ForumPostDetail: { postId: string };
+  ForumPostComposer: { postId?: string; category?: ForumCategory } | undefined;
 };

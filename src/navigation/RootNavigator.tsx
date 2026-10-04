@@ -10,6 +10,7 @@ import {
   SplashScreen,
   useAuth,
 } from '@features/auth';
+import { CommunityScreen, ForumPostComposerScreen, ForumPostDetailScreen } from '@features/forum';
 import { LandlordListingDetailScreen, StudentListingPreviewScreen } from '@features/listings';
 import type { RootStackParamList } from './types';
 import { AuthNavigator, MainTabNavigator, ListingPostNavigator } from './navigators';
@@ -48,6 +49,13 @@ export const RootNavigator = () => {
             <Stack.Screen name="StudentListingPreview" component={StudentListingPreviewScreen} />
             <Stack.Screen name="OtpVerification" component={OtpScreen} />
             <Stack.Screen name="ResetPassword" component={ResetPasswordScreen} />
+            <Stack.Screen name="Community" component={CommunityScreen} />
+            <Stack.Screen name="ForumPostDetail" component={ForumPostDetailScreen} />
+            <Stack.Screen
+              name="ForumPostComposer"
+              component={ForumPostComposerScreen}
+              options={{ animation: 'slide_from_bottom' }}
+            />
           </>
         ) : (
           <Stack.Screen name="Auth" component={AuthNavigator} />
