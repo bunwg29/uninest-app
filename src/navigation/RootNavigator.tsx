@@ -11,6 +11,15 @@ import {
   useAuth,
 } from '@features/auth';
 import { LandlordListingDetailScreen, StudentListingPreviewScreen } from '@features/listings';
+import {
+  BookingConfirmScreen,
+  BookingDetailScreen,
+  BookingHoldScreen,
+  BookingNewScreen,
+  BookingSuccessScreen,
+  CancelBookingScreen,
+  MyBookingsScreen,
+} from '@features/booking';
 import type { RootStackParamList } from './types';
 import { AuthNavigator, MainTabNavigator, ListingPostNavigator } from './navigators';
 
@@ -46,6 +55,17 @@ export const RootNavigator = () => {
             <Stack.Screen name="Settings" component={SettingsScreen} />
             <Stack.Screen name="LandlordListingDetail" component={LandlordListingDetailScreen} />
             <Stack.Screen name="StudentListingPreview" component={StudentListingPreviewScreen} />
+            <Stack.Screen name="BookingNew" component={BookingNewScreen} />
+            <Stack.Screen name="BookingConfirm" component={BookingConfirmScreen} />
+            <Stack.Screen name="BookingSuccess" component={BookingSuccessScreen} />
+            <Stack.Screen name="MyBookings" component={MyBookingsScreen} />
+            <Stack.Screen name="BookingDetail" component={BookingDetailScreen} />
+            <Stack.Screen
+              name="CancelBooking"
+              component={CancelBookingScreen}
+              options={{ presentation: 'modal', animation: 'slide_from_bottom' }}
+            />
+            <Stack.Screen name="BookingHold" component={BookingHoldScreen} />
             <Stack.Screen name="OtpVerification" component={OtpScreen} />
             <Stack.Screen name="ResetPassword" component={ResetPasswordScreen} />
           </>
