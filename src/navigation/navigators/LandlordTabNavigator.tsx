@@ -6,7 +6,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { LandlordAppointmentsScreen } from '@features/booking';
 import { LandlordListingsScreen, LandlordOverviewScreen } from '@features/listings';
 import { useListingPostStore } from '@features/listings/store/listingPostStore';
-import { MessagesScreen } from '@features/chat';
+import { MessagesScreen, useChatSummary } from '@features/chat';
 import { THEME_COLORS } from '@theme';
 import type { LandlordTabParamList, RootStackParamList } from '../types';
 import { BOTTOM_TAB_STYLES, PrimaryTabButton } from '../components/PrimaryTabButton';
@@ -18,6 +18,7 @@ const EmptyCreateScreen = () => null;
 
 export const LandlordTabNavigator = () => {
   const rootNavigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const { data: chatSummary } = useChatSummary();
   const insets = useSafeAreaInsets();
   const bottomPadding = Math.max(insets.bottom, 8);
 
@@ -91,7 +92,7 @@ export const LandlordTabNavigator = () => {
         component={MessagesScreen}
         options={{
           title: 'Tin nhắn',
-          tabBarBadge: 1,
+          tabBarBadge: chatSummary?.unreadMessages ? chatSummary.unreadMessages : undefined,
           tabBarBadgeStyle: BOTTOM_TAB_STYLES.badge,
           tabBarIcon: ({ color }) => <MessageSquare size={TAB_ICON_SIZE} color={color} />,
         }}

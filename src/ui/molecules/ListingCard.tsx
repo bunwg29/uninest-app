@@ -23,6 +23,7 @@ export interface ListingCardProps {
   onBookmarkPress?: () => void;
   style?: StyleProp<ViewStyle>;
   variant?: 'vertical' | 'horizontal';
+  compact?: boolean;
 }
 
 export const ListingCard = ({
@@ -43,6 +44,7 @@ export const ListingCard = ({
   onBookmarkPress,
   style,
   variant = 'vertical',
+  compact = false,
 }: ListingCardProps) => {
   const formattedPrice = `${price.toLocaleString('vi-VN')}đ`;
   const formattedDistance = formatDistance(distanceMeters, targetCampusName);
@@ -59,12 +61,18 @@ export const ListingCard = ({
       style={[
         styles.container,
         isHorizontal ? styles.horizontalContainer : styles.verticalContainer,
+        isHorizontal && compact ? styles.compactHorizontalContainer : null,
         style,
       ]}
       onPress={onPress}
       activeOpacity={0.88}
     >
-      <View style={isHorizontal ? styles.horizontalImageWrapper : styles.imageWrapper}>
+      <View
+        style={[
+          isHorizontal ? styles.horizontalImageWrapper : styles.imageWrapper,
+          isHorizontal && compact ? styles.compactHorizontalImageWrapper : null,
+        ]}
+      >
         {imageUrl ? (
           <Image source={{ uri: imageUrl }} style={styles.image} resizeMode="cover" />
         ) : (
@@ -97,8 +105,8 @@ export const ListingCard = ({
         ) : null}
       </View>
 
-      <View style={styles.content}>
-        <View style={styles.priceRow}>
+      <View style={[styles.content, compact && styles.compactContent]}>
+        <View style={[styles.priceRow, compact && styles.compactPriceRow]}>
           <Typography variant="h4" weight="BOLD" colorKey="TEXT_PRIMARY">
             {formattedPrice}
           </Typography>
@@ -112,7 +120,7 @@ export const ListingCard = ({
           weight="SEMIBOLD"
           colorKey="TEXT_PRIMARY"
           numberOfLines={2}
-          style={styles.title}
+          style={[styles.title, compact && styles.compactTitle]}
         >
           {title}
         </Typography>
@@ -135,7 +143,7 @@ export const ListingCard = ({
           variant="caption"
           colorKey="TEXT_SECONDARY"
           numberOfLines={1}
-          style={styles.specsText}
+          style={[styles.specsText, compact && styles.compactSpecsText]}
         >
           {[
             areaSquareMeters ? `${areaSquareMeters} m²` : null,
@@ -198,6 +206,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     width: '100%',
   },
+  compactHorizontalContainer: {
+    height: 138,
+  },
   imageWrapper: {
     width: '100%',
     height: 160,
@@ -210,6 +221,10 @@ const styles = StyleSheet.create({
     minHeight: 130,
     backgroundColor: THEME_COLORS.SURFACE_MUTED,
     position: 'relative',
+  },
+  compactHorizontalImageWrapper: {
+    width: 108,
+    minHeight: 0,
   },
   image: {
     width: '100%',
@@ -251,16 +266,26 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: SPACING_TOKENS.MD,
   },
+  compactContent: {
+    minWidth: 0,
+    padding: SPACING_TOKENS.SM,
+  },
   priceRow: {
     flexDirection: 'row',
     alignItems: 'baseline',
     marginBottom: SPACING_TOKENS.XXS + 2,
+  },
+  compactPriceRow: {
+    marginBottom: SPACING_TOKENS.XXS,
   },
   perMonthText: {
     marginLeft: SPACING_TOKENS.XS,
   },
   title: {
     marginBottom: SPACING_TOKENS.XS,
+  },
+  compactTitle: {
+    marginBottom: SPACING_TOKENS.XXS,
   },
   addressRow: {
     flexDirection: 'row',
@@ -275,6 +300,9 @@ const styles = StyleSheet.create({
   },
   specsText: {
     marginBottom: SPACING_TOKENS.XS,
+  },
+  compactSpecsText: {
+    marginBottom: SPACING_TOKENS.XXS,
   },
   ratingRow: {
     flexDirection: 'row',
