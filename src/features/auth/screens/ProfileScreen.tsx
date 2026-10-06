@@ -176,7 +176,7 @@ export const ProfileScreen = () => {
                         profile.stats.appointments > 0
                           ? `${profile.stats.appointments} đang chờ`
                           : undefined,
-                      onPress: () => toast.info('Tính năng lịch hẹn xem phòng đang phát triển'),
+                      onPress: () => navigation.navigate('MyBookings'),
                     },
                     {
                       label: 'Danh sách so sánh',
