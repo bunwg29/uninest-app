@@ -50,8 +50,9 @@ export const SlotGrid = ({
 const styles = StyleSheet.create({
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: SPACING_TOKENS.SM },
   slot: {
-    width: '30%',
-    minWidth: 88,
+    flexGrow: 1,
+    flexBasis: 88,
+    maxWidth: 160,
     height: 44,
     alignItems: 'center',
     justifyContent: 'center',
