@@ -67,6 +67,13 @@ export type RootStackParamList = {
   ChatImagePreview: { conversationId: string; counterpartName: string; imageUris: string[] };
   LandlordListingDetail: { listing: LandlordListing };
   StudentListingPreview: { listing: LandlordListing };
+  BookingNew: { resourceId: string };
+  BookingConfirm: undefined;
+  BookingSuccess: { id: string };
+  MyBookings: undefined;
+  BookingDetail: { id: string };
+  CancelBooking: { id: string };
+  BookingHold: { id: string };
   OtpVerification: {
     target: string;
     flow?: 'register' | 'forgot_password';

@@ -114,7 +114,7 @@ apiClient.interceptors.response.use(
         const refreshToken = await tokenStorage.getRefreshToken();
 
         if (!refreshToken) {
-          throw new Error('No refresh token available');
+          throw new Error('Không tìm thấy mã làm mới phiên đăng nhập');
         }
 
         const refreshResponse = await axios.post<{
@@ -163,7 +163,7 @@ apiClient.interceptors.response.use(
           ? rawMessages
           : null) ||
       error.message ||
-      'An unexpected network error occurred';
+      'Đã xảy ra lỗi kết nối không mong muốn';
 
     const statusCode =
       (typeof errorData?.statusCode === 'number' ? errorData.statusCode : null) ||
