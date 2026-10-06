@@ -33,6 +33,12 @@ export interface BookingStudent {
   avatarUrl: string | null;
 }
 
+export interface BookingLandlord {
+  id: string;
+  fullName: string;
+  avatarUrl: string | null;
+}
+
 export interface Booking {
   id: string;
   code: string;
@@ -50,6 +56,7 @@ export interface Booking {
   rejectedAt: string | null;
   createdAt: string;
   student: BookingStudent | null;
+  landlord?: BookingLandlord | null;
   listing: BookingResource;
   events: BookingEvent[];
 }

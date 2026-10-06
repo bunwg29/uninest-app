@@ -5,3 +5,4 @@ export * from './SlotGrid';
 export * from './StatusBadge';
 export * from './BookingCard';
 export * from './ReasonModal';
+export * from './StudentBookingDetailView';

@@ -292,9 +292,9 @@ describe('Các màn hình Booking', () => {
 
     await fireEvent.press(screen.getByText('Thêm vào lịch'));
 
-    expect(screen.getByText('Cả 2 bên đã xác nhận')).toBeTruthy();
+    expect(screen.getByText('Chủ trọ đã xác nhận.')).toBeTruthy();
     expect(Linking.openURL).toHaveBeenCalled();
-    await fireEvent.press(screen.getByText('Hủy lịch hẹn'));
+    await fireEvent.press(screen.getByText('Huỷ lịch hẹn'));
     expect(Alert.alert).toHaveBeenCalled();
   });
 
@@ -315,7 +315,7 @@ describe('Các màn hình Booking', () => {
     const screen = await render(<BookingDetailScreen />);
 
     expect(screen.queryByText('Nhắn tin với Chủ trọ')).toBeNull();
-    expect(screen.queryByText('Hủy lịch hẹn')).toBeNull();
+    expect(screen.queryByText('Huỷ lịch hẹn')).toBeNull();
     await fireEvent.press(screen.getByText('Nhắn tin với sinh viên'));
 
     expect(mockOpenChat).toHaveBeenCalledWith(resource.id, 'student-1');
@@ -326,7 +326,7 @@ describe('Các màn hình Booking', () => {
     globalThis.confirm = jest.fn(() => true);
     const screen = await render(<BookingDetailScreen />);
 
-    await fireEvent.press(screen.getByText('Hủy lịch hẹn'));
+    await fireEvent.press(screen.getByText('Huỷ lịch hẹn'));
 
     await waitFor(() =>
       expect(mockCancel.mutateAsync).toHaveBeenCalledWith({ id: mockBooking.id })
@@ -343,7 +343,7 @@ describe('Các màn hình Booking', () => {
     mockDetailQuery = { ...mockDetailQuery, data: mockBooking };
     const screen = await render(<BookingDetailScreen />);
 
-    expect(screen.getAllByText('Đã hủy')).toHaveLength(2);
+    expect(screen.getAllByText('Đã hủy')).toHaveLength(1);
     expect(screen.getByText('Lý do: Có lịch học')).toBeTruthy();
     expect(screen.getByText('Phòng tương tự đang còn trống')).toBeTruthy();
   });

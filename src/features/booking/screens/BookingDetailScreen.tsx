@@ -10,7 +10,13 @@ import { useOpenListing } from '@features/listings/hooks/useOpenListing';
 import { useToast } from '@hooks';
 import { BORDER_RADIUS_TOKENS, SPACING_TOKENS, THEME_COLORS } from '@theme';
 import { Button, HeaderBar, ScreenContainer, Typography } from '@ui';
-import { ReasonModal, ResourceCard, StatusBadge } from '../components';
+import {
+  ReasonModal,
+  ResourceCard,
+  StatusBadge,
+  StudentBookingDetailView,
+  getBookingSummary,
+} from '../components';
 import {
   useBookingDetail,
   useCancelBooking,
@@ -18,7 +24,7 @@ import {
   useRejectBooking,
   useReleaseBooking,
 } from '../hooks';
-import type { BookingStatus } from '../types';
+import type { Booking, BookingStatus } from '../types';
 import { formatBookingDateTime, getHoursUntil } from '../utils';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
@@ -117,16 +123,159 @@ export const BookingDetailScreen = () => {
     await Linking.openURL(url);
   };
 
-  return (
-    <ScreenContainer keyboardAvoiding={false}>
-      <HeaderBar title="Chi tiết lịch hẹn" onBack={() => navigation.goBack()} />
-      {!booking ? (
-        <View style={styles.center}>
-          <Typography>Không thể tải chi tiết lịch hẹn.</Typography>
-          <Button title="Thử lại" onPress={() => bookingQuery.refetch()} />
+  const renderLandlordBody = (booking: Booking) => (
+    <>
+      <View
+        style={[
+          styles.banner,
+          isPositiveStatus(booking.status) ? styles.successBanner : styles.warningBanner,
+        ]}
+      >
+        {isPositiveStatus(booking.status) ? (
+          <Check size={22} color={THEME_COLORS.SUCCESS} />
+        ) : (
+          <TriangleAlert size={22} color={THEME_COLORS.WARNING} />
+        )}
+        <View style={styles.flex}>
+          <Typography
+            variant="body1"
+            weight="BOLD"
+            colorKey={isPositiveStatus(booking.status) ? 'SUCCESS' : 'WARNING'}
+          >
+            {isLandlord ? LANDLORD_BANNER_LABELS[booking.status] : BANNER_LABELS[booking.status]}
+          </Typography>
+          {booking.cancelReason ? (
+            <Typography variant="caption" colorKey="TEXT_SECONDARY">
+              Lý do: {booking.cancelReason}
+            </Typography>
+          ) : null}
         </View>
-      ) : (
-        <ScrollView contentContainerStyle={styles.content}>
+      </View>
+      <View style={styles.timeline}>
+        <TimelineStep
+          label="Gửi yêu cầu"
+          value={formatBookingDateTime(booking.createdAt)}
+          completed
+        />
+        <TimelineStep
+          label="Chủ trọ xác nhận"
+          value={
+            booking.confirmedAt ? formatBookingDateTime(booking.confirmedAt) : 'Đang chờ phản hồi'
+          }
+          completed={Boolean(booking.confirmedAt)}
+        />
+        <TimelineStep
+          label={isClosedStatus(booking.status) ? 'Lịch hẹn đã đóng' : 'Xem phòng trực tiếp'}
+          value={formatBookingDateTime(booking.startTime)}
+          completed={false}
+        />
+      </View>
+      {isLandlord && booking.student ? (
+        <View style={styles.details}>
+          <View style={styles.codeRow}>
+            <Typography variant="body2" colorKey="TEXT_MUTED">
+              Sinh viên
+            </Typography>
+            <Typography variant="body2" weight="BOLD">
+              {booking.student.fullName}
+            </Typography>
+          </View>
+          <View style={styles.codeRow}>
+            <Typography variant="body2" colorKey="TEXT_MUTED">
+              Số điện thoại
+            </Typography>
+            <Typography variant="body2" weight="BOLD">
+              {booking.student.phone}
+            </Typography>
+          </View>
+          {booking.note ? (
+            <Typography variant="body2" colorKey="TEXT_SECONDARY">
+              Ghi chú: {booking.note}
+            </Typography>
+          ) : null}
+        </View>
+      ) : null}
+      <ResourceCard
+        resource={booking.listing}
+        onPress={() => void openListing(booking.listing.id)}
+      />
+      <View style={styles.details}>
+        <View style={styles.detailRow}>
+          <Clock3 size={18} color={THEME_COLORS.PRIMARY} />
+          <View style={styles.flex}>
+            <Typography variant="caption" colorKey="TEXT_MUTED">
+              Thời gian
+            </Typography>
+            <Typography variant="body2" weight="BOLD">
+              {formatBookingDateTime(booking.startTime)}
+            </Typography>
+          </View>
+        </View>
+        <View style={styles.detailRow}>
+          <MapPin size={18} color={THEME_COLORS.PRIMARY} />
+          <View style={styles.flex}>
+            <Typography variant="caption" colorKey="TEXT_MUTED">
+              Địa chỉ
+            </Typography>
+            <Typography variant="body2" weight="BOLD">
+              {booking.listing.address}
+            </Typography>
+          </View>
+        </View>
+        <View style={styles.codeRow}>
+          <Typography variant="body2" colorKey="TEXT_MUTED">
+            Mã yêu cầu
+          </Typography>
+          <Typography variant="body2" weight="BOLD">
+            #{booking.code}
+          </Typography>
+        </View>
+        <StatusBadge status={booking.status} />
+      </View>
+      <View style={styles.actions}>
+        {booking.status === 'pending' ? (
+          <>
+            <Button
+              title="Từ chối"
+              variant="outline"
+              onPress={() => setReasonAction('reject')}
+              style={styles.actionButton}
+            />
+            <Button
+              title="Xác nhận"
+              isLoading={confirmBooking.isPending}
+              onPress={() => void handleConfirm()}
+              style={styles.actionButton}
+            />
+          </>
+        ) : null}
+        {booking.status === 'holding' ? (
+          <Button
+            title="Hủy giữ chỗ"
+            variant="danger"
+            onPress={() => setReasonAction('release')}
+            fullWidth
+          />
+        ) : null}
+        {booking.student ? (
+          <Button
+            title="Nhắn tin với sinh viên"
+            variant="outline"
+            leftIcon={<MessageCircle size={17} color={THEME_COLORS.TEXT_PRIMARY} />}
+            onPress={() => void openChat(booking.listing.id, booking.student?.id)}
+            fullWidth
+          />
+        ) : null}
+      </View>
+    </>
+  );
+
+  const renderStudentBody = () => {
+    if (!booking) return null;
+
+    return (
+      <>
+        {getBookingSummary(booking) ? null : (
           <View
             style={[
               styles.banner,
@@ -144,9 +293,7 @@ export const BookingDetailScreen = () => {
                 weight="BOLD"
                 colorKey={isPositiveStatus(booking.status) ? 'SUCCESS' : 'WARNING'}
               >
-                {isLandlord
-                  ? LANDLORD_BANNER_LABELS[booking.status]
-                  : BANNER_LABELS[booking.status]}
+                {BANNER_LABELS[booking.status]}
               </Typography>
               {booking.cancelReason ? (
                 <Typography variant="caption" colorKey="TEXT_SECONDARY">
@@ -155,177 +302,72 @@ export const BookingDetailScreen = () => {
               ) : null}
             </View>
           </View>
-          <View style={styles.timeline}>
-            <TimelineStep
-              label="Gửi yêu cầu"
-              value={formatBookingDateTime(booking.createdAt)}
-              completed
-            />
-            <TimelineStep
-              label="Chủ trọ xác nhận"
-              value={
-                booking.confirmedAt
-                  ? formatBookingDateTime(booking.confirmedAt)
-                  : 'Đang chờ phản hồi'
-              }
-              completed={Boolean(booking.confirmedAt)}
-            />
-            <TimelineStep
-              label={isClosedStatus(booking.status) ? 'Lịch hẹn đã đóng' : 'Xem phòng trực tiếp'}
-              value={formatBookingDateTime(booking.startTime)}
-              completed={false}
+        )}
+        <StudentBookingDetailView
+          booking={booking}
+          summary={getBookingSummary(booking)}
+          onOpenListing={() => void openListing(booking.listing.id)}
+          onOpenChat={() => void openChat(booking.listing.id)}
+        />
+        {isClosedStatus(booking.status) ? (
+          <View style={styles.similarBox}>
+            <Typography variant="body1" weight="BOLD">
+              Phòng tương tự đang còn trống
+            </Typography>
+            <Typography variant="body2" colorKey="TEXT_MUTED">
+              Khám phá thêm các phòng phù hợp gần khu vực này.
+            </Typography>
+            <Button
+              title="Xem phòng khác"
+              variant="outline"
+              onPress={() => navigation.navigate('Main', { screen: 'Search' })}
             />
           </View>
-          {isLandlord && booking.student ? (
-            <View style={styles.details}>
-              <View style={styles.codeRow}>
-                <Typography variant="body2" colorKey="TEXT_MUTED">
-                  Sinh viên
-                </Typography>
-                <Typography variant="body2" weight="BOLD">
-                  {booking.student.fullName}
-                </Typography>
-              </View>
-              <View style={styles.codeRow}>
-                <Typography variant="body2" colorKey="TEXT_MUTED">
-                  Số điện thoại
-                </Typography>
-                <Typography variant="body2" weight="BOLD">
-                  {booking.student.phone}
-                </Typography>
-              </View>
-              {booking.note ? (
-                <Typography variant="body2" colorKey="TEXT_SECONDARY">
-                  Ghi chú: {booking.note}
-                </Typography>
+        ) : null}
+      </>
+    );
+  };
+
+  return (
+    <ScreenContainer keyboardAvoiding={false}>
+      <HeaderBar title="Chi tiết lịch hẹn" onBack={() => navigation.goBack()} />
+      {!booking ? (
+        <View style={styles.center}>
+          <Typography>Không thể tải chi tiết lịch hẹn.</Typography>
+          <Button title="Thử lại" onPress={() => bookingQuery.refetch()} />
+        </View>
+      ) : (
+        <>
+          <ScrollView contentContainerStyle={styles.content}>
+            {isLandlord ? renderLandlordBody(booking) : renderStudentBody()}
+          </ScrollView>
+          {!isLandlord && !isClosedStatus(booking.status) ? (
+            <View style={styles.bottomBar}>
+              {booking.status === 'confirmed' && getHoursUntil(booking.startTime) <= 0 ? (
+                <Button
+                  title="Giữ chỗ phòng này"
+                  onPress={() => navigation.navigate('BookingHold', { id: booking.id })}
+                  fullWidth
+                />
               ) : null}
+              <View style={styles.bottomRow}>
+                <Button
+                  title="Thêm vào lịch"
+                  variant="outline"
+                  onPress={handleAddCalendar}
+                  style={styles.actionButton}
+                />
+                <Button
+                  title="Huỷ lịch hẹn"
+                  variant="danger"
+                  disabled={getHoursUntil(booking.startTime) <= 0}
+                  onPress={handleCancel}
+                  style={styles.actionButton}
+                />
+              </View>
             </View>
           ) : null}
-          <ResourceCard
-            resource={booking.listing}
-            onPress={() => void openListing(booking.listing.id)}
-          />
-          <View style={styles.details}>
-            <View style={styles.detailRow}>
-              <Clock3 size={18} color={THEME_COLORS.PRIMARY} />
-              <View style={styles.flex}>
-                <Typography variant="caption" colorKey="TEXT_MUTED">
-                  Thời gian
-                </Typography>
-                <Typography variant="body2" weight="BOLD">
-                  {formatBookingDateTime(booking.startTime)}
-                </Typography>
-              </View>
-            </View>
-            <View style={styles.detailRow}>
-              <MapPin size={18} color={THEME_COLORS.PRIMARY} />
-              <View style={styles.flex}>
-                <Typography variant="caption" colorKey="TEXT_MUTED">
-                  Địa chỉ
-                </Typography>
-                <Typography variant="body2" weight="BOLD">
-                  {booking.listing.address}
-                </Typography>
-              </View>
-            </View>
-            <View style={styles.codeRow}>
-              <Typography variant="body2" colorKey="TEXT_MUTED">
-                Mã yêu cầu
-              </Typography>
-              <Typography variant="body2" weight="BOLD">
-                #{booking.code}
-              </Typography>
-            </View>
-            <StatusBadge status={booking.status} />
-          </View>
-          {!isLandlord && isClosedStatus(booking.status) ? (
-            <View style={styles.similarBox}>
-              <Typography variant="body1" weight="BOLD">
-                Phòng tương tự đang còn trống
-              </Typography>
-              <Typography variant="body2" colorKey="TEXT_MUTED">
-                Khám phá thêm các phòng phù hợp gần khu vực này.
-              </Typography>
-              <Button
-                title="Xem phòng khác"
-                variant="outline"
-                onPress={() => navigation.navigate('Main', { screen: 'Search' })}
-              />
-            </View>
-          ) : isLandlord ? (
-            <View style={styles.actions}>
-              {booking.status === 'pending' ? (
-                <>
-                  <Button
-                    title="Từ chối"
-                    variant="outline"
-                    onPress={() => setReasonAction('reject')}
-                    style={styles.actionButton}
-                  />
-                  <Button
-                    title="Xác nhận"
-                    isLoading={confirmBooking.isPending}
-                    onPress={() => void handleConfirm()}
-                    style={styles.actionButton}
-                  />
-                </>
-              ) : null}
-              {booking.status === 'holding' ? (
-                <Button
-                  title="Hủy giữ chỗ"
-                  variant="danger"
-                  onPress={() => setReasonAction('release')}
-                  fullWidth
-                />
-              ) : null}
-              {booking.student ? (
-                <Button
-                  title="Nhắn tin với sinh viên"
-                  variant="outline"
-                  leftIcon={<MessageCircle size={17} color={THEME_COLORS.TEXT_PRIMARY} />}
-                  onPress={() => void openChat(booking.listing.id, booking.student?.id)}
-                  fullWidth
-                />
-              ) : null}
-            </View>
-          ) : (
-            <View style={styles.actions}>
-              <Button
-                title="Thêm vào lịch"
-                variant="outline"
-                onPress={handleAddCalendar}
-                style={styles.actionButton}
-              />
-              <Button
-                title="Hủy lịch hẹn"
-                variant="danger"
-                disabled={getHoursUntil(booking.startTime) <= 0}
-                onPress={handleCancel}
-                style={styles.actionButton}
-              />
-              <Button
-                title="Nhắn tin với Chủ trọ"
-                variant="outline"
-                leftIcon={<MessageCircle size={17} color={THEME_COLORS.TEXT_PRIMARY} />}
-                onPress={() => void openChat(booking.listing.id)}
-                fullWidth
-              />
-              {booking.status === 'confirmed' ? (
-                getHoursUntil(booking.startTime) <= 0 ? (
-                  <Button
-                    title="Giữ chỗ phòng này"
-                    onPress={() => navigation.navigate('BookingHold', { id: booking.id })}
-                    fullWidth
-                  />
-                ) : (
-                  <Typography variant="caption" colorKey="TEXT_MUTED" align="center">
-                    Bạn có thể giữ chỗ sau khi đã đến xem phòng.
-                  </Typography>
-                )
-              ) : null}
-            </View>
-          )}
-        </ScrollView>
+        </>
       )}
       <ReasonModal
         isVisible={reasonAction !== null}
@@ -449,6 +491,16 @@ const styles = StyleSheet.create({
     borderRadius: BORDER_RADIUS_TOKENS.LG,
     backgroundColor: THEME_COLORS.PRIMARY_LIGHT,
   },
+  bottomBar: {
+    gap: SPACING_TOKENS.SM,
+    paddingHorizontal: SPACING_TOKENS.MD,
+    paddingTop: 14,
+    paddingBottom: SPACING_TOKENS.MD,
+    borderTopWidth: 1,
+    borderTopColor: THEME_COLORS.BORDER,
+    backgroundColor: THEME_COLORS.SURFACE,
+  },
+  bottomRow: { flexDirection: 'row', gap: SPACING_TOKENS.SM },
   center: {
     flex: 1,
     alignItems: 'center',
