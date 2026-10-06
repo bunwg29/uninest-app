@@ -1,8 +1,12 @@
 import { expect, test, type APIRequestContext, type Page } from '@playwright/test';
 
-const LOGIN_PHONE = '0900000001';
-const LOGIN_PASSWORD = 'UniNest@123';
-const API_URL = 'http://127.0.0.1:3000/api/v1';
+const LOGIN_PHONE = process.env.E2E_LOGIN_PHONE ?? '0900000001';
+const LOGIN_PASSWORD = process.env.E2E_LOGIN_PASSWORD ?? '';
+const API_URL = process.env.E2E_API_URL ?? 'http://127.0.0.1:3000/api/v1';
+
+if (!LOGIN_PASSWORD) {
+  throw new Error('Thiếu biến môi trường E2E_LOGIN_PASSWORD để chạy kiểm thử e2e');
+}
 
 const cleanActiveBookings = async (request: APIRequestContext) => {
   const loginResponse = await request.post(`${API_URL}/auth/login`, {
