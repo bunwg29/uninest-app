@@ -25,3 +25,11 @@ export const THEME_COLORS = {
 
 export type ThemeColors = typeof THEME_COLORS;
 export type ThemeColorKey = keyof typeof THEME_COLORS;
+
+export const OVERLAY_COLORS = {
+  FLOATING_BUTTON: 'rgba(255, 255, 255, 0.93)',
+  COUNTER_BADGE: 'rgba(23, 27, 34, 0.6)',
+  SCRIM_TOP: 'rgba(23, 27, 34, 0.32)',
+  SHADOW: '#171B22',
+  SUCCESS_BORDER: '#A7E9CE',
+} as const;

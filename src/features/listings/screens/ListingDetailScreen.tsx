@@ -15,15 +15,16 @@ import type { RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import {
   ArrowLeft,
-  CalendarCheck,
   Clock3,
   Eye,
   Flag,
   Footprints,
+  LayoutTemplate,
   Heart,
   ImageOff,
   MapPin,
   MessageSquare,
+  Plus,
   Scale,
   Share2,
   ShieldCheck,
@@ -34,8 +35,14 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AppError, formatVND } from '@core';
 import { useToast } from '@hooks';
 import type { RootStackParamList } from '@navigation';
-import { BORDER_RADIUS_TOKENS, SPACING_TOKENS, THEME_COLORS } from '@theme';
-import { Avatar, Badge, Button, HeaderBar, ScreenContainer, Typography } from '@ui';
+import {
+  BORDER_RADIUS_TOKENS,
+  OVERLAY_COLORS,
+  SPACING_TOKENS,
+  THEME_COLORS,
+  TYPOGRAPHY_TOKENS,
+} from '@theme';
+import { Avatar, Button, HeaderBar, ScreenContainer, Typography } from '@ui';
 import { useAuth } from '@features/auth';
 import { ImageViewerModal } from '@features/chat/components/ImageViewerModal';
 import { useOpenListingChat } from '@features/chat/hooks/useOpenListingChat';
@@ -64,8 +71,13 @@ type DetailNavigation = NativeStackNavigationProp<RootStackParamList>;
 
 const MAX_CONTENT_WIDTH = 720;
 const MAX_GALLERY_HEIGHT = 360;
+const GALLERY_ASPECT_RATIO = 0.72;
+const SECTION_SPACING = 20;
+const OVERLAY_TOP_OFFSET = 12;
+const ROUND_BUTTON_SIZE = 40;
+const ACTION_BUTTON_SIZE = 48;
 const VISIBLE_AMENITY_COUNT = 6;
-const ACTION_BAR_HEIGHT = 76;
+const ACTION_BAR_HEIGHT = 72;
 
 const AVAILABILITY_BADGES: Record<
   ListingAvailability,
@@ -106,7 +118,10 @@ export const ListingDetailScreen = () => {
   const [isAmenitiesVisible, setIsAmenitiesVisible] = useState(false);
   const [isReportVisible, setIsReportVisible] = useState(false);
   const columnWidth = Math.min(width, MAX_CONTENT_WIDTH);
-  const galleryHeight = Math.min(Math.round(columnWidth * 0.8), MAX_GALLERY_HEIGHT);
+  const galleryHeight = Math.min(
+    Math.round(columnWidth * GALLERY_ASPECT_RATIO),
+    MAX_GALLERY_HEIGHT
+  );
 
   const handleBack = () => {
     if (navigation.canGoBack()) {
@@ -287,32 +302,37 @@ export const ListingDetailScreen = () => {
 
           <View style={styles.content}>
             <View style={styles.badgeRow}>
-              <Badge label={availabilityBadge.label} variant={availabilityBadge.variant} />
+              <AvailabilityBadge
+                label={availabilityBadge.label}
+                variant={availabilityBadge.variant}
+              />
             </View>
 
-            <Typography variant="h2" weight="BOLD" style={styles.title}>
+            <Typography variant="h1" weight="BOLD" style={styles.title}>
               {listing.title}
             </Typography>
 
-            <Typography variant="h2" weight="BOLD" colorKey="PRIMARY" style={styles.price}>
-              {formatNullablePrice(listing.price)}
-              <Typography variant="body2" colorKey="TEXT_MUTED">
-                {' / tháng'}
+            <View style={styles.priceRow}>
+              <Typography variant="h2" weight="BOLD" colorKey="PRIMARY_DARK" style={styles.price}>
+                {formatHeadlinePrice(listing.price)}
               </Typography>
-            </Typography>
+              <Typography variant="body2" colorKey="TEXT_MUTED">
+                /tháng
+              </Typography>
+            </View>
 
             <View style={styles.metaRow}>
-              <InfoPill label={formatMeasuredValue(listing.area, 'm²')} />
+              <InfoPill label={formatMeasuredValue(listing.area, 'm²')} icon="area" />
               <InfoPill label={formatMeasuredValue(listing.maxOccupants, 'người')} icon="users" />
-              <InfoPill label={roomTypeLabel} />
+              <InfoPill label={roomTypeLabel} icon="plus" />
               {listing.viewCount !== null ? (
                 <InfoPill label={formatMeasuredValue(listing.viewCount, 'lượt xem')} icon="eye" />
               ) : null}
             </View>
 
             <View style={styles.addressRow}>
-              <MapPin size={18} color={THEME_COLORS.TEXT_MUTED} />
-              <Typography variant="body2" colorKey="TEXT_SECONDARY" style={styles.flexText}>
+              <MapPin size={16} color={THEME_COLORS.TEXT_MUTED} style={styles.addressIcon} />
+              <Typography variant="body2" colorKey="TEXT_MUTED" style={styles.flexText}>
                 {listing.address?.fullAddress || 'Chưa cập nhật địa chỉ'}
               </Typography>
             </View>
@@ -320,7 +340,12 @@ export const ListingDetailScreen = () => {
             {distanceMeters !== null && reference ? (
               <View style={styles.distancePill}>
                 <Footprints size={15} color={THEME_COLORS.PRIMARY_DARK} />
-                <Typography variant="caption" weight="SEMIBOLD" colorKey="PRIMARY_DARK">
+                <Typography
+                  variant="body2"
+                  weight="SEMIBOLD"
+                  colorKey="PRIMARY_DARK"
+                  style={styles.distanceText}
+                >
                   {`Cách ${reference.label} ${formatDistanceMeters(distanceMeters)} · ~${estimateWalkingMinutes(distanceMeters)} phút đi bộ`}
                 </Typography>
               </View>
@@ -328,9 +353,9 @@ export const ListingDetailScreen = () => {
 
             {listing.averageRating !== null && Number.isFinite(listing.averageRating) ? (
               <View style={styles.ratingRow}>
-                <Star size={16} color={THEME_COLORS.SECONDARY} fill={THEME_COLORS.SECONDARY} />
-                <Typography variant="body2" weight="BOLD">
-                  {listing.averageRating.toFixed(1)}
+                <Star size={17} color={THEME_COLORS.SECONDARY} fill={THEME_COLORS.SECONDARY} />
+                <Typography variant="body2" weight="SEMIBOLD">
+                  {formatRating(listing.averageRating)}
                 </Typography>
               </View>
             ) : null}
@@ -353,7 +378,7 @@ export const ListingDetailScreen = () => {
 
                       return (
                         <View key={amenity.id} style={styles.amenityItem}>
-                          <Icon size={18} color={THEME_COLORS.TEXT_SECONDARY} />
+                          <Icon size={19} color={THEME_COLORS.TEXT_SECONDARY} />
                           <Typography
                             variant="body2"
                             colorKey="TEXT_SECONDARY"
@@ -371,7 +396,7 @@ export const ListingDetailScreen = () => {
                       onPress={() => setIsAmenitiesVisible(true)}
                       style={styles.linkButton}
                     >
-                      <Typography variant="body2" weight="SEMIBOLD" colorKey="PRIMARY">
+                      <Typography variant="body2" weight="SEMIBOLD" colorKey="PRIMARY_DARK">
                         {`Xem tất cả ${listing.amenities.length} tiện ích`}
                       </Typography>
                     </TouchableOpacity>
@@ -385,7 +410,7 @@ export const ListingDetailScreen = () => {
             </Section>
 
             <Section title="Mô tả">
-              <Typography variant="body1" colorKey="TEXT_SECONDARY">
+              <Typography variant="body2" colorKey="TEXT_SECONDARY" style={styles.description}>
                 {listing.description?.trim() || 'Chủ trọ chưa bổ sung mô tả.'}
               </Typography>
             </Section>
@@ -460,7 +485,7 @@ export const ListingDetailScreen = () => {
                 <View style={styles.ratingRow}>
                   <Star size={20} color={THEME_COLORS.SECONDARY} fill={THEME_COLORS.SECONDARY} />
                   <Typography variant="h3" weight="BOLD">
-                    {listing.averageRating.toFixed(1)}
+                    {formatRating(listing.averageRating)}
                   </Typography>
                 </View>
               )}
@@ -484,7 +509,7 @@ export const ListingDetailScreen = () => {
 
       <View
         pointerEvents="box-none"
-        style={[styles.overlayHeader, { paddingTop: insets.top + SPACING_TOKENS.SM }]}
+        style={[styles.overlayHeader, { paddingTop: insets.top + OVERLAY_TOP_OFFSET }]}
       >
         <View style={styles.overlayRow}>
           <RoundButton label="Quay lại" onPress={handleBack}>
@@ -511,7 +536,12 @@ export const ListingDetailScreen = () => {
               />
               {comparisonItems.length > 0 ? (
                 <View style={styles.compareCount}>
-                  <Typography variant="tiny" weight="BOLD" color={THEME_COLORS.WHITE}>
+                  <Typography
+                    variant="tiny"
+                    weight="BOLD"
+                    color={THEME_COLORS.WHITE}
+                    style={styles.compareCountText}
+                  >
                     {comparisonItems.length}
                   </Typography>
                 </View>
@@ -544,20 +574,20 @@ export const ListingDetailScreen = () => {
               {isOpening ? (
                 <ActivityIndicator size="small" color={THEME_COLORS.PRIMARY} />
               ) : (
-                <MessageSquare size={20} color={THEME_COLORS.PRIMARY} />
+                <MessageSquare size={21} color={THEME_COLORS.PRIMARY} />
               )}
             </TouchableOpacity>
             <Button
               title={myBooking ? 'Xem lịch hẹn' : 'Đặt lịch xem'}
               variant="outline"
               disabled={!canBook && !myBooking}
-              leftIcon={<CalendarCheck size={17} color={THEME_COLORS.PRIMARY} />}
               onPress={() =>
                 myBooking
                   ? navigation.navigate('BookingDetail', { id: myBooking.id })
                   : navigation.navigate('BookingNew', { resourceId: listing.id })
               }
-              style={styles.actionFlex}
+              style={[styles.actionFlex, styles.outlineAction]}
+              textStyle={styles.outlineActionText}
             />
             <Button
               title={myBooking?.status === 'holding' ? 'Đang giữ chỗ' : 'Giữ chỗ'}
@@ -700,7 +730,7 @@ const ListingImageGallery = ({
       />
       <View style={styles.imageCounter}>
         <Typography variant="caption" weight="SEMIBOLD" color={THEME_COLORS.WHITE}>
-          {`${activeIndex + 1}/${images.length}`}
+          {`${activeIndex + 1} / ${images.length}`}
         </Typography>
       </View>
     </View>
@@ -773,15 +803,76 @@ const DetailRow = ({ label, value }: { label: string; value: string }) => (
   </View>
 );
 
-const InfoPill = ({ label, icon }: { label: string; icon?: 'users' | 'eye' }) => (
-  <View style={styles.infoPill}>
-    {icon === 'users' ? <Users size={14} color={THEME_COLORS.TEXT_SECONDARY} /> : null}
-    {icon === 'eye' ? <Eye size={14} color={THEME_COLORS.TEXT_SECONDARY} /> : null}
-    <Typography variant="caption" colorKey="TEXT_SECONDARY">
-      {label}
-    </Typography>
-  </View>
-);
+const INFO_PILL_ICONS = {
+  area: LayoutTemplate,
+  users: Users,
+  plus: Plus,
+  eye: Eye,
+} as const;
+
+const InfoPill = ({ label, icon }: { label: string; icon: keyof typeof INFO_PILL_ICONS }) => {
+  const Icon = INFO_PILL_ICONS[icon];
+
+  return (
+    <View style={styles.infoPill}>
+      <Icon size={16} color={THEME_COLORS.TEXT_MUTED} />
+      <Typography variant="label" weight="REGULAR" colorKey="TEXT_MUTED">
+        {label}
+      </Typography>
+    </View>
+  );
+};
+
+const AvailabilityBadge = ({
+  label,
+  variant,
+}: {
+  label: string;
+  variant: 'available' | 'holding' | 'neutral';
+}) => {
+  const palette = AVAILABILITY_PALETTES[variant];
+
+  return (
+    <View
+      style={[
+        styles.availabilityBadge,
+        { backgroundColor: palette.backgroundColor, borderColor: palette.borderColor },
+      ]}
+    >
+      <Typography
+        variant="caption"
+        weight="SEMIBOLD"
+        color={palette.textColor}
+        style={styles.badgeText}
+      >
+        {label}
+      </Typography>
+    </View>
+  );
+};
+
+const AVAILABILITY_PALETTES = {
+  available: {
+    backgroundColor: THEME_COLORS.SUCCESS_LIGHT,
+    borderColor: OVERLAY_COLORS.SUCCESS_BORDER,
+    textColor: THEME_COLORS.SUCCESS,
+  },
+  holding: {
+    backgroundColor: THEME_COLORS.WARNING_LIGHT,
+    borderColor: THEME_COLORS.WARNING_LIGHT,
+    textColor: THEME_COLORS.WARNING,
+  },
+  neutral: {
+    backgroundColor: THEME_COLORS.SURFACE_MUTED,
+    borderColor: THEME_COLORS.SURFACE_MUTED,
+    textColor: THEME_COLORS.TEXT_MUTED,
+  },
+} as const;
+
+const formatHeadlinePrice = (value: number): string =>
+  Number.isFinite(value) ? `${value.toLocaleString('vi-VN')}đ` : 'Chưa cập nhật';
+
+const formatRating = (value: number): string => value.toFixed(1).replace('.', ',');
 
 const formatNullablePrice = (value: number | null | undefined, suffix = ''): string =>
   value === null || value === undefined || !Number.isFinite(value)
@@ -816,30 +907,33 @@ const styles = StyleSheet.create({
   },
   overlayActions: { flexDirection: 'row', gap: SPACING_TOKENS.SM },
   roundButton: {
-    width: 44,
-    height: 44,
+    width: ROUND_BUTTON_SIZE,
+    height: ROUND_BUTTON_SIZE,
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: BORDER_RADIUS_TOKENS.FULL,
-    backgroundColor: THEME_COLORS.SURFACE,
-    shadowColor: THEME_COLORS.BLACK,
-    shadowOpacity: 0.15,
-    shadowRadius: 4,
+    backgroundColor: OVERLAY_COLORS.FLOATING_BUTTON,
+    shadowColor: OVERLAY_COLORS.SHADOW,
+    shadowOpacity: 0.12,
+    shadowRadius: 8,
     shadowOffset: { width: 0, height: 2 },
     elevation: 3,
   },
   compareCount: {
     position: 'absolute',
-    top: -2,
-    right: -2,
-    minWidth: 16,
-    height: 16,
+    top: -3,
+    right: -3,
+    minWidth: 17,
+    height: 17,
     paddingHorizontal: 3,
+    borderWidth: 1,
+    borderColor: THEME_COLORS.WHITE,
     borderRadius: BORDER_RADIUS_TOKENS.FULL,
     backgroundColor: THEME_COLORS.ERROR,
     alignItems: 'center',
     justifyContent: 'center',
   },
+  compareCountText: { lineHeight: 13 },
   galleryImageWrapper: { backgroundColor: THEME_COLORS.SURFACE_MUTED },
   galleryImage: { width: '100%', height: '100%' },
   imageLoader: { ...StyleSheet.absoluteFill },
@@ -850,57 +944,83 @@ const styles = StyleSheet.create({
   },
   imageCounter: {
     position: 'absolute',
-    right: SPACING_TOKENS.MD,
-    bottom: SPACING_TOKENS.XL,
-    paddingHorizontal: SPACING_TOKENS.SM,
-    paddingVertical: SPACING_TOKENS.XS,
+    right: SPACING_TOKENS.MD - SPACING_TOKENS.XS,
+    bottom: SPACING_TOKENS.XL - SPACING_TOKENS.XS,
+    height: 26,
+    justifyContent: 'center',
+    paddingHorizontal: SPACING_TOKENS.SM + SPACING_TOKENS.XS,
     borderRadius: BORDER_RADIUS_TOKENS.FULL,
-    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    backgroundColor: OVERLAY_COLORS.COUNTER_BADGE,
   },
   content: {
-    marginTop: -SPACING_TOKENS.LG,
-    padding: SPACING_TOKENS.MD,
+    marginTop: -SPACING_TOKENS.MD,
+    paddingHorizontal: SPACING_TOKENS.MD,
+    paddingTop: SECTION_SPACING,
     paddingBottom: SPACING_TOKENS.XL,
-    borderTopLeftRadius: BORDER_RADIUS_TOKENS.XL,
-    borderTopRightRadius: BORDER_RADIUS_TOKENS.XL,
+    borderTopLeftRadius: BORDER_RADIUS_TOKENS.LG,
+    borderTopRightRadius: BORDER_RADIUS_TOKENS.LG,
     backgroundColor: THEME_COLORS.SURFACE,
   },
   badgeRow: { flexDirection: 'row', gap: SPACING_TOKENS.SM },
-  title: { marginTop: SPACING_TOKENS.SM },
-  price: { marginTop: SPACING_TOKENS.SM },
+  availabilityBadge: {
+    height: 22,
+    justifyContent: 'center',
+    paddingHorizontal: SPACING_TOKENS.SM + SPACING_TOKENS.XS,
+    borderWidth: 1,
+    borderRadius: BORDER_RADIUS_TOKENS.FULL,
+  },
+  badgeText: {
+    fontSize: TYPOGRAPHY_TOKENS.FONT_SIZES.CAPTION_SM,
+    lineHeight: TYPOGRAPHY_TOKENS.LINE_HEIGHTS.TINY,
+    letterSpacing: 0.5,
+  },
+  title: {
+    marginTop: SPACING_TOKENS.SM + SPACING_TOKENS.XXS,
+    letterSpacing: -0.5,
+  },
+  priceRow: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    gap: SPACING_TOKENS.XS,
+    marginTop: SPACING_TOKENS.SM,
+  },
+  price: { fontSize: TYPOGRAPHY_TOKENS.FONT_SIZES.XL + 2, letterSpacing: -0.2 },
   metaRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: SPACING_TOKENS.SM,
-    marginTop: SPACING_TOKENS.MD,
+    columnGap: SECTION_SPACING,
+    rowGap: SPACING_TOKENS.SM,
+    marginTop: SPACING_TOKENS.SM,
   },
   infoPill: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: SPACING_TOKENS.XS,
-    paddingHorizontal: SPACING_TOKENS.SM,
-    paddingVertical: SPACING_TOKENS.XS,
-    borderRadius: BORDER_RADIUS_TOKENS.FULL,
-    backgroundColor: THEME_COLORS.SURFACE_MUTED,
+    gap: SPACING_TOKENS.SM - SPACING_TOKENS.XXS,
   },
-  addressRow: { flexDirection: 'row', gap: SPACING_TOKENS.SM, marginTop: SPACING_TOKENS.MD },
+  addressRow: {
+    flexDirection: 'row',
+    gap: SPACING_TOKENS.SM - SPACING_TOKENS.XXS,
+    marginTop: SPACING_TOKENS.SM,
+  },
+  addressIcon: { marginTop: SPACING_TOKENS.XS },
   flexText: { flex: 1 },
   distancePill: {
     flexDirection: 'row',
     alignItems: 'center',
     alignSelf: 'flex-start',
     gap: SPACING_TOKENS.XS,
-    marginTop: SPACING_TOKENS.MD,
-    paddingHorizontal: SPACING_TOKENS.SM + 2,
-    paddingVertical: SPACING_TOKENS.SM,
-    borderRadius: BORDER_RADIUS_TOKENS.MD,
+    marginTop: SPACING_TOKENS.SM + SPACING_TOKENS.XXS,
+    height: 30,
+    paddingHorizontal: SPACING_TOKENS.SM + SPACING_TOKENS.XXS,
+    borderRadius: BORDER_RADIUS_TOKENS.SM,
     backgroundColor: THEME_COLORS.PRIMARY_LIGHT,
   },
+  distanceText: { fontSize: TYPOGRAPHY_TOKENS.FONT_SIZES.SUB },
   ratingRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: SPACING_TOKENS.XS,
-    marginTop: SPACING_TOKENS.SM,
+    gap: SPACING_TOKENS.XS + SPACING_TOKENS.XXS,
+    marginTop: SPACING_TOKENS.SM + SPACING_TOKENS.XXS,
   },
   holdNotice: {
     flexDirection: 'row',
@@ -913,19 +1033,30 @@ const styles = StyleSheet.create({
     backgroundColor: THEME_COLORS.WARNING_LIGHT,
   },
   section: {
-    marginTop: SPACING_TOKENS.LG,
-    paddingTop: SPACING_TOKENS.MD,
+    marginTop: SECTION_SPACING,
+    paddingTop: SECTION_SPACING,
     borderTopWidth: 1,
-    borderTopColor: THEME_COLORS.DIVIDER,
+    borderTopColor: THEME_COLORS.BORDER,
   },
-  sectionTitle: { marginBottom: SPACING_TOKENS.SM },
+  sectionTitle: {
+    marginBottom: SPACING_TOKENS.SM + SPACING_TOKENS.XS,
+    fontSize: TYPOGRAPHY_TOKENS.FONT_SIZES.XL,
+    lineHeight: TYPOGRAPHY_TOKENS.LINE_HEIGHTS.H2,
+    fontWeight: TYPOGRAPHY_TOKENS.FONT_WEIGHTS.SEMIBOLD,
+    letterSpacing: -0.3,
+  },
+  description: { lineHeight: TYPOGRAPHY_TOKENS.LINE_HEIGHTS.BODY1 },
   detailRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     paddingVertical: SPACING_TOKENS.XS,
   },
   detailValue: { flex: 1, textAlign: 'right', marginLeft: SPACING_TOKENS.MD },
-  amenityGrid: { flexDirection: 'row', flexWrap: 'wrap', rowGap: SPACING_TOKENS.MD },
+  amenityGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    rowGap: SPACING_TOKENS.SM + SPACING_TOKENS.XS,
+  },
   amenityItem: {
     width: '50%',
     flexDirection: 'row',
@@ -933,7 +1064,7 @@ const styles = StyleSheet.create({
     gap: SPACING_TOKENS.SM,
     paddingRight: SPACING_TOKENS.SM,
   },
-  linkButton: { marginTop: SPACING_TOKENS.MD },
+  linkButton: { marginTop: SPACING_TOKENS.SM + SPACING_TOKENS.XS },
   mapWrapper: { height: 220, overflow: 'hidden', borderRadius: BORDER_RADIUS_TOKENS.MD },
   landlordRow: { flexDirection: 'row', alignItems: 'center' },
   landlordInfo: { flex: 1, marginLeft: SPACING_TOKENS.MD },
@@ -953,7 +1084,12 @@ const styles = StyleSheet.create({
     bottom: 0,
     backgroundColor: THEME_COLORS.SURFACE,
     borderTopWidth: 1,
-    borderTopColor: THEME_COLORS.DIVIDER,
+    borderTopColor: THEME_COLORS.BORDER,
+    shadowColor: OVERLAY_COLORS.SHADOW,
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: -4 },
+    elevation: 8,
   },
   holdHint: { paddingHorizontal: SPACING_TOKENS.MD, paddingBottom: SPACING_TOKENS.XS },
   holdStrip: {
@@ -970,18 +1106,20 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     flexDirection: 'row',
     alignItems: 'center',
-    gap: SPACING_TOKENS.SM,
+    gap: SPACING_TOKENS.SM + SPACING_TOKENS.XS,
     paddingHorizontal: SPACING_TOKENS.MD,
-    paddingTop: SPACING_TOKENS.SM,
+    paddingTop: SPACING_TOKENS.SM + SPACING_TOKENS.XS,
   },
   chatButton: {
-    width: 48,
-    height: 48,
+    width: ACTION_BUTTON_SIZE,
+    height: ACTION_BUTTON_SIZE,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
     borderColor: THEME_COLORS.PRIMARY,
     borderRadius: BORDER_RADIUS_TOKENS.MD,
   },
-  actionFlex: { flex: 1 },
+  actionFlex: { flex: 1, height: ACTION_BUTTON_SIZE },
+  outlineAction: { borderColor: THEME_COLORS.PRIMARY },
+  outlineActionText: { color: THEME_COLORS.PRIMARY_DARK },
 });
