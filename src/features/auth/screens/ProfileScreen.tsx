@@ -209,7 +209,7 @@ export const ProfileScreen = () => {
                   label: 'Bài viết & bình luận',
                   icon: MessageSquare,
                   tone: ICON_TONES.SLATE,
-                  onPress: () => toast.info('Tính năng cộng đồng đang phát triển'),
+                  onPress: () => navigation.navigate('Community'),
                 },
               ]}
             />

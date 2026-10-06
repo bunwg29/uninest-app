@@ -69,6 +69,10 @@ export const HomeScreen = () => {
     navigation.navigate('Search' as never);
   };
 
+  const handleGoToRoommateCommunity = () => {
+    navigation.navigate('Community', { category: 'roommate' });
+  };
+
   const handleGoToMessages = () => {
     navigation.navigate('Messages' as never);
   };
@@ -195,7 +199,7 @@ export const HomeScreen = () => {
               <TouchableOpacity
                 key={cat.id}
                 style={[styles.categoryItem, isCompact && styles.categoryItemCompact]}
-                onPress={handleGoToSearch}
+                onPress={cat.id === 'roommate' ? handleGoToRoommateCommunity : handleGoToSearch}
                 activeOpacity={0.7}
               >
                 <View style={[styles.categoryIconCircle, { backgroundColor: cat.bgColor }]}>
