@@ -166,14 +166,32 @@ export const AddComparisonSheet = ({
     setIsAdding(true);
 
     try {
-      const details = await Promise.all(
+      const results = await Promise.allSettled(
         selectedIds.map((id) => listingService.getListingDetail(id))
       );
+      const details = results.flatMap((result) =>
+        result.status === 'fulfilled' ? [result.value] : []
+      );
+      const comparable = details.filter(
+        (detail) =>
+          detail.status === 'active' &&
+          detail.availability !== 'rented' &&
+          detail.availability !== 'paused'
+      );
+      const addedCount = comparable.filter((detail) => addComparison(detail) === 'added').length;
+      const skippedCount = selectedIds.length - addedCount;
 
-      details.forEach((detail) => addComparison(detail));
-      onClose();
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Không thể thêm phòng vào so sánh');
+      if (skippedCount > 0) {
+        toast.warning(
+          addedCount > 0
+            ? `${skippedCount} phòng không còn khả dụng nên chưa được thêm`
+            : 'Các phòng đã chọn không còn khả dụng để so sánh'
+        );
+      }
+
+      if (addedCount > 0 || skippedCount === 0) {
+        onClose();
+      }
     } finally {
       setIsAdding(false);
     }

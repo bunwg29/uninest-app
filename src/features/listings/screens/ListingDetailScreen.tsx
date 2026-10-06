@@ -169,6 +169,14 @@ export const ListingDetailScreen = () => {
       return;
     }
 
+    const { availability, status } = detailQuery.data;
+
+    if (status !== 'active' || availability === 'rented' || availability === 'paused') {
+      toast.warning('Phòng này hiện không nhận so sánh');
+
+      return;
+    }
+
     const result = addComparison(detailQuery.data);
 
     if (result === 'limit-reached') {

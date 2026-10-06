@@ -1,5 +1,6 @@
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@features/auth';
+import { useToast } from '@hooks';
 import { favoriteService } from '../services/favoriteService';
 
 export const FAVORITE_IDS_QUERY_KEY = ['favorite-ids'] as const;
@@ -30,6 +31,7 @@ export const useFavorites = () =>
 
 export const useToggleFavorite = () => {
   const queryClient = useQueryClient();
+  const toast = useToast();
 
   return useMutation({
     mutationFn: ({ listingId, isSaved }: { listingId: string; isSaved: boolean }) =>
@@ -45,10 +47,18 @@ export const useToggleFavorite = () => {
 
       return { previous };
     },
-    onError: (_error, _variables, context) => {
+    onError: (error, { isSaved }, context) => {
       queryClient.setQueryData(FAVORITE_IDS_QUERY_KEY, context?.previous);
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : isSaved
+            ? 'Không thể bỏ lưu phòng'
+            : 'Không thể lưu phòng'
+      );
     },
     onSettled: (_data, _error, { listingId }) => {
+      void queryClient.invalidateQueries({ queryKey: FAVORITE_IDS_QUERY_KEY });
       void queryClient.invalidateQueries({ queryKey: FAVORITES_QUERY_KEY });
       void queryClient.invalidateQueries({ queryKey: ['listing-detail', listingId] });
       void queryClient.invalidateQueries({ queryKey: ['profile'] });

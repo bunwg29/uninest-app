@@ -36,6 +36,21 @@ type CustomAxiosRequestConfig = InternalAxiosRequestConfig & {
   _retry?: boolean;
 };
 
+interface RefreshTokenPayload {
+  accessToken: string;
+  refreshToken?: string;
+}
+
+const unwrapRefreshPayload = (
+  body: RefreshTokenPayload | { data?: RefreshTokenPayload }
+): RefreshTokenPayload | undefined => {
+  if ('accessToken' in body) {
+    return body;
+  }
+
+  return body.data;
+};
+
 let isRefreshing = false;
 let failedQueue: Array<{
   resolve: (token: string) => void;
@@ -117,15 +132,20 @@ apiClient.interceptors.response.use(
           throw new Error('Không tìm thấy mã làm mới phiên đăng nhập');
         }
 
-        const refreshResponse = await axios.post<{
-          accessToken: string;
-          refreshToken?: string;
-        }>(`${API_CONFIG.BASE_URL}/auth/refresh-token`, {
+        const refreshResponse = await axios.post<
+          RefreshTokenPayload | { data?: RefreshTokenPayload }
+        >(`${API_CONFIG.BASE_URL}/auth/refresh-token`, {
           refreshToken,
         });
 
-        const newAccessToken = refreshResponse.data.accessToken;
-        const newRefreshToken = refreshResponse.data.refreshToken || refreshToken;
+        const refreshPayload = unwrapRefreshPayload(refreshResponse.data);
+
+        if (!refreshPayload?.accessToken) {
+          throw new Error('Phản hồi làm mới phiên đăng nhập không hợp lệ');
+        }
+
+        const newAccessToken = refreshPayload.accessToken;
+        const newRefreshToken = refreshPayload.refreshToken || refreshToken;
 
         await tokenStorage.setTokens({
           accessToken: newAccessToken,
