@@ -99,6 +99,8 @@ export interface ListingDetail {
   status: string;
   viewingSchedule: Record<string, unknown> | null;
   averageRating: number | null;
+  reviewCount?: number | null;
+  isHighlighted?: boolean;
   viewCount: number | null;
   availability: ListingAvailability;
   hold: ListingHold | null;

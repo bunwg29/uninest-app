@@ -21,3 +21,12 @@ export const formatDistanceMeters = (meters: number) =>
   meters >= 1000 ? `${(meters / 1000).toFixed(1)} km` : `${Math.round(meters)} m`;
 
 export const estimateWalkingMinutes = (meters: number) => Math.max(1, Math.round(meters / 80));
+
+export const WALKING_DISTANCE_LIMIT_METERS = 1000;
+
+export const estimateMotorbikeMinutes = (meters: number) => Math.max(1, Math.round(meters / 300));
+
+export const formatTravelEstimate = (meters: number) =>
+  meters < WALKING_DISTANCE_LIMIT_METERS
+    ? `~${estimateWalkingMinutes(meters)} phút đi bộ`
+    : `~${estimateMotorbikeMinutes(meters)} phút xe máy`;

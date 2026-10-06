@@ -4,18 +4,25 @@ import {
   View,
   type LayoutChangeEvent,
   type StyleProp,
+  type ViewProps,
   type ViewStyle,
 } from 'react-native';
 import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
 
-export interface GradientViewProps {
+export interface GradientViewProps extends Omit<ViewProps, 'style' | 'children' | 'onLayout'> {
   colors: readonly [string, string];
   angle?: number;
   style?: StyleProp<ViewStyle>;
   children?: ReactNode;
 }
 
-export const GradientView = ({ colors, angle = 135, style, children }: GradientViewProps) => {
+export const GradientView = ({
+  colors,
+  angle = 135,
+  style,
+  children,
+  ...viewProps
+}: GradientViewProps) => {
   const gradientId = useId().replace(/[^a-zA-Z0-9]/g, '');
   const [size, setSize] = useState({ width: 0, height: 0 });
 
@@ -33,7 +40,7 @@ export const GradientView = ({ colors, angle = 135, style, children }: GradientV
   const centerY = size.height / 2;
 
   return (
-    <View style={[styles.container, style]} onLayout={handleLayout}>
+    <View {...viewProps} style={[styles.container, style]} onLayout={handleLayout}>
       {size.width > 0 ? (
         <Svg style={StyleSheet.absoluteFill} width={size.width} height={size.height}>
           <Defs>
