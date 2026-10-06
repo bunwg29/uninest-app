@@ -1,5 +1,5 @@
 import React from 'react';
-import { Alert, Linking, Platform } from 'react-native';
+import { Alert, Linking } from 'react-native';
 import { cleanup, fireEvent, render, waitFor } from '@testing-library/react-native';
 import { BookingNewScreen } from '../src/features/booking/screens/BookingNewScreen';
 import { BookingConfirmScreen } from '../src/features/booking/screens/BookingConfirmScreen';
@@ -162,12 +162,15 @@ describe('Các màn hình Booking', () => {
   afterEach(async () => {
     await cleanup();
     jest.restoreAllMocks();
-    delete globalThis.confirm;
   });
 
   it('hiển thị lịch, chọn slot và chuyển sang xác nhận', async () => {
     const screen = await render(<BookingNewScreen />);
 
+    expect(screen.getByText('Chọn một ngày để tiếp tục')).toBeTruthy();
+    await fireEvent.press(screen.getByLabelText('Ngày 03/10/2030'));
+    expect(mockFlowState.selectDate).toHaveBeenCalledWith('2030-10-03');
+    await fireEvent.press(screen.getByText('Tiếp tục'));
     await fireEvent.press(screen.getByText('08:00'));
     await fireEvent.press(screen.getByText('Tiếp tục'));
 
@@ -234,6 +237,8 @@ describe('Các màn hình Booking', () => {
     mockSlotsQuery = { ...mockSlotsQuery, data: undefined, isError: true };
     const screen = await render(<BookingNewScreen />);
 
+    await fireEvent.press(screen.getByLabelText('Ngày 03/10/2030'));
+    await fireEvent.press(screen.getByText('Tiếp tục'));
     await fireEvent.press(screen.getByText('Thử lại'));
     expect(mockRefetch).toHaveBeenCalled();
   });
@@ -270,7 +275,7 @@ describe('Các màn hình Booking', () => {
     const screen = await render(<MyBookingsScreen />);
 
     await fireEvent.press(screen.getByText('Phòng 101 gần trường'));
-    await fireEvent.press(screen.getByText('Đã xác nhận (0)'));
+    await fireEvent.press(screen.getByText('Đã xác nhận'));
 
     expect(mockNavigation.navigate).toHaveBeenCalledWith('BookingDetail', { id: mockBooking.id });
     expect(isInTab('pending', 'pending')).toBe(true);
@@ -295,7 +300,9 @@ describe('Các màn hình Booking', () => {
     expect(screen.getByText('Chủ trọ đã xác nhận.')).toBeTruthy();
     expect(Linking.openURL).toHaveBeenCalled();
     await fireEvent.press(screen.getByText('Huỷ lịch hẹn'));
-    expect(Alert.alert).toHaveBeenCalled();
+    expect(screen.getByText('Hủy lịch hẹn?')).toBeTruthy();
+    await fireEvent.press(screen.getByText('Không'));
+    expect(mockCancel.mutateAsync).not.toHaveBeenCalled();
   });
 
   it('sinh viên bấm vào phòng để mở chi tiết phòng', async () => {
@@ -321,12 +328,11 @@ describe('Các màn hình Booking', () => {
     expect(mockOpenChat).toHaveBeenCalledWith(resource.id, 'student-1');
   });
 
-  it('xác nhận và hủy lịch trên web khi còn trên 24 giờ', async () => {
-    jest.replaceProperty(Platform, 'OS', 'web');
-    globalThis.confirm = jest.fn(() => true);
+  it('xác nhận hủy lịch bằng hộp thoại khi còn trên 24 giờ', async () => {
     const screen = await render(<BookingDetailScreen />);
 
     await fireEvent.press(screen.getByText('Huỷ lịch hẹn'));
+    await fireEvent.press(screen.getByText('Hủy lịch'));
 
     await waitFor(() =>
       expect(mockCancel.mutateAsync).toHaveBeenCalledWith({ id: mockBooking.id })
@@ -346,6 +352,23 @@ describe('Các màn hình Booking', () => {
     expect(screen.getAllByText('Đã hủy')).toHaveLength(1);
     expect(screen.getByText('Lý do: Có lịch học')).toBeTruthy();
     expect(screen.getByText('Phòng tương tự đang còn trống')).toBeTruthy();
+  });
+
+  it('hiển thị biến thể hết hạn và cho gửi lại yêu cầu', async () => {
+    mockBooking = createBooking({
+      status: 'expired',
+      expiredAt: '2030-10-03T01:00:00.000Z',
+      expiresAt: null,
+    });
+    mockDetailQuery = { ...mockDetailQuery, data: mockBooking };
+    const screen = await render(<BookingDetailScreen />);
+
+    expect(screen.getByText('Hết hạn — không có phản hồi')).toBeTruthy();
+    await fireEvent.press(screen.getByText('Gửi lại yêu cầu'));
+
+    expect(mockNavigation.navigate).toHaveBeenCalledWith('BookingNew', {
+      resourceId: resource.id,
+    });
   });
 
   it('bắt buộc và gửi lý do hủy', async () => {
@@ -369,7 +392,7 @@ describe('Các màn hình Booking', () => {
   it('xác nhận hủy lịch từ danh sách khi còn trên 24 giờ', async () => {
     const screen = await render(<MyBookingsScreen />);
 
-    await fireEvent.press(screen.getByText('Hủy yêu cầu'));
+    await fireEvent.press(screen.getByText('Huỷ yêu cầu'));
     const actions = Alert.alert.mock.calls[0][2];
     await actions[1].onPress();
 

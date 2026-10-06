@@ -10,6 +10,7 @@ export interface BookingResource {
   address: string;
   imageUrl?: string | null;
   deposit?: number | null;
+  landlordName?: string | null;
 }
 
 export interface BookingSlot {

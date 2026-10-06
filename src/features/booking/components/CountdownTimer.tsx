@@ -1,7 +1,4 @@
 import { useEffect, useState } from 'react';
-import { Clock3 } from 'lucide-react-native';
-import { StyleSheet, View } from 'react-native';
-import { SPACING_TOKENS, THEME_COLORS } from '@theme';
 import { Typography } from '@ui';
 
 const TICK_INTERVAL_MS = 30_000;
@@ -46,15 +43,8 @@ export const CountdownTimer = ({
   }, [expiresAt, onExpire]);
 
   return (
-    <View style={styles.row}>
-      <Clock3 size={15} color={THEME_COLORS.WARNING} />
-      <Typography variant="caption" weight="BOLD" colorKey="WARNING">
-        {formatRemaining(remainingMs)}
-      </Typography>
-    </View>
+    <Typography variant="caption" weight="MEDIUM" colorKey="TEXT_PLACEHOLDER">
+      {formatRemaining(remainingMs)}
+    </Typography>
   );
 };
-
-const styles = StyleSheet.create({
-  row: { flexDirection: 'row', alignItems: 'center', gap: SPACING_TOKENS.XS },
-});

@@ -1,20 +1,28 @@
-import { useState } from 'react';
-import { ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
-import { Check, Clock3, ShieldCheck } from 'lucide-react-native';
+import { useState, type ReactNode } from 'react';
+import { ScrollView, StyleSheet, View } from 'react-native';
+import { CalendarDays, Clock3, Phone, User } from 'lucide-react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { AppError } from '@core';
 import { useAuthStore } from '@features/auth';
 import { useToast } from '@hooks';
 import type { RootStackParamList } from '@navigation';
-import { BORDER_RADIUS_TOKENS, SPACING_TOKENS, THEME_COLORS } from '@theme';
+import { BORDER_RADIUS_TOKENS, OVERLAY_COLORS, SPACING_TOKENS, THEME_COLORS } from '@theme';
 import { Button, HeaderBar, Input, ScreenContainer, Typography } from '@ui';
-import { ResourceCard } from '../components';
+import {
+  BookingFooter,
+  BookingStepper,
+  FooterButton,
+  NoticeBanner,
+  ResourceCard,
+} from '../components';
 import { useCreateBooking } from '../hooks';
 import { useBookingStore } from '../store';
-import { formatBookingDateTime } from '../utils';
+import { formatViewingLong } from '../utils';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
+
+const MAX_NOTE_LENGTH = 300;
 
 export const BookingConfirmScreen = () => {
   const navigation = useNavigation<NavigationProp>();
@@ -22,7 +30,6 @@ export const BookingConfirmScreen = () => {
   const user = useAuthStore((state) => state.user);
   const [phone, setPhone] = useState(user?.phoneNumber ?? '');
   const [note, setNote] = useState('');
-  const [isAccepted, setIsAccepted] = useState(true);
   const [phoneError, setPhoneError] = useState('');
   const createBooking = useCreateBooking();
   const toast = useToast();
@@ -34,7 +41,7 @@ export const BookingConfirmScreen = () => {
       return;
     }
 
-    if (!resource || !selectedSlot || !isAccepted) return;
+    if (!resource || !selectedSlot) return;
 
     setPhoneError('');
 
@@ -74,121 +81,130 @@ export const BookingConfirmScreen = () => {
     <ScreenContainer>
       <HeaderBar title="Xác nhận yêu cầu" onBack={() => navigation.goBack()} />
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-        <ResourceCard resource={resource} />
-        <View style={styles.infoBox}>
-          <View style={styles.iconCircle}>
-            <Clock3 size={20} color={THEME_COLORS.PRIMARY} />
-          </View>
-          <View style={styles.flex}>
-            <Typography variant="caption" colorKey="TEXT_MUTED">
-              Thời gian
+        <BookingStepper step={3} />
+        <View style={styles.body}>
+          <ResourceCard
+            resource={resource}
+            showPrice={false}
+            footer={
+              <View style={styles.infoRows}>
+                <InfoRow
+                  icon={<CalendarDays size={19} color={THEME_COLORS.PRIMARY_DARK} />}
+                  label="Thời gian"
+                  value={formatViewingLong(selectedSlot.startTime)}
+                />
+                {resource.landlordName ? (
+                  <InfoRow
+                    icon={<User size={19} color={THEME_COLORS.PRIMARY_DARK} />}
+                    label="Chủ trọ"
+                    value={resource.landlordName}
+                  />
+                ) : null}
+              </View>
+            }
+          />
+          <View style={styles.field}>
+            <Typography variant="body2" weight="SEMIBOLD" style={styles.fieldLabel}>
+              Số điện thoại liên hệ
             </Typography>
-            <Typography variant="body1" weight="BOLD">
-              {formatBookingDateTime(selectedSlot.startTime)}
+            <Input
+              value={phone}
+              onChangeText={setPhone}
+              keyboardType="phone-pad"
+              maxLength={10}
+              errorMessage={phoneError}
+              placeholder="0905 123 456"
+              idleBorderColor={OVERLAY_COLORS.FIELD_BORDER}
+              leftIcon={<Phone size={19} color={THEME_COLORS.TEXT_MUTED} />}
+              containerStyle={styles.input}
+              inputContainerStyle={styles.phoneInput}
+              style={styles.inputText}
+            />
+            {phoneError ? null : (
+              <Typography variant="caption" weight="MEDIUM" colorKey="TEXT_PLACEHOLDER">
+                Chủ trọ chỉ thấy số này sau khi xác nhận lịch hẹn.
+              </Typography>
+            )}
+          </View>
+          <View style={styles.field}>
+            <Typography variant="body2" weight="SEMIBOLD" style={styles.fieldLabel}>
+              {'Ghi chú cho chủ trọ '}
+              <Typography variant="body2" colorKey="TEXT_PLACEHOLDER">
+                (không bắt buộc)
+              </Typography>
             </Typography>
+            <Input
+              value={note}
+              onChangeText={setNote}
+              maxLength={MAX_NOTE_LENGTH}
+              multiline
+              placeholder="Ví dụ: Mình muốn xem phòng vào đúng giờ đã chọn..."
+              idleBorderColor={OVERLAY_COLORS.FIELD_BORDER}
+              containerStyle={styles.input}
+              inputContainerStyle={styles.noteInput}
+              style={styles.inputText}
+            />
+            <View style={styles.noteMeta}>
+              <Typography variant="caption" weight="MEDIUM" colorKey="TEXT_PLACEHOLDER">
+                Đừng ghi số tài khoản ngân hàng ở đây
+              </Typography>
+              <Typography variant="caption" weight="MEDIUM" colorKey="TEXT_PLACEHOLDER">
+                {`${note.length} / ${MAX_NOTE_LENGTH}`}
+              </Typography>
+            </View>
           </View>
+          <NoticeBanner tone="warning" icon={Clock3}>
+            Đặt lịch xem phòng hoàn toàn miễn phí. Bạn chưa phải trả bất kỳ khoản nào ở bước này.
+          </NoticeBanner>
         </View>
-        <Input
-          label="Số điện thoại liên hệ"
-          value={phone}
-          onChangeText={setPhone}
-          keyboardType="phone-pad"
-          maxLength={10}
-          errorMessage={phoneError}
-          placeholder="0905 123 456"
-        />
-        <View style={styles.freeBox}>
-          <ShieldCheck size={20} color={THEME_COLORS.SUCCESS} />
-          <Typography variant="body2" colorKey="SUCCESS" style={styles.flex}>
-            Chỉ trả phí khi bạn xác nhận giữ phòng
-          </Typography>
-        </View>
-        <Input
-          label="Ghi chú cho chủ trọ"
-          value={note}
-          onChangeText={setNote}
-          maxLength={300}
-          multiline
-          placeholder="Ví dụ: Mình muốn xem phòng vào đúng giờ đã chọn..."
-          helperText={`${note.length}/300 ký tự`}
-        />
-        <TouchableOpacity
-          style={styles.checkboxRow}
-          onPress={() => setIsAccepted((value) => !value)}
-        >
-          <View style={[styles.checkbox, isAccepted && styles.checked]}>
-            {isAccepted ? <Check size={15} color={THEME_COLORS.WHITE} /> : null}
-          </View>
-          <Typography variant="body2" style={styles.flex}>
-            Tôi hiểu đặt lịch xem phòng hoàn toàn miễn phí
-          </Typography>
-        </TouchableOpacity>
       </ScrollView>
-      <View style={styles.footer}>
-        <Button
+      <BookingFooter>
+        <FooterButton
           title="Gửi yêu cầu xem phòng"
-          fullWidth
-          disabled={!isAccepted}
           isLoading={createBooking.isPending}
           onPress={handleSubmit}
         />
-        <Button
-          title="Tiếp tục tìm phòng"
-          variant="ghost"
-          fullWidth
-          onPress={() => navigation.navigate('Main', { screen: 'Search' })}
-        />
-      </View>
+      </BookingFooter>
     </ScreenContainer>
   );
 };
 
+const InfoRow = ({ icon, label, value }: { icon: ReactNode; label: string; value: string }) => (
+  <View style={styles.infoRow}>
+    <View style={styles.iconTile}>{icon}</View>
+    <View style={styles.flex}>
+      <Typography variant="caption" weight="MEDIUM" colorKey="TEXT_PLACEHOLDER">
+        {label}
+      </Typography>
+      <Typography variant="body2" weight="SEMIBOLD" style={styles.infoValue}>
+        {value}
+      </Typography>
+    </View>
+  </View>
+);
+
 const styles = StyleSheet.create({
-  content: { padding: SPACING_TOKENS.MD, gap: SPACING_TOKENS.MD, paddingBottom: SPACING_TOKENS.LG },
-  infoBox: {
-    flexDirection: 'row',
+  content: { paddingBottom: SPACING_TOKENS.LG },
+  body: { gap: 20, paddingHorizontal: 16, paddingTop: 20 },
+  infoRows: { gap: 14, paddingTop: 16 },
+  infoRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  iconTile: {
+    width: 38,
+    height: 38,
     alignItems: 'center',
-    gap: SPACING_TOKENS.MD,
-    padding: SPACING_TOKENS.MD,
-    borderRadius: BORDER_RADIUS_TOKENS.LG,
+    justifyContent: 'center',
+    borderRadius: 10,
     backgroundColor: THEME_COLORS.PRIMARY_LIGHT,
   },
-  iconCircle: {
-    width: 42,
-    height: 42,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: BORDER_RADIUS_TOKENS.FULL,
-    backgroundColor: THEME_COLORS.SURFACE,
-  },
   flex: { flex: 1 },
-  freeBox: {
-    flexDirection: 'row',
-    gap: SPACING_TOKENS.SM,
-    alignItems: 'center',
-    padding: SPACING_TOKENS.MD,
-    borderRadius: BORDER_RADIUS_TOKENS.MD,
-    backgroundColor: THEME_COLORS.SUCCESS_LIGHT,
-  },
-  checkboxRow: { flexDirection: 'row', alignItems: 'center', gap: SPACING_TOKENS.SM },
-  checkbox: {
-    width: 22,
-    height: 22,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: THEME_COLORS.BORDER,
-    borderRadius: 6,
-    backgroundColor: THEME_COLORS.SURFACE,
-  },
-  checked: { borderColor: THEME_COLORS.PRIMARY, backgroundColor: THEME_COLORS.PRIMARY },
-  footer: {
-    padding: SPACING_TOKENS.MD,
-    gap: SPACING_TOKENS.XS,
-    borderTopWidth: 1,
-    borderTopColor: THEME_COLORS.DIVIDER,
-    backgroundColor: THEME_COLORS.SURFACE,
-  },
+  infoValue: { lineHeight: 22 },
+  field: { gap: 8 },
+  fieldLabel: { lineHeight: 22 },
+  input: { marginBottom: 0 },
+  phoneInput: { height: 52, borderRadius: BORDER_RADIUS_TOKENS.MD },
+  noteInput: { minHeight: 96, paddingHorizontal: 14, paddingVertical: 12 },
+  inputText: { fontSize: 15, lineHeight: 22 },
+  noteMeta: { flexDirection: 'row', justifyContent: 'space-between' },
   missingState: {
     flex: 1,
     padding: SPACING_TOKENS.XL,

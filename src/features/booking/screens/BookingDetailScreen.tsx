@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Alert, Linking, Platform, ScrollView, StyleSheet, View } from 'react-native';
+import { Linking, ScrollView, StyleSheet, View } from 'react-native';
 import { Check, Circle, Clock3, MapPin, MessageCircle, TriangleAlert } from 'lucide-react-native';
 import { useNavigation, useRoute, type RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -9,8 +9,10 @@ import { useOpenListingChat } from '@features/chat';
 import { useOpenListing } from '@features/listings/hooks/useOpenListing';
 import { useToast } from '@hooks';
 import { BORDER_RADIUS_TOKENS, SPACING_TOKENS, THEME_COLORS } from '@theme';
-import { Button, HeaderBar, ScreenContainer, Typography } from '@ui';
+import { Button, HeaderBar, Modal, ScreenContainer, Typography } from '@ui';
 import {
+  BookingFooter,
+  FooterButton,
   ReasonModal,
   ResourceCard,
   StatusBadge,
@@ -45,6 +47,7 @@ export const BookingDetailScreen = () => {
   const rejectBooking = useRejectBooking();
   const releaseBooking = useReleaseBooking();
   const [reasonAction, setReasonAction] = useState<'reject' | 'release' | null>(null);
+  const [isCancelDialogOpen, setIsCancelDialogOpen] = useState(false);
 
   const handleConfirm = async () => {
     if (!booking) return;
@@ -95,22 +98,12 @@ export const BookingDetailScreen = () => {
       return;
     }
 
-    if (Platform.OS === 'web') {
-      if (globalThis.confirm('Hủy lịch hẹn? Bạn có thể đặt lại nếu khung giờ vẫn còn trống.')) {
-        void cancelWithoutReason();
-      }
+    setIsCancelDialogOpen(true);
+  };
 
-      return;
-    }
-
-    Alert.alert('Hủy lịch hẹn?', 'Bạn có thể đặt lại nếu khung giờ vẫn còn trống.', [
-      { text: 'Không', style: 'cancel' },
-      {
-        text: 'Hủy lịch',
-        style: 'destructive',
-        onPress: cancelWithoutReason,
-      },
-    ]);
+  const handleConfirmCancel = async () => {
+    setIsCancelDialogOpen(false);
+    await cancelWithoutReason();
   };
 
   const handleAddCalendar = async () => {
@@ -275,7 +268,7 @@ export const BookingDetailScreen = () => {
 
     return (
       <>
-        {getBookingSummary(booking) ? null : (
+        {getBookingSummary(booking) || booking.status === 'expired' ? null : (
           <View
             style={[
               styles.banner,
@@ -309,7 +302,7 @@ export const BookingDetailScreen = () => {
           onOpenListing={() => void openListing(booking.listing.id)}
           onOpenChat={() => void openChat(booking.listing.id)}
         />
-        {isClosedStatus(booking.status) ? (
+        {isClosedStatus(booking.status) && booking.status !== 'expired' ? (
           <View style={styles.similarBox}>
             <Typography variant="body1" weight="BOLD">
               Phòng tương tự đang còn trống
@@ -341,34 +334,59 @@ export const BookingDetailScreen = () => {
           <ScrollView contentContainerStyle={styles.content}>
             {isLandlord ? renderLandlordBody(booking) : renderStudentBody()}
           </ScrollView>
+          {!isLandlord && booking.status === 'expired' ? (
+            <BookingFooter>
+              <FooterButton
+                title="Gửi lại yêu cầu"
+                onPress={() =>
+                  navigation.navigate('BookingNew', { resourceId: booking.listing.id })
+                }
+              />
+              <FooterButton
+                title="Xem phòng khác"
+                tone="outline"
+                onPress={() => navigation.navigate('Main', { screen: 'Search' })}
+              />
+            </BookingFooter>
+          ) : null}
           {!isLandlord && !isClosedStatus(booking.status) ? (
-            <View style={styles.bottomBar}>
+            <BookingFooter>
               {booking.status === 'confirmed' && getHoursUntil(booking.startTime) <= 0 ? (
-                <Button
+                <FooterButton
                   title="Giữ chỗ phòng này"
                   onPress={() => navigation.navigate('BookingHold', { id: booking.id })}
-                  fullWidth
                 />
               ) : null}
               <View style={styles.bottomRow}>
-                <Button
+                <FooterButton
                   title="Thêm vào lịch"
-                  variant="outline"
+                  tone="outline"
                   onPress={handleAddCalendar}
-                  style={styles.actionButton}
+                  style={styles.footerRowButton}
                 />
-                <Button
+                <FooterButton
                   title="Huỷ lịch hẹn"
-                  variant="danger"
+                  tone="danger"
                   disabled={getHoursUntil(booking.startTime) <= 0}
                   onPress={handleCancel}
-                  style={styles.actionButton}
+                  style={styles.footerRowButton}
                 />
               </View>
-            </View>
+            </BookingFooter>
           ) : null}
         </>
       )}
+      <Modal
+        isVisible={isCancelDialogOpen}
+        title="Hủy lịch hẹn?"
+        description="Bạn có thể đặt lại nếu khung giờ vẫn còn trống."
+        cancelText="Không"
+        confirmText="Hủy lịch"
+        confirmVariant="danger"
+        isConfirmLoading={cancelBooking.isPending}
+        onClose={() => setIsCancelDialogOpen(false)}
+        onConfirm={() => void handleConfirmCancel()}
+      />
       <ReasonModal
         isVisible={reasonAction !== null}
         title={reasonAction === 'reject' ? 'Từ chối yêu cầu xem phòng' : 'Hủy giữ chỗ'}
@@ -485,22 +503,14 @@ const styles = StyleSheet.create({
   codeRow: { flexDirection: 'row', justifyContent: 'space-between' },
   actions: { flexDirection: 'row', flexWrap: 'wrap', gap: SPACING_TOKENS.SM },
   actionButton: { flex: 1 },
+  footerRowButton: { flex: 1, height: 48 },
   similarBox: {
     gap: SPACING_TOKENS.SM,
     padding: SPACING_TOKENS.MD,
     borderRadius: BORDER_RADIUS_TOKENS.LG,
     backgroundColor: THEME_COLORS.PRIMARY_LIGHT,
   },
-  bottomBar: {
-    gap: SPACING_TOKENS.SM,
-    paddingHorizontal: SPACING_TOKENS.MD,
-    paddingTop: 14,
-    paddingBottom: SPACING_TOKENS.MD,
-    borderTopWidth: 1,
-    borderTopColor: THEME_COLORS.BORDER,
-    backgroundColor: THEME_COLORS.SURFACE,
-  },
-  bottomRow: { flexDirection: 'row', gap: SPACING_TOKENS.SM },
+  bottomRow: { flexDirection: 'row', gap: 12 },
   center: {
     flex: 1,
     alignItems: 'center',

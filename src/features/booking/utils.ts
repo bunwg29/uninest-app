@@ -53,3 +53,14 @@ export const formatViewingShort = (value: string) =>
     day: '2-digit',
     month: '2-digit',
   })}`;
+
+export const formatDayLabel = (dateKey: string) => {
+  const date = new Date(`${dateKey}T12:00:00`);
+  const weekday = new Intl.DateTimeFormat('vi-VN', { weekday: 'long' }).format(date);
+  const day = `${String(date.getDate()).padStart(2, '0')}/${String(date.getMonth() + 1).padStart(2, '0')}`;
+
+  return `${weekday} ${day}`;
+};
+
+export const formatViewingLong = (value: string) =>
+  `${formatTime(value)} — ${formatParts(value, { weekday: 'long' })}, ${formatFullDate(value)}`;

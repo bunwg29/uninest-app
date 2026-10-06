@@ -7,13 +7,13 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { CalendarX2, MessageCircle } from 'lucide-react-native';
+import { CalendarX2 } from 'lucide-react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '@navigation';
 import { useOpenListingChat } from '@features/chat';
 import { useToast } from '@hooks';
-import { SPACING_TOKENS, THEME_COLORS } from '@theme';
+import { BORDER_RADIUS_TOKENS, SPACING_TOKENS, THEME_COLORS } from '@theme';
 import {
   Button,
   EmptyState,
@@ -34,7 +34,7 @@ const TABS: Array<{ key: TabKey; label: string }> = [
   { key: 'pending', label: 'Chờ' },
   { key: 'confirmed', label: 'Đã xác nhận' },
   { key: 'expired', label: 'Hết hạn' },
-  { key: 'cancelled', label: 'Đã hủy' },
+  { key: 'cancelled', label: 'Đã huỷ' },
 ];
 
 export const isInTab = (status: BookingStatus, tab: TabKey) => {
@@ -46,6 +46,11 @@ export const isInTab = (status: BookingStatus, tab: TabKey) => {
 
   return status === 'cancelled' || status === 'rejected';
 };
+
+const getBookingSubtitle = (booking: Booking) =>
+  booking.landlord?.fullName
+    ? `${booking.landlord.fullName} · ${booking.listing.address}`
+    : booking.listing.address;
 
 export const MyBookingsScreen = () => {
   const navigation = useNavigation<NavigationProp>();
@@ -66,10 +71,10 @@ export const MyBookingsScreen = () => {
       return;
     }
 
-    Alert.alert('Hủy yêu cầu xem phòng?', 'Khung giờ sẽ được trả lại để người khác có thể đặt.', [
+    Alert.alert('Huỷ yêu cầu xem phòng?', 'Khung giờ sẽ được trả lại để người khác có thể đặt.', [
       { text: 'Giữ lại', style: 'cancel' },
       {
-        text: 'Hủy yêu cầu',
+        text: 'Huỷ yêu cầu',
         style: 'destructive',
         onPress: async () => {
           try {
@@ -95,6 +100,7 @@ export const MyBookingsScreen = () => {
           variant="outline"
           onPress={() => navigation.navigate('Main', { screen: 'Search' })}
           style={styles.actionButton}
+          textStyle={styles.neutralText}
         />
       );
     }
@@ -104,13 +110,13 @@ export const MyBookingsScreen = () => {
         <Button
           title="Nhắn tin"
           variant="outline"
-          leftIcon={<MessageCircle size={17} color={THEME_COLORS.TEXT_PRIMARY} />}
           onPress={() => void openChat(booking.listing.id)}
           style={styles.actionButton}
+          textStyle={styles.neutralText}
         />
         {booking.status !== 'holding' ? (
           <Button
-            title="Hủy yêu cầu"
+            title="Huỷ yêu cầu"
             variant="outline"
             onPress={() => handleCancel(booking)}
             style={[styles.actionButton, styles.dangerButton]}
@@ -132,12 +138,12 @@ export const MyBookingsScreen = () => {
             style={[styles.tab, activeTab === tab.key && styles.activeTab]}
           >
             <Typography
-              variant="caption"
-              weight="BOLD"
+              variant="label"
+              weight={activeTab === tab.key ? 'BOLD' : 'MEDIUM'}
               align="center"
-              color={activeTab === tab.key ? THEME_COLORS.PRIMARY : THEME_COLORS.TEXT_MUTED}
+              colorKey={activeTab === tab.key ? 'PRIMARY_DARK' : 'TEXT_PLACEHOLDER'}
             >
-              {tab.label} ({countFor(tab.key)})
+              {countFor(tab.key) > 0 ? `${tab.label} (${countFor(tab.key)})` : tab.label}
             </Typography>
           </TouchableOpacity>
         ))}
@@ -175,6 +181,7 @@ export const MyBookingsScreen = () => {
             <BookingCard
               key={booking.id}
               booking={booking}
+              subtitle={getBookingSubtitle(booking)}
               actions={renderActions(booking)}
               onPress={() => navigation.navigate('BookingDetail', { id: booking.id })}
               onExpire={() => void bookingsQuery.refetch()}
@@ -189,17 +196,21 @@ export const MyBookingsScreen = () => {
 const styles = StyleSheet.create({
   tabs: {
     flexDirection: 'row',
+    paddingHorizontal: 16,
     backgroundColor: THEME_COLORS.SURFACE,
     borderBottomWidth: 1,
-    borderBottomColor: THEME_COLORS.DIVIDER,
+    borderBottomColor: THEME_COLORS.BORDER,
   },
   tab: {
     flex: 1,
     alignItems: 'center',
-    paddingVertical: SPACING_TOKENS.MD,
+    justifyContent: 'center',
+    minHeight: 56,
     paddingHorizontal: SPACING_TOKENS.XS,
-    borderBottomWidth: 2,
+    paddingBottom: 6,
+    borderBottomWidth: 3,
     borderBottomColor: THEME_COLORS.TRANSPARENT,
+    borderRadius: BORDER_RADIUS_TOKENS.FULL,
   },
   activeTab: { borderBottomColor: THEME_COLORS.PRIMARY },
   list: {
@@ -207,10 +218,11 @@ const styles = StyleSheet.create({
     maxWidth: 720,
     alignSelf: 'center',
     padding: SPACING_TOKENS.MD,
-    gap: SPACING_TOKENS.MD,
+    gap: 12,
   },
   loading: { padding: SPACING_TOKENS.MD },
-  actionButton: { flex: 1 },
+  actionButton: { flex: 1, height: 40, backgroundColor: THEME_COLORS.SURFACE },
+  neutralText: { color: THEME_COLORS.TEXT_SECONDARY },
   dangerButton: { borderColor: THEME_COLORS.ERROR },
   dangerText: { color: THEME_COLORS.ERROR },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: SPACING_TOKENS.MD },

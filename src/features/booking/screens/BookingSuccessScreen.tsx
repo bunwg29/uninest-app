@@ -1,13 +1,19 @@
-import { ActivityIndicator, ScrollView, StyleSheet, View } from 'react-native';
-import { Check } from 'lucide-react-native';
+import { ActivityIndicator, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { Check, Info, X } from 'lucide-react-native';
 import { useNavigation, useRoute, type RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '@navigation';
 import { BORDER_RADIUS_TOKENS, SPACING_TOKENS, THEME_COLORS } from '@theme';
-import { Button, HeaderBar, ScreenContainer, Typography } from '@ui';
-import { ResourceCard, StatusBadge } from '../components';
+import { Button, ScreenContainer, Typography } from '@ui';
+import {
+  BookingFooter,
+  FooterButton,
+  NoticeBanner,
+  ResourceCard,
+  StatusBadge,
+} from '../components';
 import { useBookingDetail } from '../hooks';
-import { formatBookingDateTime } from '../utils';
+import { formatViewingSlot } from '../utils';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 type ScreenRouteProp = RouteProp<RootStackParamList, 'BookingSuccess'>;
@@ -16,58 +22,83 @@ export const BookingSuccessScreen = () => {
   const navigation = useNavigation<NavigationProp>();
   const { params } = useRoute<ScreenRouteProp>();
   const bookingQuery = useBookingDetail(params.id);
+  const booking = bookingQuery.data;
 
   return (
-    <ScreenContainer>
-      <HeaderBar title="Yêu cầu xem phòng" />
+    <ScreenContainer style={styles.screen}>
+      <View style={styles.topBar}>
+        <TouchableOpacity
+          style={styles.closeButton}
+          onPress={() => navigation.navigate('Main')}
+          accessibilityRole="button"
+          accessibilityLabel="Đóng"
+        >
+          <X size={20} color={THEME_COLORS.TEXT_PRIMARY} />
+        </TouchableOpacity>
+      </View>
       {bookingQuery.isLoading ? (
         <ActivityIndicator color={THEME_COLORS.PRIMARY} style={styles.loader} />
-      ) : bookingQuery.data ? (
+      ) : booking ? (
         <>
           <ScrollView contentContainerStyle={styles.content}>
             <View style={styles.successIcon}>
-              <Check size={38} strokeWidth={3} color={THEME_COLORS.WHITE} />
+              <Check size={52} strokeWidth={2.5} color={THEME_COLORS.SUCCESS} />
             </View>
-            <Typography variant="h1" weight="BOLD" align="center">
-              Đã gửi yêu cầu xem phòng
-            </Typography>
-            <Typography variant="body2" colorKey="TEXT_MUTED" align="center">
-              Chủ trọ sẽ phản hồi yêu cầu của bạn trong thời gian sớm nhất.
-            </Typography>
-            <ResourceCard resource={bookingQuery.data.listing} />
-            <View style={styles.summary}>
-              <SummaryRow
-                label="Thời gian"
-                value={formatBookingDateTime(bookingQuery.data.startTime)}
-              />
-              <SummaryRow label="Mã yêu cầu" value={`#${bookingQuery.data.code}`} />
-              <View style={styles.row}>
-                <Typography variant="body2" colorKey="TEXT_MUTED">
-                  Trạng thái
+            <View style={styles.heading}>
+              <Typography variant="h1" weight="BOLD" align="center" style={styles.title}>
+                Đã gửi yêu cầu xem phòng
+              </Typography>
+              <Typography
+                variant="body1"
+                colorKey="TEXT_SECONDARY"
+                align="center"
+                style={styles.description}
+              >
+                {`${booking.landlord?.fullName ?? 'Chủ trọ'} có `}
+                <Typography
+                  variant="body1"
+                  weight="SEMIBOLD"
+                  align="center"
+                  style={styles.description}
+                >
+                  24 giờ
                 </Typography>
-                <StatusBadge status={bookingQuery.data.status} />
-              </View>
-            </View>
-            <View style={styles.infoBox}>
-              <Typography variant="body2" colorKey="TEXT_SECONDARY">
-                Bạn không cần thanh toán khi đặt lịch. Hãy trao đổi với chủ trọ qua UniNest để bảo
-                đảm an toàn.
+                {' để xác nhận. Bạn sẽ nhận thông báo ngay khi có phản hồi.'}
               </Typography>
             </View>
+            <ResourceCard
+              resource={booking.listing}
+              showPrice={false}
+              compact
+              footer={
+                <View style={styles.summary}>
+                  <SummaryRow label="Thời gian" value={formatViewingSlot(booking.startTime)} />
+                  <SummaryRow label="Mã yêu cầu" value={`#${booking.code}`} />
+                  <View style={styles.row}>
+                    <Typography variant="label" weight="REGULAR" colorKey="TEXT_PLACEHOLDER">
+                      Trạng thái
+                    </Typography>
+                    <StatusBadge status={booking.status} />
+                  </View>
+                </View>
+              }
+            />
+            <NoticeBanner tone="info" icon={Info}>
+              Trong lúc chờ, bạn có thể nhắn tin hỏi thêm hoặc đặt lịch xem một phòng khác — không
+              giới hạn số yêu cầu.
+            </NoticeBanner>
           </ScrollView>
-          <View style={styles.footer}>
-            <Button
+          <BookingFooter>
+            <FooterButton
               title="Xem lịch hẹn của tôi"
-              fullWidth
               onPress={() => navigation.replace('MyBookings')}
             />
-            <Button
+            <FooterButton
               title="Tiếp tục tìm phòng"
-              fullWidth
-              variant="ghost"
+              tone="outline"
               onPress={() => navigation.navigate('Main', { screen: 'Search' })}
             />
-          </View>
+          </BookingFooter>
         </>
       ) : (
         <View style={styles.error}>
@@ -81,54 +112,41 @@ export const BookingSuccessScreen = () => {
 
 const SummaryRow = ({ label, value }: { label: string; value: string }) => (
   <View style={styles.row}>
-    <Typography variant="body2" colorKey="TEXT_MUTED">
+    <Typography variant="label" weight="REGULAR" colorKey="TEXT_PLACEHOLDER">
       {label}
     </Typography>
-    <Typography variant="body2" weight="BOLD" style={styles.value}>
+    <Typography variant="label" weight="SEMIBOLD" align="right" style={styles.value}>
       {value}
     </Typography>
   </View>
 );
 
 const styles = StyleSheet.create({
+  screen: { backgroundColor: THEME_COLORS.SURFACE },
+  topBar: { height: 56, alignItems: 'flex-end', justifyContent: 'center', paddingRight: 16 },
+  closeButton: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
   loader: { flex: 1 },
-  content: { padding: SPACING_TOKENS.MD, gap: SPACING_TOKENS.MD },
+  content: { gap: 24, paddingHorizontal: 16, paddingTop: 24, paddingBottom: SPACING_TOKENS.LG },
   successIcon: {
-    width: 76,
-    height: 76,
+    width: 104,
+    height: 104,
     alignSelf: 'center',
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: 38,
-    backgroundColor: THEME_COLORS.SUCCESS,
+    borderRadius: BORDER_RADIUS_TOKENS.FULL,
+    backgroundColor: THEME_COLORS.SUCCESS_LIGHT,
   },
-  summary: {
-    gap: SPACING_TOKENS.MD,
-    padding: SPACING_TOKENS.MD,
-    borderWidth: 1,
-    borderColor: THEME_COLORS.BORDER,
-    borderRadius: BORDER_RADIUS_TOKENS.LG,
-    backgroundColor: THEME_COLORS.SURFACE,
-  },
+  heading: { gap: 8 },
+  title: { letterSpacing: -0.5 },
+  description: { lineHeight: 24 },
+  summary: { gap: 12, paddingTop: 14 },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     gap: SPACING_TOKENS.MD,
   },
-  value: { flex: 1, textAlign: 'right' },
-  infoBox: {
-    padding: SPACING_TOKENS.MD,
-    borderRadius: BORDER_RADIUS_TOKENS.MD,
-    backgroundColor: THEME_COLORS.PRIMARY_LIGHT,
-  },
-  footer: {
-    padding: SPACING_TOKENS.MD,
-    gap: SPACING_TOKENS.XS,
-    borderTopWidth: 1,
-    borderTopColor: THEME_COLORS.DIVIDER,
-    backgroundColor: THEME_COLORS.SURFACE,
-  },
+  value: { flex: 1 },
   error: {
     flex: 1,
     alignItems: 'center',

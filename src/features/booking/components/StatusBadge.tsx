@@ -1,58 +1,68 @@
 import { StyleSheet, View } from 'react-native';
-import { BORDER_RADIUS_TOKENS, THEME_COLORS } from '@theme';
+import { BORDER_RADIUS_TOKENS, OVERLAY_COLORS, THEME_COLORS } from '@theme';
 import { Typography } from '@ui';
 import type { BookingStatus } from '../types';
 
-const STATUS_CONFIG: Record<BookingStatus, { label: string; color: string; background: string }> = {
+interface BadgePalette {
+  color: string;
+  background: string;
+  border: string;
+}
+
+const NEUTRAL_PALETTE: BadgePalette = {
+  color: THEME_COLORS.TEXT_MUTED,
+  background: THEME_COLORS.SURFACE_MUTED,
+  border: THEME_COLORS.BORDER,
+};
+
+const STATUS_CONFIG: Record<BookingStatus, BadgePalette & { label: string }> = {
   pending: {
     label: 'Chờ xác nhận',
-    color: THEME_COLORS.WARNING,
-    background: THEME_COLORS.WARNING_LIGHT,
+    color: THEME_COLORS.PRIMARY_DARK,
+    background: THEME_COLORS.PRIMARY_LIGHT,
+    border: OVERLAY_COLORS.INFO_BORDER,
   },
-  confirmed: {
-    label: 'Đã xác nhận',
-    color: THEME_COLORS.SUCCESS,
-    background: THEME_COLORS.SUCCESS_LIGHT,
-  },
+  confirmed: { label: 'Đã xác nhận', ...NEUTRAL_PALETTE },
   holding: {
     label: 'Đang giữ chỗ',
-    color: THEME_COLORS.PRIMARY,
+    color: THEME_COLORS.PRIMARY_DARK,
     background: THEME_COLORS.PRIMARY_LIGHT,
+    border: OVERLAY_COLORS.INFO_BORDER,
   },
-  expired: {
-    label: 'Đã hết hạn',
-    color: THEME_COLORS.TEXT_MUTED,
-    background: THEME_COLORS.SURFACE_MUTED,
-  },
+  expired: { label: 'Đã hết hạn', ...NEUTRAL_PALETTE },
   rejected: {
     label: 'Bị từ chối',
     color: THEME_COLORS.ERROR,
     background: THEME_COLORS.ERROR_LIGHT,
+    border: OVERLAY_COLORS.ERROR_BORDER,
   },
-  cancelled: {
-    label: 'Đã hủy',
-    color: THEME_COLORS.TEXT_MUTED,
-    background: THEME_COLORS.SURFACE_MUTED,
-  },
+  cancelled: { label: 'Đã hủy', ...NEUTRAL_PALETTE },
 };
+
+const BadgePill = ({ label, palette }: { label: string; palette: BadgePalette }) => (
+  <View
+    style={[styles.badge, { backgroundColor: palette.background, borderColor: palette.border }]}
+  >
+    <Typography variant="tiny" weight="SEMIBOLD" color={palette.color} style={styles.label}>
+      {label}
+    </Typography>
+  </View>
+);
 
 export const StatusBadge = ({ status }: { status: BookingStatus }) => {
   const config = STATUS_CONFIG[status];
 
-  return (
-    <View style={[styles.badge, { backgroundColor: config.background }]}>
-      <Typography variant="tiny" weight="BOLD" color={config.color}>
-        {config.label}
-      </Typography>
-    </View>
-  );
+  return <BadgePill label={config.label} palette={config} />;
 };
 
 const styles = StyleSheet.create({
   badge: {
     alignSelf: 'flex-start',
+    justifyContent: 'center',
+    height: 22,
     paddingHorizontal: 10,
-    paddingVertical: 5,
+    borderWidth: 1,
     borderRadius: BORDER_RADIUS_TOKENS.FULL,
   },
+  label: { fontSize: 11, lineHeight: 14, letterSpacing: 0.5, textTransform: 'uppercase' },
 });

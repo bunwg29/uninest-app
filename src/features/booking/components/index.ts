@@ -6,3 +6,7 @@ export * from './StatusBadge';
 export * from './BookingCard';
 export * from './ReasonModal';
 export * from './StudentBookingDetailView';
+export * from './BookingFooter';
+export * from './BookingStepper';
+export * from './NoticeBanner';
+export * from './BookingCalendar';
