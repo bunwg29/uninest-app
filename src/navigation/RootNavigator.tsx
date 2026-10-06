@@ -11,6 +11,7 @@ import {
   useAuth,
 } from '@features/auth';
 import { ChatImagePreviewScreen, ChatRoomScreen, useChatRealtime } from '@features/chat';
+import { CommunityScreen, ForumPostComposerScreen, ForumPostDetailScreen } from '@features/forum';
 import {
   LandlordListingDetailScreen,
   ListingDetailScreen,
@@ -84,6 +85,13 @@ export const RootNavigator = () => {
             <Stack.Screen name="BookingHold" component={BookingHoldScreen} />
             <Stack.Screen name="OtpVerification" component={OtpScreen} />
             <Stack.Screen name="ResetPassword" component={ResetPasswordScreen} />
+            <Stack.Screen name="Community" component={CommunityScreen} />
+            <Stack.Screen name="ForumPostDetail" component={ForumPostDetailScreen} />
+            <Stack.Screen
+              name="ForumPostComposer"
+              component={ForumPostComposerScreen}
+              options={{ animation: 'slide_from_bottom' }}
+            />
           </>
         ) : (
           <Stack.Screen name="Auth" component={AuthNavigator} />
