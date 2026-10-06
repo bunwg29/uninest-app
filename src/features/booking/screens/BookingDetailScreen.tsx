@@ -1,14 +1,23 @@
+import { useState } from 'react';
 import { Alert, Linking, Platform, ScrollView, StyleSheet, View } from 'react-native';
 import { Check, Circle, Clock3, MapPin, MessageCircle, TriangleAlert } from 'lucide-react-native';
 import { useNavigation, useRoute, type RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '@navigation';
+import { useAuth } from '@features/auth/hooks';
 import { useOpenListingChat } from '@features/chat';
+import { useOpenListing } from '@features/listings/hooks/useOpenListing';
 import { useToast } from '@hooks';
 import { BORDER_RADIUS_TOKENS, SPACING_TOKENS, THEME_COLORS } from '@theme';
 import { Button, HeaderBar, ScreenContainer, Typography } from '@ui';
-import { ResourceCard, StatusBadge } from '../components';
-import { useBookingDetail, useCancelBooking } from '../hooks';
+import { ReasonModal, ResourceCard, StatusBadge } from '../components';
+import {
+  useBookingDetail,
+  useCancelBooking,
+  useConfirmBooking,
+  useRejectBooking,
+  useReleaseBooking,
+} from '../hooks';
 import type { BookingStatus } from '../types';
 import { formatBookingDateTime, getHoursUntil } from '../utils';
 
@@ -23,6 +32,42 @@ export const BookingDetailScreen = () => {
   const toast = useToast();
   const booking = bookingQuery.data;
   const { openChat } = useOpenListingChat();
+  const { openListing } = useOpenListing();
+  const { role } = useAuth();
+  const isLandlord = role === 'landlord';
+  const confirmBooking = useConfirmBooking();
+  const rejectBooking = useRejectBooking();
+  const releaseBooking = useReleaseBooking();
+  const [reasonAction, setReasonAction] = useState<'reject' | 'release' | null>(null);
+
+  const handleConfirm = async () => {
+    if (!booking) return;
+
+    try {
+      await confirmBooking.mutateAsync(booking.id);
+      toast.success('Đã xác nhận lịch hẹn');
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Không thể xác nhận lịch hẹn');
+    }
+  };
+
+  const handleSubmitReason = async (reason: string) => {
+    if (!booking || !reasonAction) return;
+
+    try {
+      if (reasonAction === 'reject') {
+        await rejectBooking.mutateAsync({ id: booking.id, reason });
+        toast.success('Đã từ chối yêu cầu');
+      } else {
+        await releaseBooking.mutateAsync({ id: booking.id, reason });
+        toast.success('Đã hủy giữ chỗ');
+      }
+
+      setReasonAction(null);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Không thể thực hiện thao tác');
+    }
+  };
 
   const cancelWithoutReason = async () => {
     if (!booking) return;
@@ -99,7 +144,9 @@ export const BookingDetailScreen = () => {
                 weight="BOLD"
                 colorKey={isPositiveStatus(booking.status) ? 'SUCCESS' : 'WARNING'}
               >
-                {BANNER_LABELS[booking.status]}
+                {isLandlord
+                  ? LANDLORD_BANNER_LABELS[booking.status]
+                  : BANNER_LABELS[booking.status]}
               </Typography>
               {booking.cancelReason ? (
                 <Typography variant="caption" colorKey="TEXT_SECONDARY">
@@ -129,7 +176,35 @@ export const BookingDetailScreen = () => {
               completed={false}
             />
           </View>
-          <ResourceCard resource={booking.listing} />
+          {isLandlord && booking.student ? (
+            <View style={styles.details}>
+              <View style={styles.codeRow}>
+                <Typography variant="body2" colorKey="TEXT_MUTED">
+                  Sinh viên
+                </Typography>
+                <Typography variant="body2" weight="BOLD">
+                  {booking.student.fullName}
+                </Typography>
+              </View>
+              <View style={styles.codeRow}>
+                <Typography variant="body2" colorKey="TEXT_MUTED">
+                  Số điện thoại
+                </Typography>
+                <Typography variant="body2" weight="BOLD">
+                  {booking.student.phone}
+                </Typography>
+              </View>
+              {booking.note ? (
+                <Typography variant="body2" colorKey="TEXT_SECONDARY">
+                  Ghi chú: {booking.note}
+                </Typography>
+              ) : null}
+            </View>
+          ) : null}
+          <ResourceCard
+            resource={booking.listing}
+            onPress={() => void openListing(booking.listing.id)}
+          />
           <View style={styles.details}>
             <View style={styles.detailRow}>
               <Clock3 size={18} color={THEME_COLORS.PRIMARY} />
@@ -163,7 +238,7 @@ export const BookingDetailScreen = () => {
             </View>
             <StatusBadge status={booking.status} />
           </View>
-          {isClosedStatus(booking.status) ? (
+          {!isLandlord && isClosedStatus(booking.status) ? (
             <View style={styles.similarBox}>
               <Typography variant="body1" weight="BOLD">
                 Phòng tương tự đang còn trống
@@ -176,6 +251,42 @@ export const BookingDetailScreen = () => {
                 variant="outline"
                 onPress={() => navigation.navigate('Main', { screen: 'Search' })}
               />
+            </View>
+          ) : isLandlord ? (
+            <View style={styles.actions}>
+              {booking.status === 'pending' ? (
+                <>
+                  <Button
+                    title="Từ chối"
+                    variant="outline"
+                    onPress={() => setReasonAction('reject')}
+                    style={styles.actionButton}
+                  />
+                  <Button
+                    title="Xác nhận"
+                    isLoading={confirmBooking.isPending}
+                    onPress={() => void handleConfirm()}
+                    style={styles.actionButton}
+                  />
+                </>
+              ) : null}
+              {booking.status === 'holding' ? (
+                <Button
+                  title="Hủy giữ chỗ"
+                  variant="danger"
+                  onPress={() => setReasonAction('release')}
+                  fullWidth
+                />
+              ) : null}
+              {booking.student ? (
+                <Button
+                  title="Nhắn tin với sinh viên"
+                  variant="outline"
+                  leftIcon={<MessageCircle size={17} color={THEME_COLORS.TEXT_PRIMARY} />}
+                  onPress={() => void openChat(booking.listing.id, booking.student?.id)}
+                  fullWidth
+                />
+              ) : null}
             </View>
           ) : (
             <View style={styles.actions}>
@@ -216,6 +327,19 @@ export const BookingDetailScreen = () => {
           )}
         </ScrollView>
       )}
+      <ReasonModal
+        isVisible={reasonAction !== null}
+        title={reasonAction === 'reject' ? 'Từ chối yêu cầu xem phòng' : 'Hủy giữ chỗ'}
+        description={
+          reasonAction === 'reject'
+            ? 'Lý do sẽ được gửi tới sinh viên.'
+            : 'Phòng sẽ trở về trạng thái còn trống và sinh viên được thông báo.'
+        }
+        confirmTitle={reasonAction === 'reject' ? 'Từ chối' : 'Hủy giữ chỗ'}
+        isLoading={rejectBooking.isPending || releaseBooking.isPending}
+        onClose={() => setReasonAction(null)}
+        onConfirm={(reason) => void handleSubmitReason(reason)}
+      />
     </ScreenContainer>
   );
 };
@@ -227,6 +351,15 @@ const BANNER_LABELS: Record<BookingStatus, string> = {
   expired: 'Yêu cầu đã hết hạn',
   cancelled: 'Đã hủy',
   rejected: 'Chủ trọ đã từ chối',
+};
+
+const LANDLORD_BANNER_LABELS: Record<BookingStatus, string> = {
+  pending: 'Đang chờ bạn xác nhận',
+  confirmed: 'Bạn đã xác nhận lịch hẹn',
+  holding: 'Sinh viên đang giữ chỗ phòng này',
+  expired: 'Yêu cầu đã hết hạn',
+  cancelled: 'Lịch hẹn đã bị hủy',
+  rejected: 'Bạn đã từ chối yêu cầu',
 };
 
 const isPositiveStatus = (status: BookingStatus) => status === 'confirmed' || status === 'holding';

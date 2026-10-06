@@ -37,8 +37,8 @@ const resolveImageContentType = (uri: string): string => {
 };
 
 export const chatService = {
-  async startConversation(listingId: string): Promise<Conversation> {
-    const response = await apiClient.post('/conversations', { listingId });
+  async startConversation(listingId: string, studentId?: string): Promise<Conversation> {
+    const response = await apiClient.post('/conversations', { listingId, studentId });
 
     return unwrapData<Conversation>(response.data);
   },

@@ -34,6 +34,7 @@ const useBookableListing = (id: string | undefined) => {
           imageUrl: cover?.url ?? null,
           deposit: detail.deposit,
           availability: detail.availability,
+          myBooking: detail.myBooking ?? null,
         }
       : undefined,
   };
@@ -106,6 +107,29 @@ export const BookingNewScreen = () => {
             title="Quay lại Tìm trọ"
             variant="ghost"
             onPress={() => navigation.replace('Main', { screen: 'Search' })}
+          />
+        </View>
+      </ScreenContainer>
+    );
+  }
+
+  if (roomQuery.data?.myBooking) {
+    const existingBookingId = roomQuery.data.myBooking.id;
+
+    return (
+      <ScreenContainer keyboardAvoiding={false}>
+        <HeaderBar title="Đặt lịch xem phòng" onBack={() => navigation.goBack()} />
+        <View style={styles.centerState}>
+          <Typography variant="h3" weight="BOLD" align="center">
+            Bạn đã có lịch hẹn cho phòng này
+          </Typography>
+          <Typography variant="body2" colorKey="TEXT_MUTED" align="center">
+            Mỗi phòng chỉ có một lịch hẹn đang xử lý. Hãy hủy lịch hiện tại nếu muốn đổi sang khung
+            giờ khác.
+          </Typography>
+          <Button
+            title="Xem lịch hẹn của tôi"
+            onPress={() => navigation.replace('BookingDetail', { id: existingBookingId })}
           />
         </View>
       </ScreenContainer>

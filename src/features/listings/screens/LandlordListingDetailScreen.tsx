@@ -21,11 +21,11 @@ import {
   X,
   XCircle,
 } from 'lucide-react-native';
-import { Badge, Button, HeaderBar, ScreenContainer, Typography } from '@ui';
+import { Badge, Button, HeaderBar, Modal, ScreenContainer, Typography } from '@ui';
 import { BORDER_RADIUS_TOKENS, SPACING_TOKENS, THEME_COLORS } from '@theme';
 import type { RootStackParamList } from '@navigation';
-import { useResponsiveLayout } from '@hooks';
-import { useLandlordListingDetail } from '../hooks';
+import { useResponsiveLayout, useToast } from '@hooks';
+import { useLandlordListingDetail, useLandlordListingMutation } from '../hooks';
 import type { LandlordListing, LandlordListingStatus } from '../types';
 import { useListingPostStore } from '../store/listingPostStore';
 
@@ -37,8 +37,34 @@ const STATUS_LABELS: Record<LandlordListingStatus, string> = {
   pending: 'CHỜ DUYỆT',
   rejected: 'BỊ TỪ CHỐI',
   hidden: 'ĐÃ ẨN',
-  expired: 'HẾT HẠN',
+  expired: 'ĐÃ CHO THUÊ',
   paused: 'NGỪNG NHẬN YÊU CẦU',
+};
+
+const ACTION_SUCCESS_MESSAGES = {
+  hide: 'Đã ẩn tin đăng',
+  republish: 'Đã hiển thị lại tin đăng',
+  rent: 'Đã đánh dấu phòng đã cho thuê',
+  unrent: 'Đã mở lại tin, phòng đang trống',
+};
+
+const PENDING_ACTION_COPY = {
+  hide: {
+    title: 'Ẩn tin đăng?',
+    description: 'Tin đăng sẽ không còn hiển thị với người tìm phòng.',
+    confirmText: 'Ẩn tin',
+  },
+  rent: {
+    title: 'Đánh dấu đã cho thuê?',
+    description:
+      'Tin sẽ ngừng hiển thị trong tìm kiếm và các lịch hẹn đang chờ hoặc đã xác nhận sẽ hết hạn.',
+    confirmText: 'Đã cho thuê',
+  },
+  unrent: {
+    title: 'Đánh dấu chưa cho thuê?',
+    description: 'Tin sẽ hiển thị lại với sinh viên và nhận yêu cầu xem phòng mới.',
+    confirmText: 'Chưa cho thuê',
+  },
 };
 
 const STATUS_VARIANTS: Record<
@@ -63,6 +89,27 @@ export const LandlordListingDetailScreen = () => {
   const [hasImageError, setHasImageError] = useState(false);
   const [isMenuVisible, setIsMenuVisible] = useState(false);
   const { isCompact } = useResponsiveLayout();
+  const toast = useToast();
+  const listingMutation = useLandlordListingMutation();
+  const [pendingAction, setPendingAction] = useState<'hide' | 'rent' | 'unrent' | null>(null);
+
+  const runAction = (action: 'hide' | 'republish' | 'rent' | 'unrent') => {
+    if (listingMutation.isPending) return;
+
+    listingMutation.mutate(
+      { action, id: currentListing.id },
+      {
+        onSuccess: () => {
+          setPendingAction(null);
+          toast.success(ACTION_SUCCESS_MESSAGES[action]);
+        },
+        onError: (error) => {
+          setPendingAction(null);
+          toast.error(error instanceof Error ? error.message : 'Không thể cập nhật tin đăng');
+        },
+      }
+    );
+  };
 
   const isRejected = currentListing.status === 'rejected';
 
@@ -96,6 +143,8 @@ export const LandlordListingDetailScreen = () => {
     if (currentListing.status === 'pending') return 'Tin chờ duyệt';
 
     if (currentListing.status === 'hidden') return 'Tin đã ẩn';
+
+    if (currentListing.status === 'expired') return 'Tin đã cho thuê';
 
     return 'Quản lý tin đăng';
   };
@@ -194,25 +243,61 @@ export const LandlordListingDetailScreen = () => {
             onEdit={handleEdit}
             onEditSchedule={handleEditSchedule}
             onStudentPreview={handleStudentPreview}
+            onHide={() => setPendingAction('hide')}
+            onRepublish={() => runAction('republish')}
+            isUpdating={listingMutation.isPending}
           />
         )}
       </ScrollView>
 
       <View style={[styles.bottomBar, isCompact && styles.bottomBarCompact]}>
-        {currentListing.status !== 'pending' ? (
+        {isRejected ? (
           <Button
-            title={isRejected ? 'Quay lại' : 'Đánh dấu đã cho thuê'}
+            title="Quay lại"
             variant="outline"
             onPress={() => navigation.goBack()}
+            style={styles.secondaryButton}
+          />
+        ) : null}
+        {currentListing.status === 'published' || currentListing.status === 'paused' ? (
+          <Button
+            title="Đánh dấu đã cho thuê"
+            variant="outline"
+            onPress={() => setPendingAction('rent')}
+            style={styles.secondaryButton}
+          />
+        ) : null}
+        {currentListing.status === 'expired' ? (
+          <Button
+            title="Đánh dấu chưa cho thuê"
+            variant="outline"
+            onPress={() => setPendingAction('unrent')}
             style={styles.secondaryButton}
           />
         ) : null}
         <Button
           title={isRejected ? 'Sửa và gửi lại' : 'Chỉnh sửa'}
           onPress={handleEdit}
-          style={currentListing.status === 'pending' ? styles.fullButton : styles.primaryButton}
+          style={
+            currentListing.status === 'pending' ||
+            currentListing.status === 'hidden' ||
+            currentListing.status === 'expired'
+              ? styles.fullButton
+              : styles.primaryButton
+          }
         />
       </View>
+
+      <Modal
+        isVisible={pendingAction !== null}
+        onClose={() => setPendingAction(null)}
+        title={pendingAction ? PENDING_ACTION_COPY[pendingAction].title : ''}
+        description={pendingAction ? PENDING_ACTION_COPY[pendingAction].description : ''}
+        confirmText={pendingAction ? PENDING_ACTION_COPY[pendingAction].confirmText : ''}
+        confirmVariant={pendingAction === 'hide' ? 'danger' : 'primary'}
+        onConfirm={() => pendingAction && runAction(pendingAction)}
+        isConfirmLoading={listingMutation.isPending}
+      />
 
       <RNModal
         visible={isMenuVisible}
@@ -305,11 +390,17 @@ const PublishedDetails = ({
   onEdit,
   onEditSchedule,
   onStudentPreview,
+  onHide,
+  onRepublish,
+  isUpdating,
 }: {
   listing: LandlordListing;
   onEdit: () => void;
   onEditSchedule: () => void;
   onStudentPreview: () => void;
+  onHide: () => void;
+  onRepublish: () => void;
+  isUpdating: boolean;
 }) => {
   const getVisibilityInfo = () => {
     switch (listing.status) {
@@ -319,8 +410,12 @@ const PublishedDetails = ({
         return { text: 'Đang chờ duyệt từ UniNest', colorKey: 'WARNING' as const };
       case 'hidden':
         return { text: 'Đang tạm ẩn với sinh viên', colorKey: 'TEXT_MUTED' as const };
+      case 'paused':
+        return { text: 'Đang ngừng nhận yêu cầu mới', colorKey: 'WARNING' as const };
+      case 'expired':
+        return { text: 'Phòng đã cho thuê', colorKey: 'TEXT_MUTED' as const };
       default:
-        return { text: 'Đã hết hạn', colorKey: 'TEXT_MUTED' as const };
+        return { text: 'Không hiển thị với sinh viên', colorKey: 'TEXT_MUTED' as const };
     }
   };
 
@@ -342,8 +437,23 @@ const PublishedDetails = ({
             {visibilityInfo.text}
           </Typography>
         </View>
-        {listing.status === 'published' ? (
-          <Button title="Ẩn tin" variant="outline" size="sm" onPress={() => undefined} />
+        {listing.status === 'published' || listing.status === 'paused' ? (
+          <Button
+            title="Ẩn tin"
+            variant="outline"
+            size="sm"
+            disabled={isUpdating}
+            onPress={onHide}
+          />
+        ) : null}
+        {listing.status === 'hidden' ? (
+          <Button
+            title="Hiện lại tin"
+            variant="outline"
+            size="sm"
+            disabled={isUpdating}
+            onPress={onRepublish}
+          />
         ) : null}
       </View>
 
@@ -361,7 +471,7 @@ const PublishedDetails = ({
             [String(listing.viewCount || 0), 'Lượt xem'],
             [String(listing.saveCount || 0), 'Đã lưu'],
             [String(listing.contactCount || 0), 'Liên hệ'],
-            ['0', 'Đặt lịch'],
+            [String(listing.bookingCount || 0), 'Đặt lịch'],
           ].map(([value, label]) => (
             <View key={label} style={styles.quickStat}>
               <Typography variant="body1" weight="BOLD">

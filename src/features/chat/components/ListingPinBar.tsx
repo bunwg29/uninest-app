@@ -1,4 +1,4 @@
-import { View, Image, StyleSheet } from 'react-native';
+import { View, Image, StyleSheet, TouchableOpacity } from 'react-native';
 import { Pin } from 'lucide-react-native';
 import { THEME_COLORS, SPACING_TOKENS, BORDER_RADIUS_TOKENS } from '@theme';
 import { Typography } from '@ui';
@@ -8,10 +8,18 @@ import type { ChatListingSummary } from '../types';
 
 export interface ListingPinBarProps {
   listing: ChatListingSummary;
+  onPress?: () => void;
 }
 
-export const ListingPinBar = ({ listing }: ListingPinBarProps) => (
-  <View style={styles.container}>
+export const ListingPinBar = ({ listing, onPress }: ListingPinBarProps) => (
+  <TouchableOpacity
+    style={styles.container}
+    onPress={onPress}
+    disabled={!onPress}
+    activeOpacity={0.85}
+    accessibilityRole={onPress ? 'button' : undefined}
+    accessibilityLabel={onPress ? `Xem chi tiết phòng ${listing.title}` : undefined}
+  >
     <Pin size={16} color={THEME_COLORS.TEXT_PLACEHOLDER} />
 
     {listing.coverImageUrl ? (
@@ -35,7 +43,7 @@ export const ListingPinBar = ({ listing }: ListingPinBarProps) => (
         </Typography>
       </View>
     </View>
-  </View>
+  </TouchableOpacity>
 );
 
 const styles = StyleSheet.create({

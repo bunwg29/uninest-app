@@ -15,6 +15,7 @@ import { THEME_COLORS, SPACING_TOKENS } from '@theme';
 import { EmptyState, ScreenContainer, Typography } from '@ui';
 import { useToast } from '@hooks';
 import { useAuth, useRoleGuard } from '@features/auth';
+import { useOpenListing } from '@features/listings/hooks/useOpenListing';
 import type { RootStackParamList } from '@navigation/types';
 import {
   ChatComposer,
@@ -59,6 +60,7 @@ export const ChatRoomScreen = ({ navigation, route }: ChatRoomScreenProps) => {
   const isOnline = useNetworkStatus();
   const conversationQuery = useConversation(conversationId);
   const room = useChatRoom(conversationId, currentUserId);
+  const { openListing } = useOpenListing();
   const recallMutation = useRecallMessage(conversationId);
   const deleteMutation = useDeleteConversation();
   const { pickFromLibrary, takePhoto } = useChatImagePicker();
@@ -246,7 +248,12 @@ export const ChatRoomScreen = ({ navigation, route }: ChatRoomScreenProps) => {
 
       {!isOnline ? <OfflineBanner /> : null}
 
-      {conversation ? <ListingPinBar listing={conversation.listing} /> : null}
+      {conversation ? (
+        <ListingPinBar
+          listing={conversation.listing}
+          onPress={() => void openListing(conversation.listing.id)}
+        />
+      ) : null}
 
       <KeyboardAvoidingView
         style={styles.body}

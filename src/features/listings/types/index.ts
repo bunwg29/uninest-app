@@ -70,6 +70,13 @@ export interface ListingHold {
   daysLeft: number;
 }
 
+export interface ListingMyBooking {
+  id: string;
+  status: 'pending' | 'confirmed' | 'holding';
+  startTime: string;
+  expiresAt: string | null;
+}
+
 export interface ListingDetail {
   id: string;
   title: string;
@@ -96,6 +103,7 @@ export interface ListingDetail {
   availability: ListingAvailability;
   hold: ListingHold | null;
   isFavorite: boolean;
+  myBooking?: ListingMyBooking | null;
   createdAt: string;
   updatedAt: string;
   distanceMeters?: number;

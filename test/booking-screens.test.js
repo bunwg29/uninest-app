@@ -24,6 +24,10 @@ let mockSlotsQuery;
 let mockDetailQuery;
 let mockBookingsQuery;
 let mockRoomQuery;
+let mockRole = 'student';
+const mockOpenChat = jest.fn();
+const mockOpenListing = jest.fn();
+const mockLandlordAction = { mutateAsync: jest.fn(), isPending: false };
 const mockToast = { success: jest.fn(), error: jest.fn(), warning: jest.fn(), info: jest.fn() };
 const mockCreate = { mutateAsync: jest.fn(), isPending: false };
 const mockCancel = { mutateAsync: jest.fn(), isPending: false };
@@ -49,12 +53,21 @@ jest.mock('../src/features/booking/hooks', () => ({
   useBookings: () => mockBookingsQuery,
   useCancelBooking: () => mockCancel,
   useHoldBooking: () => mockHold,
+  useConfirmBooking: () => mockLandlordAction,
+  useRejectBooking: () => mockLandlordAction,
+  useReleaseBooking: () => mockLandlordAction,
+}));
+jest.mock('../src/features/auth/hooks', () => ({
+  useAuth: () => ({ role: mockRole }),
+}));
+jest.mock('../src/features/listings/hooks/useOpenListing', () => ({
+  useOpenListing: () => ({ openListing: mockOpenListing, isOpening: false }),
 }));
 jest.mock('@features/listings', () => ({
   useListingDetail: () => mockRoomQuery,
 }));
 jest.mock('@features/chat', () => ({
-  useOpenListingChat: () => ({ openChat: jest.fn(), isOpening: false }),
+  useOpenListingChat: () => ({ openChat: mockOpenChat, isOpening: false }),
 }));
 
 const toListingDetail = (room) => ({
@@ -107,6 +120,7 @@ const createBooking = (overrides = {}) => ({
 describe('Các màn hình Booking', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    mockRole = 'student';
     mockBooking = createBooking();
     mockRouteParams = { id: mockBooking.id, resourceId: resource.id, resource };
     mockFlowState = {
@@ -282,6 +296,29 @@ describe('Các màn hình Booking', () => {
     expect(Linking.openURL).toHaveBeenCalled();
     await fireEvent.press(screen.getByText('Hủy lịch hẹn'));
     expect(Alert.alert).toHaveBeenCalled();
+  });
+
+  it('sinh viên bấm vào phòng để mở chi tiết phòng', async () => {
+    const screen = await render(<BookingDetailScreen />);
+
+    await fireEvent.press(screen.getByLabelText(`Xem chi tiết phòng ${resource.title}`));
+
+    expect(mockOpenListing).toHaveBeenCalledWith(resource.id);
+  });
+
+  it('chủ trọ nhắn tin cho sinh viên đã đặt lịch thay vì nhắn cho chính mình', async () => {
+    mockRole = 'landlord';
+    mockBooking = createBooking({
+      student: { id: 'student-1', fullName: 'Nguyễn Văn A', phone: '0905123456', avatarUrl: null },
+    });
+    mockDetailQuery = { ...mockDetailQuery, data: mockBooking };
+    const screen = await render(<BookingDetailScreen />);
+
+    expect(screen.queryByText('Nhắn tin với Chủ trọ')).toBeNull();
+    expect(screen.queryByText('Hủy lịch hẹn')).toBeNull();
+    await fireEvent.press(screen.getByText('Nhắn tin với sinh viên'));
+
+    expect(mockOpenChat).toHaveBeenCalledWith(resource.id, 'student-1');
   });
 
   it('xác nhận và hủy lịch trên web khi còn trên 24 giờ', async () => {

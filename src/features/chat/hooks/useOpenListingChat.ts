@@ -11,9 +11,9 @@ export const useOpenListingChat = () => {
   const toast = useToast();
   const startConversation = useStartConversation();
 
-  const openChat = async (listingId: string) => {
+  const openChat = async (listingId: string, studentId?: string) => {
     try {
-      const conversation = await startConversation.mutateAsync(listingId);
+      const conversation = await startConversation.mutateAsync({ listingId, studentId });
 
       navigation.navigate('ChatRoom', { conversationId: conversation.id });
     } catch (error) {

@@ -1,11 +1,24 @@
-import { Image, StyleSheet, View } from 'react-native';
+import { Image, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { ImageOff, MapPin } from 'lucide-react-native';
 import { BORDER_RADIUS_TOKENS, SPACING_TOKENS, THEME_COLORS } from '@theme';
 import { Typography } from '@ui';
 import type { BookingResource } from '../types';
 
-export const ResourceCard = ({ resource }: { resource: BookingResource }) => (
-  <View style={styles.card}>
+export const ResourceCard = ({
+  resource,
+  onPress,
+}: {
+  resource: BookingResource;
+  onPress?: () => void;
+}) => (
+  <TouchableOpacity
+    style={styles.card}
+    onPress={onPress}
+    disabled={!onPress}
+    activeOpacity={0.85}
+    accessibilityRole={onPress ? 'button' : undefined}
+    accessibilityLabel={onPress ? `Xem chi tiết phòng ${resource.title}` : undefined}
+  >
     {resource.imageUrl ? (
       <Image source={{ uri: resource.imageUrl }} style={styles.image} resizeMode="cover" />
     ) : (
@@ -36,7 +49,7 @@ export const ResourceCard = ({ resource }: { resource: BookingResource }) => (
         </Typography>
       </View>
     </View>
-  </View>
+  </TouchableOpacity>
 );
 
 const styles = StyleSheet.create({

@@ -37,7 +37,6 @@ import type { RootStackParamList } from '@navigation';
 import { BORDER_RADIUS_TOKENS, SPACING_TOKENS, THEME_COLORS } from '@theme';
 import { Avatar, Badge, Button, HeaderBar, ScreenContainer, Typography } from '@ui';
 import { useAuth } from '@features/auth';
-import { useHoldableBooking } from '@features/booking/hooks';
 import { ImageViewerModal } from '@features/chat/components/ImageViewerModal';
 import { useOpenListingChat } from '@features/chat/hooks/useOpenListingChat';
 import { MAX_COMPARISON_ITEMS, useComparisonStore } from '@features/comparison';
@@ -57,7 +56,7 @@ import {
   getAmenityIcon,
   type ListingReportReason,
 } from '../components';
-import type { ListingAvailability, ListingDetailImage } from '../types';
+import type { ListingAvailability, ListingDetail, ListingDetailImage } from '../types';
 import { ROOM_TYPE_OPTIONS } from '../types/constants';
 
 type DetailRoute = RouteProp<RootStackParamList, 'ListingDetail'>;
@@ -98,7 +97,6 @@ export const ListingDetailScreen = () => {
   const toggleFavorite = useToggleFavorite();
   const { openChat, isOpening } = useOpenListingChat();
   const isStudent = role === 'student';
-  const holdable = useHoldableBooking(listingId, isStudent);
   const recordedListingId = useRef<string | null>(null);
   const comparisonItems = useComparisonStore((state) => state.items);
   const addComparison = useComparisonStore((state) => state.add);
@@ -182,17 +180,13 @@ export const ListingDetailScreen = () => {
   };
 
   const handleHold = () => {
-    if (!holdable.confirmedBooking) {
-      toast.info(
-        holdable.activeBooking
-          ? 'Bạn có thể giữ chỗ sau khi đã đến xem phòng và Chủ trọ đã xác nhận lịch hẹn.'
-          : 'Hãy đặt lịch và đến xem phòng trước khi giữ chỗ.'
-      );
+    const booking = detailQuery.data?.myBooking;
 
+    if (!booking || booking.status !== 'confirmed' || new Date(booking.startTime) > new Date()) {
       return;
     }
 
-    navigation.navigate('BookingHold', { id: holdable.confirmedBooking.id });
+    navigation.navigate('BookingHold', { id: booking.id });
   };
 
   const handleSubmitReport = (reason: ListingReportReason, note: string) => {
@@ -261,7 +255,13 @@ export const ListingDetailScreen = () => {
     ROOM_TYPE_OPTIONS.find((option) => option.value === listing.roomType)?.label ?? 'Chưa cập nhật';
   const availabilityBadge = AVAILABILITY_BADGES[listing.availability];
   const isHolding = listing.availability === 'holding';
-  const canBook = listing.availability === 'available' || isHolding;
+  const myBooking = listing.myBooking ?? null;
+  const canBook = listing.availability === 'available' && !myBooking;
+  const canHold =
+    listing.availability === 'available' &&
+    myBooking?.status === 'confirmed' &&
+    new Date(myBooking.startTime) <= new Date();
+  const holdHint = getHoldHint(listing.availability, myBooking);
   const reference = getDistanceReference(appliedFilters);
   const distanceMeters =
     reference && hasCoordinates
@@ -548,20 +548,34 @@ export const ListingDetailScreen = () => {
               )}
             </TouchableOpacity>
             <Button
-              title="Đặt lịch xem"
+              title={myBooking ? 'Xem lịch hẹn' : 'Đặt lịch xem'}
               variant="outline"
-              disabled={!canBook}
+              disabled={!canBook && !myBooking}
               leftIcon={<CalendarCheck size={17} color={THEME_COLORS.PRIMARY} />}
-              onPress={() => navigation.navigate('BookingNew', { resourceId: listing.id })}
+              onPress={() =>
+                myBooking
+                  ? navigation.navigate('BookingDetail', { id: myBooking.id })
+                  : navigation.navigate('BookingNew', { resourceId: listing.id })
+              }
               style={styles.actionFlex}
             />
             <Button
-              title="Giữ chỗ"
-              disabled={listing.availability !== 'available'}
+              title={myBooking?.status === 'holding' ? 'Đang giữ chỗ' : 'Giữ chỗ'}
+              disabled={!canHold}
               onPress={handleHold}
               style={styles.actionFlex}
             />
           </View>
+          {holdHint ? (
+            <Typography
+              variant="caption"
+              colorKey="TEXT_MUTED"
+              align="center"
+              style={styles.holdHint}
+            >
+              {holdHint}
+            </Typography>
+          ) : null}
         </View>
       ) : null}
 
@@ -584,6 +598,23 @@ export const ListingDetailScreen = () => {
       />
     </View>
   );
+};
+
+const getHoldHint = (
+  availability: ListingDetail['availability'],
+  myBooking: ListingDetail['myBooking']
+) => {
+  if (availability !== 'available') return null;
+
+  if (!myBooking) return 'Đặt lịch và đến xem phòng để có thể giữ chỗ.';
+
+  if (myBooking.status === 'pending') return 'Đang chờ Chủ trọ xác nhận lịch xem phòng.';
+
+  if (myBooking.status === 'confirmed' && new Date(myBooking.startTime) > new Date()) {
+    return 'Bạn có thể giữ chỗ sau khi đã đến xem phòng.';
+  }
+
+  return null;
 };
 
 const getDistanceReference = (filters: {
@@ -924,6 +955,7 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: THEME_COLORS.DIVIDER,
   },
+  holdHint: { paddingHorizontal: SPACING_TOKENS.MD, paddingBottom: SPACING_TOKENS.XS },
   holdStrip: {
     flexDirection: 'row',
     alignItems: 'center',

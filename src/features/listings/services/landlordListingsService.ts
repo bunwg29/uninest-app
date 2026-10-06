@@ -92,6 +92,14 @@ export const landlordListingsService = {
     await apiClient.patch(`/landlord/listings/${id}/visibility`, { hidden: false });
   },
 
+  async markRented(id: string): Promise<void> {
+    await apiClient.patch(`/landlord/listings/${id}/rental-status`, { rented: true });
+  },
+
+  async markAvailable(id: string): Promise<void> {
+    await apiClient.patch(`/landlord/listings/${id}/rental-status`, { rented: false });
+  },
+
   async deleteListing(id: string): Promise<{ deleted: boolean }> {
     const response = await apiClient.delete(`/landlord/listings/${id}`);
     const result = unwrapData<{ deleted?: boolean } | null>(response.data);

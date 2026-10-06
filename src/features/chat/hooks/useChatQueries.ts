@@ -75,7 +75,8 @@ export const useStartConversation = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (listingId: string) => chatService.startConversation(listingId),
+    mutationFn: ({ listingId, studentId }: { listingId: string; studentId?: string }) =>
+      chatService.startConversation(listingId, studentId),
     onSuccess: (conversation) => {
       queryClient.setQueryData(CHAT_QUERY_KEYS.conversation(conversation.id), conversation);
     },

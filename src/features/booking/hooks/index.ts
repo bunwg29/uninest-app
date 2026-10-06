@@ -39,7 +39,10 @@ export const useCreateBooking = () => {
 
   return useMutation({
     mutationFn: (payload: CreateBookingPayload) => bookingService.create(payload),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: BOOKING_KEYS.all }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: BOOKING_KEYS.all });
+      queryClient.invalidateQueries({ queryKey: ['listing-detail'] });
+    },
   });
 };
 
@@ -52,6 +55,7 @@ export const useCancelBooking = () => {
     onSuccess: (booking) => {
       queryClient.setQueryData(BOOKING_KEYS.detail(booking.id), booking);
       queryClient.invalidateQueries({ queryKey: BOOKING_KEYS.all });
+      queryClient.invalidateQueries({ queryKey: ['listing-detail', booking.listing.id] });
     },
   });
 };
@@ -101,25 +105,3 @@ export const useReleaseBooking = () =>
   useLandlordAction(({ id, reason }: { id: string; reason: string }) =>
     bookingService.release(id, reason)
   );
-
-export const useHoldableBooking = (listingId: string, isEnabled: boolean) => {
-  const bookingsQuery = useQuery({
-    queryKey: [...BOOKING_KEYS.all, 'all'],
-    queryFn: () => bookingService.getList(),
-    enabled: isEnabled,
-    staleTime: 15_000,
-  });
-  const bookings = (bookingsQuery.data?.items ?? []).filter(
-    (booking) => booking.listing.id === listingId
-  );
-
-  return {
-    isLoading: bookingsQuery.isLoading,
-    confirmedBooking: bookings.find(
-      (booking) => booking.status === 'confirmed' && new Date(booking.startTime) <= new Date()
-    ),
-    activeBooking: bookings.find((booking) =>
-      ['pending', 'confirmed', 'holding'].includes(booking.status)
-    ),
-  };
-};

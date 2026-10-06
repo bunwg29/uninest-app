@@ -32,17 +32,25 @@ export const useLandlordListingMutation = () => {
       action,
       id,
     }: {
-      action: 'hide' | 'republish' | 'delete';
+      action: 'hide' | 'republish' | 'rent' | 'unrent' | 'delete';
       id: string;
     }): Promise<{ deleted: boolean } | void> => {
       if (action === 'hide') return landlordListingsService.hideListing(id);
 
       if (action === 'republish') return landlordListingsService.republishListing(id);
 
+      if (action === 'rent') return landlordListingsService.markRented(id);
+
+      if (action === 'unrent') return landlordListingsService.markAvailable(id);
+
       return landlordListingsService.deleteListing(id);
     },
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: LANDLORD_LISTINGS_QUERY_KEY });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: LANDLORD_LISTINGS_QUERY_KEY }),
+        queryClient.invalidateQueries({ queryKey: [LANDLORD_LISTING_DETAIL_QUERY_KEY] }),
+        queryClient.invalidateQueries({ queryKey: ['listing-detail'] }),
+      ]);
     },
   });
 };
