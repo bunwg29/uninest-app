@@ -12,12 +12,23 @@ import { useNavigation, useRoute } from '@react-navigation/native';
 import type { RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import MapView, { Marker } from 'react-native-maps';
-import { Eye, Heart, ImageOff, MapPin, Scale, ShieldCheck, Star, Users } from 'lucide-react-native';
+import {
+  CalendarCheck,
+  Eye,
+  Heart,
+  ImageOff,
+  MapPin,
+  Scale,
+  ShieldCheck,
+  Star,
+  Users,
+} from 'lucide-react-native';
 import { AppError, formatVND } from '@core';
 import { useToast } from '@hooks';
 import type { RootStackParamList } from '@navigation';
 import { BORDER_RADIUS_TOKENS, SPACING_TOKENS, THEME_COLORS } from '@theme';
 import { Avatar, Button, HeaderBar, ScreenContainer, Typography } from '@ui';
+import { useAuth } from '@features/auth';
 import { MAX_COMPARISON_ITEMS, useComparisonStore } from '@features/comparison';
 import { useListingDetail, useRecordListingView } from '../hooks';
 import type { ListingDetailImage } from '../types';
@@ -29,6 +40,7 @@ type DetailNavigation = NativeStackNavigationProp<RootStackParamList>;
 export const ListingDetailScreen = () => {
   const route = useRoute<DetailRoute>();
   const navigation = useNavigation<DetailNavigation>();
+  const { role } = useAuth();
   const toast = useToast();
   const { width } = useWindowDimensions();
   const listingId = route.params.id;
@@ -309,6 +321,16 @@ export const ListingDetailScreen = () => {
                 </View>
               ) : null}
 
+              {role === 'student' && listing.status === 'active' ? (
+                <Button
+                  title="Đặt lịch xem phòng"
+                  fullWidth
+                  leftIcon={<CalendarCheck size={18} color={THEME_COLORS.WHITE} />}
+                  onPress={() => navigation.navigate('BookingNew', { resourceId: listing.id })}
+                  style={styles.bookingButton}
+                />
+              ) : null}
+
               <Button
                 title={isCompared ? 'Bỏ khỏi so sánh' : 'Thêm vào so sánh'}
                 variant={isCompared ? 'secondary' : 'primary'}
@@ -547,5 +569,6 @@ const styles = StyleSheet.create({
     borderRadius: BORDER_RADIUS_TOKENS.SM,
     backgroundColor: THEME_COLORS.ERROR_LIGHT,
   },
-  compareButton: { marginTop: SPACING_TOKENS.LG, marginBottom: SPACING_TOKENS.MD },
+  bookingButton: { marginTop: SPACING_TOKENS.LG },
+  compareButton: { marginTop: SPACING_TOKENS.SM, marginBottom: SPACING_TOKENS.MD },
 });
