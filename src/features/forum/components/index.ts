@@ -4,6 +4,7 @@ export * from './ForumBadge';
 export * from './ForumBottomSheet';
 export * from './ForumCommentItem';
 export * from './ForumEmptyFeed';
+export * from './ForumFormField';
 export * from './ForumHeader';
 export * from './ForumImageStrip';
 export * from './ForumPostCard';

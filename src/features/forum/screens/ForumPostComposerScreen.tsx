@@ -16,19 +16,20 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
 import { Controller, useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { ImagePlus, X } from 'lucide-react-native';
+import { ImagePlus, MapPin, X } from 'lucide-react-native';
 import { filterValidUploadImages, resolveImageContentType } from '@core';
-import { BORDER_RADIUS_TOKENS, SPACING_TOKENS, THEME_COLORS } from '@theme';
-import { Badge, Button, FilterChip, Input, ScreenContainer, Typography } from '@ui';
+import { BORDER_RADIUS_TOKENS, OVERLAY_COLORS, SPACING_TOKENS, THEME_COLORS } from '@theme';
+import { Button, FilterChip, Input, ScreenContainer, Typography } from '@ui';
 import { useToast } from '@hooks';
 import { formatNumberWithDots, parseRawNumberString } from '@core';
 import type { RootStackParamList } from '@navigation';
-import { ForumHeader, ModerationWarningModal } from '../components';
+import { ForumBadge, ForumFormField, ForumHeader, ModerationWarningModal } from '../components';
 import { useCheckForumContent, useForumPost, useSaveForumPost } from '../hooks';
 import type {
   ForumCategory,
   ForumLocalImage,
   ForumPost,
+  ModeratedField,
   ModerationResult,
   SaveForumPostPayload,
 } from '../types';
@@ -47,6 +48,8 @@ import {
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 type ComposerRouteProp = RouteProp<RootStackParamList, 'ForumPostComposer'>;
+
+const TITLE_HELPER_TEXT = 'Ghi rõ khu vực và giá ngay ở tiêu đề để bài dễ được tìm thấy.';
 
 const CATEGORY_ORDER = Object.keys(FORUM_COMPOSER_CATEGORY_LABELS) as ForumCategory[];
 
@@ -99,6 +102,7 @@ export const ForumPostComposerScreen = () => {
   const [images, setImages] = useState<ForumLocalImage[]>([]);
   const [moderationResult, setModerationResult] = useState<ModerationResult | null>(null);
   const [pendingPayload, setPendingPayload] = useState<SaveForumPostPayload | null>(null);
+  const [flaggedFields, setFlaggedFields] = useState<ModeratedField[]>([]);
 
   const postQuery = useForumPost(postId ?? '');
   const saveMutation = useSaveForumPost();
@@ -138,6 +142,15 @@ export const ForumPostComposerScreen = () => {
       }))
     );
   }, [editingPost, reset]);
+
+  const clearFlag = (field: ModeratedField) => {
+    setFlaggedFields((current) =>
+      current.includes(field) ? current.filter((f) => f !== field) : current
+    );
+  };
+
+  const getFlagStyle = (field: ModeratedField) =>
+    flaggedFields.includes(field) ? styles.flaggedInput : null;
 
   const handlePickImages = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -228,6 +241,7 @@ export const ForumPostComposerScreen = () => {
 
           setPendingPayload(payload);
           setModerationResult(result);
+          setFlaggedFields(result.violations.map((violation) => violation.field));
         },
         onError: (error) => toast.error(error.message, 'Không kiểm tra được nội dung'),
       }
@@ -258,6 +272,7 @@ export const ForumPostComposerScreen = () => {
 
     setModerationResult(null);
     setPendingPayload(null);
+    setFlaggedFields([]);
     toast.info('Đã xoá các phần vi phạm, bạn kiểm tra lại rồi đăng nhé.');
   };
 
@@ -295,232 +310,286 @@ export const ForumPostComposerScreen = () => {
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
         <ScrollView contentContainerStyle={styles.form} keyboardShouldPersistTaps="handled">
-          <Typography variant="label" weight="SEMIBOLD" style={styles.sectionLabel}>
-            Chuyên mục
-          </Typography>
+          <ForumFormField label="Chuyên mục" style={styles.group}>
+            <Controller
+              control={control}
+              name="category"
+              render={({ field: { value, onChange } }) => (
+                <View style={styles.chipWrap}>
+                  {CATEGORY_ORDER.map((option) => (
+                    <FilterChip
+                      key={option}
+                      label={FORUM_COMPOSER_CATEGORY_LABELS[option]}
+                      isSelected={value === option}
+                      onPress={() => onChange(option)}
+                    />
+                  ))}
+                </View>
+              )}
+            />
+          </ForumFormField>
 
-          <Controller
-            control={control}
-            name="category"
-            render={({ field: { value, onChange } }) => (
-              <View style={styles.chipWrap}>
-                {CATEGORY_ORDER.map((option) => (
-                  <FilterChip
-                    key={option}
-                    label={FORUM_COMPOSER_CATEGORY_LABELS[option]}
-                    isSelected={value === option}
-                    onPress={() => onChange(option)}
-                  />
-                ))}
-              </View>
-            )}
-          />
+          <ForumFormField
+            label="Tiêu đề"
+            helperText={errors.title ? undefined : TITLE_HELPER_TEXT}
+            style={styles.group}
+          >
+            <Controller
+              control={control}
+              name="title"
+              render={({ field: { value, onChange, onBlur } }) => (
+                <Input
+                  value={value}
+                  onChangeText={(text) => {
+                    clearFlag('title');
+                    onChange(text);
+                  }}
+                  onBlur={onBlur}
+                  placeholder="VD: Tìm 1 bạn nữ ở ghép Hoà Khánh Bắc, 1,3 triệu/người"
+                  errorMessage={errors.title?.message}
+                  maxLength={150}
+                  multiline
+                  idleBorderColor={OVERLAY_COLORS.FIELD_BORDER}
+                  inputContainerStyle={[styles.textArea, styles.titleInput, getFlagStyle('title')]}
+                  style={styles.textAreaText}
+                  containerStyle={styles.inputReset}
+                />
+              )}
+            />
+          </ForumFormField>
 
-          <Controller
-            control={control}
-            name="title"
-            render={({ field: { value, onChange, onBlur } }) => (
-              <Input
-                label="Tiêu đề"
-                value={value}
-                onChangeText={onChange}
-                onBlur={onBlur}
-                placeholder="VD: Tìm 1 bạn nữ ở ghép Hoà Khánh Bắc, 1,3 triệu/người"
-                helperText="Ghi rõ khu vực và giá ngay ở tiêu đề để bài dễ được tìm thấy."
-                errorMessage={errors.title?.message}
-                maxLength={150}
-                multiline
-                containerStyle={styles.field}
-              />
-            )}
-          />
+          <ForumFormField label="Nội dung" style={styles.group}>
+            <Controller
+              control={control}
+              name="content"
+              render={({ field: { value, onChange, onBlur } }) => (
+                <Input
+                  value={value}
+                  onChangeText={(text) => {
+                    clearFlag('content');
+                    onChange(text);
+                  }}
+                  onBlur={onBlur}
+                  placeholder="Chia sẻ chi tiết về phòng, kinh nghiệm hoặc câu hỏi của bạn…"
+                  errorMessage={errors.content?.message}
+                  maxLength={5000}
+                  multiline
+                  idleBorderColor={OVERLAY_COLORS.FIELD_BORDER}
+                  inputContainerStyle={[
+                    styles.textArea,
+                    styles.contentInput,
+                    getFlagStyle('content'),
+                  ]}
+                  style={styles.textAreaText}
+                  containerStyle={styles.inputReset}
+                />
+              )}
+            />
+          </ForumFormField>
 
-          <Controller
-            control={control}
-            name="content"
-            render={({ field: { value, onChange, onBlur } }) => (
-              <Input
-                label="Nội dung"
-                value={value}
-                onChangeText={onChange}
-                onBlur={onBlur}
-                placeholder="Chia sẻ chi tiết về phòng, kinh nghiệm hoặc câu hỏi của bạn…"
-                errorMessage={errors.content?.message}
-                maxLength={5000}
-                multiline
-                inputContainerStyle={styles.contentInput}
-                containerStyle={styles.field}
-              />
-            )}
-          />
+          <ForumFormField label={`Ảnh (${images.length}/${FORUM_MAX_IMAGES})`} style={styles.group}>
+            <View style={styles.imageGrid}>
+              {images.map((image, index) => (
+                <View key={`${image.uri}-${index}`} style={styles.imageTile}>
+                  <Image source={{ uri: image.uri }} style={styles.imagePreview} />
+                  <TouchableOpacity
+                    style={styles.removeImage}
+                    onPress={() => handleRemoveImage(index)}
+                    accessibilityLabel={`Xoá ảnh ${index + 1}`}
+                  >
+                    <X size={14} color={THEME_COLORS.WHITE} />
+                  </TouchableOpacity>
+                </View>
+              ))}
 
-          <View style={styles.sectionHeader}>
-            <Typography variant="label" weight="SEMIBOLD">
-              Ảnh ({images.length}/{FORUM_MAX_IMAGES})
-            </Typography>
-          </View>
-
-          <View style={styles.imageGrid}>
-            {images.map((image, index) => (
-              <View key={`${image.uri}-${index}`} style={styles.imageTile}>
-                <Image source={{ uri: image.uri }} style={styles.imagePreview} />
+              {images.length < FORUM_MAX_IMAGES ? (
                 <TouchableOpacity
-                  style={styles.removeImage}
-                  onPress={() => handleRemoveImage(index)}
-                  accessibilityLabel={`Xoá ảnh ${index + 1}`}
+                  style={[styles.imageTile, styles.addImage]}
+                  onPress={handlePickImages}
                 >
-                  <X size={14} color={THEME_COLORS.WHITE} />
+                  <ImagePlus size={24} color={THEME_COLORS.PRIMARY} />
+                  <Typography variant="caption" colorKey="PRIMARY">
+                    Thêm ảnh
+                  </Typography>
                 </TouchableOpacity>
-              </View>
-            ))}
-
-            {images.length < FORUM_MAX_IMAGES ? (
-              <TouchableOpacity
-                style={[styles.imageTile, styles.addImage]}
-                onPress={handlePickImages}
-              >
-                <ImagePlus size={24} color={THEME_COLORS.PRIMARY} />
-                <Typography variant="caption" colorKey="PRIMARY">
-                  Thêm ảnh
-                </Typography>
-              </TouchableOpacity>
-            ) : null}
-          </View>
+              ) : null}
+            </View>
+          </ForumFormField>
 
           {isRoommate ? (
-            <View style={styles.roommateSection}>
+            <View>
               <View style={styles.sectionHeader}>
-                <Typography variant="label" weight="SEMIBOLD">
+                <Typography variant="label" weight="SEMIBOLD" colorKey="TEXT_SECONDARY">
                   Tiêu chí ở ghép
                 </Typography>
-                <Badge size="sm" variant="primary" label="GIÚP LỌC TỐT HƠN" />
+                <ForumBadge label="Giúp lọc tốt hơn" />
               </View>
 
-              <Typography variant="tiny" colorKey="TEXT_MUTED" style={styles.fieldCaption}>
-                GIỚI TÍNH
-              </Typography>
+              <ForumFormField label="GIỚI TÍNH" tone="caption" style={styles.subGroup}>
+                <Controller
+                  control={control}
+                  name="gender"
+                  render={({ field: { value, onChange } }) => (
+                    <View style={styles.chipWrap}>
+                      {ROOMMATE_GENDER_OPTIONS.map((option) => (
+                        <FilterChip
+                          key={option.value}
+                          label={option.label}
+                          isSelected={value === option.value}
+                          onPress={() => onChange(option.value)}
+                        />
+                      ))}
+                    </View>
+                  )}
+                />
+              </ForumFormField>
 
-              <Controller
-                control={control}
-                name="gender"
-                render={({ field: { value, onChange } }) => (
-                  <View style={styles.chipWrap}>
-                    {ROOMMATE_GENDER_OPTIONS.map((option) => (
-                      <FilterChip
-                        key={option.value}
-                        label={option.label}
-                        isSelected={value === option.value}
-                        onPress={() => onChange(option.value)}
+              <View style={[styles.inlineFields, styles.subGroup]}>
+                <ForumFormField label="CHI PHÍ / NGƯỜI" tone="caption" style={styles.inlineField}>
+                  <Controller
+                    control={control}
+                    name="costPerPerson"
+                    render={({ field: { value, onChange } }) => (
+                      <Input
+                        value={value}
+                        onChangeText={(text) => onChange(formatNumberWithDots(text))}
+                        placeholder="1.300.000"
+                        keyboardType="number-pad"
+                        errorMessage={errors.costPerPerson?.message}
+                        idleBorderColor={OVERLAY_COLORS.FIELD_BORDER}
+                        inputContainerStyle={styles.lineInput}
+                        style={styles.lineInputText}
+                        containerStyle={styles.inputReset}
                       />
-                    ))}
-                  </View>
-                )}
-              />
+                    )}
+                  />
+                </ForumFormField>
 
-              <View style={styles.inlineFields}>
-                <Controller
-                  control={control}
-                  name="costPerPerson"
-                  render={({ field: { value, onChange } }) => (
-                    <Input
-                      label="Chi phí / người"
-                      value={value}
-                      onChangeText={(text) => onChange(formatNumberWithDots(text))}
-                      placeholder="1.300.000"
-                      keyboardType="number-pad"
-                      errorMessage={errors.costPerPerson?.message}
-                      containerStyle={styles.inlineField}
-                    />
-                  )}
-                />
-
-                <Controller
-                  control={control}
-                  name="moveInDate"
-                  render={({ field: { value, onChange } }) => (
-                    <Input
-                      label="Dọn vào từ"
-                      value={value}
-                      onChangeText={onChange}
-                      placeholder="01/10/2026"
-                      keyboardType="numbers-and-punctuation"
-                      errorMessage={errors.moveInDate?.message}
-                      containerStyle={styles.inlineField}
-                    />
-                  )}
-                />
+                <ForumFormField label="DỌN VÀO TỪ" tone="caption" style={styles.inlineField}>
+                  <Controller
+                    control={control}
+                    name="moveInDate"
+                    render={({ field: { value, onChange } }) => (
+                      <Input
+                        value={value}
+                        onChangeText={onChange}
+                        placeholder="01/10/2026"
+                        keyboardType="numbers-and-punctuation"
+                        errorMessage={errors.moveInDate?.message}
+                        idleBorderColor={OVERLAY_COLORS.FIELD_BORDER}
+                        inputContainerStyle={styles.lineInput}
+                        style={styles.lineInputText}
+                        containerStyle={styles.inputReset}
+                      />
+                    )}
+                  />
+                </ForumFormField>
               </View>
 
-              <View style={styles.inlineFields}>
+              <ForumFormField label="KHU VỰC" tone="caption" style={styles.subGroup}>
                 <Controller
                   control={control}
-                  name="minStayMonths"
+                  name="area"
                   render={({ field: { value, onChange } }) => (
                     <Input
-                      label="Ở tối thiểu (tháng)"
                       value={value}
-                      onChangeText={(text) => onChange(text.replace(/\D/g, ''))}
-                      placeholder="6"
-                      keyboardType="number-pad"
-                      errorMessage={errors.minStayMonths?.message}
-                      containerStyle={styles.inlineField}
+                      onChangeText={(text) => {
+                        clearFlag('roommate.area');
+                        onChange(text);
+                      }}
+                      placeholder="Kiệt 154 Nguyễn Lương Bằng, P. Hoà Khánh Bắc"
+                      errorMessage={errors.area?.message}
+                      leftIcon={<MapPin size={18} color={THEME_COLORS.TEXT_PLACEHOLDER} />}
+                      idleBorderColor={OVERLAY_COLORS.FIELD_BORDER}
+                      inputContainerStyle={[styles.lineInput, getFlagStyle('roommate.area')]}
+                      style={styles.lineInputText}
+                      containerStyle={styles.inputReset}
                     />
                   )}
                 />
+              </ForumFormField>
 
+              <ForumFormField
+                label="TIÊU CHÍ BẠN CÙNG PHÒNG"
+                tone="caption"
+                style={styles.subGroup}
+              >
                 <Controller
                   control={control}
-                  name="costNote"
+                  name="lifestyle"
                   render={({ field: { value, onChange } }) => (
                     <Input
-                      label="Ghi chú chi phí"
                       value={value}
-                      onChangeText={onChange}
-                      placeholder="Điện nước chia đôi"
-                      errorMessage={errors.costNote?.message}
-                      containerStyle={styles.inlineField}
+                      onChangeText={(text) => {
+                        clearFlag('roommate.lifestyle');
+                        onChange(text);
+                      }}
+                      placeholder="Không hút thuốc · Gọn gàng · Ngủ trước 12h"
+                      errorMessage={errors.lifestyle?.message}
+                      multiline
+                      idleBorderColor={OVERLAY_COLORS.FIELD_BORDER}
+                      inputContainerStyle={[
+                        styles.lineInput,
+                        styles.lifestyleInput,
+                        getFlagStyle('roommate.lifestyle'),
+                      ]}
+                      style={styles.lineInputText}
+                      containerStyle={styles.inputReset}
                     />
                   )}
                 />
+              </ForumFormField>
+
+              <View style={[styles.inlineFields, styles.subGroup]}>
+                <ForumFormField
+                  label="Ở TỐI THIỂU (THÁNG)"
+                  tone="caption"
+                  style={styles.inlineField}
+                >
+                  <Controller
+                    control={control}
+                    name="minStayMonths"
+                    render={({ field: { value, onChange } }) => (
+                      <Input
+                        value={value}
+                        onChangeText={(text) => onChange(text.replace(/\D/g, ''))}
+                        placeholder="6"
+                        keyboardType="number-pad"
+                        errorMessage={errors.minStayMonths?.message}
+                        idleBorderColor={OVERLAY_COLORS.FIELD_BORDER}
+                        inputContainerStyle={styles.lineInput}
+                        style={styles.lineInputText}
+                        containerStyle={styles.inputReset}
+                      />
+                    )}
+                  />
+                </ForumFormField>
+
+                <ForumFormField label="GHI CHÚ CHI PHÍ" tone="caption" style={styles.inlineField}>
+                  <Controller
+                    control={control}
+                    name="costNote"
+                    render={({ field: { value, onChange } }) => (
+                      <Input
+                        value={value}
+                        onChangeText={(text) => {
+                          clearFlag('roommate.costNote');
+                          onChange(text);
+                        }}
+                        placeholder="Điện nước chia đôi"
+                        errorMessage={errors.costNote?.message}
+                        idleBorderColor={OVERLAY_COLORS.FIELD_BORDER}
+                        inputContainerStyle={[styles.lineInput, getFlagStyle('roommate.costNote')]}
+                        style={styles.lineInputText}
+                        containerStyle={styles.inputReset}
+                      />
+                    )}
+                  />
+                </ForumFormField>
               </View>
-
-              <Controller
-                control={control}
-                name="lifestyle"
-                render={({ field: { value, onChange } }) => (
-                  <Input
-                    label="Tiêu chí"
-                    value={value}
-                    onChangeText={onChange}
-                    placeholder="Không hút thuốc · Gọn gàng · Ngủ trước 12h"
-                    errorMessage={errors.lifestyle?.message}
-                    multiline
-                    containerStyle={styles.field}
-                  />
-                )}
-              />
-
-              <Controller
-                control={control}
-                name="area"
-                render={({ field: { value, onChange } }) => (
-                  <Input
-                    label="Khu vực"
-                    value={value}
-                    onChangeText={onChange}
-                    placeholder="Kiệt 154 Nguyễn Lương Bằng, P. Hoà Khánh Bắc"
-                    errorMessage={errors.area?.message}
-                    containerStyle={styles.field}
-                  />
-                )}
-              />
 
               {isEditing ? (
-                <>
-                  <Typography variant="tiny" colorKey="TEXT_MUTED" style={styles.fieldCaption}>
-                    TRẠNG THÁI
-                  </Typography>
-
+                <ForumFormField label="TRẠNG THÁI" tone="caption" style={styles.subGroup}>
                   <Controller
                     control={control}
                     name="roommateStatus"
@@ -537,7 +606,7 @@ export const ForumPostComposerScreen = () => {
                       </View>
                     )}
                   />
-                </>
+                </ForumFormField>
               ) : null}
             </View>
           ) : null}
@@ -548,19 +617,18 @@ export const ForumPostComposerScreen = () => {
             <Button
               title="Lưu nháp"
               variant="outline"
-              size="lg"
               onPress={handleSaveDraft}
               disabled={isBusy}
-              style={styles.draftButton}
+              style={[styles.footerButton, styles.draftButton]}
+              textStyle={styles.draftText}
             />
           ) : null}
 
           <Button
             title={isEditing && editingPost?.status !== 'draft' ? 'Lưu thay đổi' : 'Đăng bài'}
-            size="lg"
             onPress={handlePublish}
             isLoading={isBusy}
-            style={styles.flexOne}
+            style={[styles.footerButton, styles.flexOne]}
           />
         </View>
       </KeyboardAvoidingView>
@@ -582,7 +650,7 @@ export const ForumPostComposerScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: THEME_COLORS.SURFACE,
+    backgroundColor: THEME_COLORS.BACKGROUND,
   },
   centered: {
     flex: 1,
@@ -596,33 +664,65 @@ const styles = StyleSheet.create({
     padding: SPACING_TOKENS.MD,
     paddingBottom: SPACING_TOKENS.XL,
   },
-  sectionLabel: {
-    marginBottom: SPACING_TOKENS.SM,
+  group: {
+    marginBottom: 18,
+  },
+  subGroup: {
+    marginBottom: SPACING_TOKENS.SM + 4,
   },
   sectionHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: SPACING_TOKENS.SM,
+    marginBottom: SPACING_TOKENS.SM + 4,
   },
   chipWrap: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: SPACING_TOKENS.SM,
-    marginBottom: SPACING_TOKENS.MD,
   },
-  field: {
-    marginBottom: SPACING_TOKENS.MD,
+  inputReset: {
+    marginBottom: 0,
+  },
+  textArea: {
+    borderRadius: BORDER_RADIUS_TOKENS.MD,
+    paddingHorizontal: 14,
+    paddingVertical: 13,
+  },
+  textAreaText: {
+    minHeight: 0,
+    fontSize: 15,
+    lineHeight: 22,
+  },
+  titleInput: {
+    minHeight: 72,
   },
   contentInput: {
-    minHeight: 120,
-    alignItems: 'flex-start',
+    minHeight: 116,
+  },
+  flaggedInput: {
+    borderColor: THEME_COLORS.ERROR,
+    backgroundColor: THEME_COLORS.ERROR_LIGHT,
+  },
+  lineInput: {
+    height: 50,
+    borderRadius: BORDER_RADIUS_TOKENS.MD,
+    paddingHorizontal: 14,
+  },
+  lifestyleInput: {
+    height: undefined,
+    minHeight: 50,
+    paddingVertical: 12,
+  },
+  lineInputText: {
+    minHeight: 0,
+    fontSize: 14,
+    lineHeight: 22,
   },
   imageGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: SPACING_TOKENS.SM,
-    marginBottom: SPACING_TOKENS.LG,
   },
   imageTile: {
     width: 76,
@@ -641,7 +741,7 @@ const styles = StyleSheet.create({
     width: 22,
     height: 22,
     borderRadius: BORDER_RADIUS_TOKENS.FULL,
-    backgroundColor: 'rgba(23, 27, 34, 0.6)',
+    backgroundColor: OVERLAY_COLORS.COUNTER_BADGE,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -654,19 +754,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: SPACING_TOKENS.XXS,
   },
-  roommateSection: {
-    paddingTop: SPACING_TOKENS.MD,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: THEME_COLORS.BORDER,
-  },
-  fieldCaption: {
-    marginBottom: SPACING_TOKENS.SM,
-    letterSpacing: 0.5,
-  },
   inlineFields: {
     flexDirection: 'row',
-    gap: SPACING_TOKENS.SM + 4,
-    marginBottom: SPACING_TOKENS.MD,
+    gap: SPACING_TOKENS.MD,
   },
   inlineField: {
     flex: 1,
@@ -675,12 +765,19 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: SPACING_TOKENS.SM + 4,
     paddingHorizontal: SPACING_TOKENS.MD,
-    paddingTop: SPACING_TOKENS.SM + 4,
-    borderTopWidth: StyleSheet.hairlineWidth,
+    paddingTop: 14,
+    borderTopWidth: 1,
     borderTopColor: THEME_COLORS.BORDER,
     backgroundColor: THEME_COLORS.SURFACE,
   },
+  footerButton: {
+    height: 48,
+  },
   draftButton: {
-    minWidth: 120,
+    minWidth: 117,
+    backgroundColor: THEME_COLORS.SURFACE,
+  },
+  draftText: {
+    color: THEME_COLORS.TEXT_SECONDARY,
   },
 });

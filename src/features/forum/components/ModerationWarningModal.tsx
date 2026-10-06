@@ -141,11 +141,11 @@ const styles = StyleSheet.create({
     marginBottom: SPACING_TOKENS.MD,
   },
   subtitle: {
-    marginTop: SPACING_TOKENS.SM,
+    marginTop: SPACING_TOKENS.SM + 2,
     fontSize: TYPOGRAPHY_TOKENS.FONT_SIZES.SUB,
   },
   violationList: {
-    marginVertical: SPACING_TOKENS.MD,
+    marginVertical: 18,
   },
   violationContent: {
     gap: SPACING_TOKENS.SM,

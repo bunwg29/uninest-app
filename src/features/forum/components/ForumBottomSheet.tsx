@@ -70,6 +70,11 @@ const styles = StyleSheet.create({
     borderTopRightRadius: SHEET_RADIUS,
     paddingTop: SPACING_TOKENS.SM + 2,
     maxHeight: '90%',
+    shadowColor: OVERLAY_COLORS.SHADOW,
+    shadowOffset: { width: 0, height: -6 },
+    shadowOpacity: 0.16,
+    shadowRadius: 10,
+    elevation: 16,
   },
   handle: {
     alignSelf: 'center',

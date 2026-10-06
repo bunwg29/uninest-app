@@ -57,6 +57,10 @@ type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 type DetailRouteProp = RouteProp<RootStackParamList, 'ForumPostDetail'>;
 
 const ACTION_ICON_SIZE = 20;
+const STAT_ICON_SIZE = 19;
+const AUTHOR_AVATAR_SIZE = 44;
+const COMPOSER_AVATAR_SIZE = 36;
+const COMPOSER_CONTROL_SIZE = 42;
 
 const orderCommentThreads = (comments: ForumComment[]) => {
   const repliesByParent = new Map<string, ForumComment[]>();
@@ -275,13 +279,19 @@ export const ForumPostDetailScreen = () => {
               name={post.author.fullName}
               seed={post.author.id}
               uri={post.author.avatarUrl}
+              size={AUTHOR_AVATAR_SIZE}
             />
 
             <View style={styles.flexOne}>
-              <Typography variant="body2" weight="SEMIBOLD">
+              <Typography variant="body2" weight="SEMIBOLD" style={styles.authorName}>
                 {post.author.fullName}
               </Typography>
-              <Typography variant="caption" colorKey="TEXT_MUTED">
+              <Typography
+                variant="caption"
+                weight="MEDIUM"
+                colorKey="TEXT_PLACEHOLDER"
+                style={styles.authorMeta}
+              >
                 {authorMeta}
               </Typography>
             </View>
@@ -289,11 +299,11 @@ export const ForumPostDetailScreen = () => {
             <ForumPostHeaderBadge post={post} />
           </View>
 
-          <Typography variant="h3" weight="BOLD" style={styles.postTitle}>
+          <Typography variant="h4" weight="SEMIBOLD" style={styles.postTitle}>
             {post.title}
           </Typography>
 
-          <Typography variant="body1" colorKey="TEXT_SECONDARY">
+          <Typography variant="body2" colorKey="TEXT_SECONDARY" style={styles.postContent}>
             {post.content}
           </Typography>
 
@@ -319,23 +329,38 @@ export const ForumPostDetailScreen = () => {
               accessibilityLabel={post.isLiked ? 'Bỏ thích bài viết' : 'Thích bài viết'}
             >
               <Heart
-                size={20}
-                color={post.isLiked ? THEME_COLORS.ERROR : THEME_COLORS.TEXT_MUTED}
+                size={STAT_ICON_SIZE}
+                color={post.isLiked ? THEME_COLORS.ERROR : THEME_COLORS.TEXT_PLACEHOLDER}
                 fill={post.isLiked ? THEME_COLORS.ERROR : THEME_COLORS.TRANSPARENT}
               />
-              <Typography variant="body2" colorKey="TEXT_MUTED">
+              <Typography
+                variant="body2"
+                weight="MEDIUM"
+                colorKey="TEXT_PLACEHOLDER"
+                style={styles.statText}
+              >
                 {post.likeCount}
               </Typography>
             </TouchableOpacity>
 
             <View style={styles.stat}>
-              <MessageSquare size={20} color={THEME_COLORS.TEXT_MUTED} />
-              <Typography variant="body2" colorKey="TEXT_MUTED">
+              <MessageSquare size={STAT_ICON_SIZE} color={THEME_COLORS.TEXT_PLACEHOLDER} />
+              <Typography
+                variant="body2"
+                weight="MEDIUM"
+                colorKey="TEXT_PLACEHOLDER"
+                style={styles.statText}
+              >
                 {post.commentCount} bình luận
               </Typography>
             </View>
 
-            <Typography variant="caption" colorKey="TEXT_MUTED" style={styles.viewCount}>
+            <Typography
+              variant="caption"
+              weight="MEDIUM"
+              colorKey="TEXT_PLACEHOLDER"
+              style={styles.viewCount}
+            >
               {post.viewCount} lượt xem
             </Typography>
           </View>
@@ -422,7 +447,7 @@ export const ForumPostDetailScreen = () => {
               hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
               accessibilityLabel="Tuỳ chọn bài viết"
             >
-              <MoreVertical size={22} color={THEME_COLORS.TEXT_PRIMARY} />
+              <MoreVertical size={20} color={THEME_COLORS.TEXT_PRIMARY} />
             </TouchableOpacity>
           ) : null
         }
@@ -457,7 +482,8 @@ export const ForumPostDetailScreen = () => {
                 name={user?.fullName ?? 'Bạn'}
                 seed={user?.id ?? 'me'}
                 uri={user?.avatarUrl}
-                size={32}
+                size={COMPOSER_AVATAR_SIZE}
+                style={styles.composerAvatar}
               />
 
               <TextInput
@@ -481,7 +507,7 @@ export const ForumPostDetailScreen = () => {
                   <ActivityIndicator size="small" color={THEME_COLORS.WHITE} />
                 ) : (
                   <Send
-                    size={18}
+                    size={20}
                     color={commentText.trim() ? THEME_COLORS.WHITE : THEME_COLORS.TEXT_PLACEHOLDER}
                   />
                 )}
@@ -514,7 +540,10 @@ const styles = StyleSheet.create({
     paddingBottom: SPACING_TOKENS.LG,
   },
   postBlock: {
-    padding: SPACING_TOKENS.MD,
+    paddingHorizontal: SPACING_TOKENS.MD,
+    paddingTop: SPACING_TOKENS.MD,
+    paddingBottom: SPACING_TOKENS.MD,
+    backgroundColor: THEME_COLORS.SURFACE,
     borderBottomWidth: SPACING_TOKENS.SM,
     borderBottomColor: THEME_COLORS.BACKGROUND,
   },
@@ -529,15 +558,27 @@ const styles = StyleSheet.create({
   },
   authorRow: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: SPACING_TOKENS.SM + 4,
+    alignItems: 'center',
+    gap: SPACING_TOKENS.SM + 2,
+  },
+  authorName: {
+    lineHeight: 22,
+  },
+  authorMeta: {
+    letterSpacing: 0.2,
   },
   postTitle: {
-    marginTop: SPACING_TOKENS.MD,
-    marginBottom: SPACING_TOKENS.SM,
+    marginTop: SPACING_TOKENS.SM + 4,
+    fontSize: 17,
+    lineHeight: 25,
+  },
+  postContent: {
+    marginTop: SPACING_TOKENS.SM + 4,
+    fontSize: 13,
+    lineHeight: 20,
   },
   section: {
-    marginTop: SPACING_TOKENS.MD,
+    marginTop: SPACING_TOKENS.SM + 4,
   },
   imageGrid: {
     flexDirection: 'row',
@@ -547,20 +588,24 @@ const styles = StyleSheet.create({
   },
   gridImage: {
     width: '48.5%',
-    aspectRatio: 1.25,
-    borderRadius: BORDER_RADIUS_TOKENS.MD,
+    height: 110,
+    borderRadius: BORDER_RADIUS_TOKENS.SM + 2,
     backgroundColor: THEME_COLORS.SURFACE_MUTED,
   },
   statsRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: SPACING_TOKENS.LG,
-    marginTop: SPACING_TOKENS.MD,
+    gap: 20,
+    marginTop: SPACING_TOKENS.SM + 4,
   },
   stat: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: SPACING_TOKENS.XS + 2,
+    gap: 6,
+  },
+  statText: {
+    fontSize: 13,
+    lineHeight: 20,
   },
   viewCount: {
     marginLeft: 'auto',
@@ -578,11 +623,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: SPACING_TOKENS.MD,
   },
   composer: {
-    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopWidth: 1,
     borderTopColor: THEME_COLORS.BORDER,
     backgroundColor: THEME_COLORS.SURFACE,
-    paddingHorizontal: SPACING_TOKENS.MD,
-    paddingTop: SPACING_TOKENS.SM,
+    paddingHorizontal: SPACING_TOKENS.SM + 4,
+    paddingTop: SPACING_TOKENS.SM + 2,
   },
   replyBar: {
     flexDirection: 'row',
@@ -592,27 +637,31 @@ const styles = StyleSheet.create({
   composerRow: {
     flexDirection: 'row',
     alignItems: 'flex-end',
-    gap: SPACING_TOKENS.SM,
+    gap: SPACING_TOKENS.SM + 2,
+  },
+  composerAvatar: {
+    marginBottom: (COMPOSER_CONTROL_SIZE - COMPOSER_AVATAR_SIZE) / 2,
   },
   commentInput: {
     flex: 1,
-    minHeight: 40,
+    minHeight: COMPOSER_CONTROL_SIZE,
     maxHeight: 120,
-    paddingHorizontal: SPACING_TOKENS.MD,
+    paddingHorizontal: 14,
     paddingTop: 10,
     paddingBottom: 10,
-    borderRadius: BORDER_RADIUS_TOKENS.XL,
-    backgroundColor: THEME_COLORS.BACKGROUND,
+    borderRadius: BORDER_RADIUS_TOKENS.XL + 1,
+    backgroundColor: THEME_COLORS.SURFACE_MUTED,
     color: THEME_COLORS.TEXT_PRIMARY,
-    fontSize: 15,
+    fontSize: 14,
+    lineHeight: 21,
   },
   sendButton: {
-    width: 40,
-    height: 40,
+    width: COMPOSER_CONTROL_SIZE,
+    height: COMPOSER_CONTROL_SIZE,
     borderRadius: BORDER_RADIUS_TOKENS.FULL,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: THEME_COLORS.SURFACE_MUTED,
+    backgroundColor: THEME_COLORS.BORDER,
   },
   sendButtonActive: {
     backgroundColor: THEME_COLORS.PRIMARY,
