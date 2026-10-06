@@ -104,13 +104,38 @@ export const SEARCH_SORT_OPTIONS: ReadonlyArray<{
 export interface SearchSchool {
   id: string;
   name: string;
+  shortName: string;
   latitude: number;
   longitude: number;
 }
 
 export const SEARCH_SCHOOLS: readonly SearchSchool[] = [
-  { id: 'dut', name: 'ĐH Bách khoa Đà Nẵng', latitude: 16.0739, longitude: 108.1499 },
-  { id: 'ued', name: 'ĐH Sư phạm Đà Nẵng', latitude: 16.0617, longitude: 108.1585 },
-  { id: 'vku', name: 'ĐH CNTT & TT Việt - Hàn (VKU)', latitude: 15.9757, longitude: 108.2531 },
-  { id: 'due', name: 'ĐH Kinh tế Đà Nẵng', latitude: 16.0481, longitude: 108.2402 },
+  {
+    id: 'dut',
+    name: 'ĐH Bách khoa Đà Nẵng',
+    shortName: 'BKĐN',
+    latitude: 16.0739,
+    longitude: 108.1499,
+  },
+  {
+    id: 'ued',
+    name: 'ĐH Sư phạm Đà Nẵng',
+    shortName: 'ĐHSP',
+    latitude: 16.0617,
+    longitude: 108.1585,
+  },
+  {
+    id: 'vku',
+    name: 'ĐH CNTT & TT Việt - Hàn (VKU)',
+    shortName: 'VKU',
+    latitude: 15.9757,
+    longitude: 108.2531,
+  },
+  {
+    id: 'due',
+    name: 'ĐH Kinh tế Đà Nẵng',
+    shortName: 'ĐH Kinh tế',
+    latitude: 16.0481,
+    longitude: 108.2402,
+  },
 ];

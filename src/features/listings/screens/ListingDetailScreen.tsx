@@ -55,6 +55,7 @@ import {
   useSearchStore,
   useToggleFavorite,
 } from '@features/search';
+import { useRecentlyViewedStore } from '@features/recommendations';
 import { useListingDetail, useRecordListingView, useReportListing } from '../hooks';
 import {
   AmenitiesModal,
@@ -110,6 +111,7 @@ export const ListingDetailScreen = () => {
   const { openChat, isOpening } = useOpenListingChat();
   const isStudent = role === 'student';
   const recordedListingId = useRef<string | null>(null);
+  const recordRecentlyViewed = useRecentlyViewedStore((state) => state.recordView);
   const comparisonItems = useComparisonStore((state) => state.items);
   const addComparison = useComparisonStore((state) => state.add);
   const appliedFilters = useSearchStore((state) => state.appliedFilters);
@@ -140,7 +142,11 @@ export const ListingDetailScreen = () => {
 
     recordedListingId.current = listingId;
     viewMutation.mutate();
-  }, [detailQuery.data, listingId, viewMutation]);
+
+    if (isStudent) {
+      recordRecentlyViewed(listingId);
+    }
+  }, [detailQuery.data, isStudent, listingId, recordRecentlyViewed, viewMutation]);
 
   const handleCompare = () => {
     if (!detailQuery.data) {

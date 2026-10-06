@@ -1,67 +1,98 @@
-import { View, StyleSheet, TouchableOpacity, useWindowDimensions } from 'react-native';
+import { useMemo, useState } from 'react';
+import { FlatList, View, StyleSheet, TouchableOpacity, useWindowDimensions } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import {
-  Bell,
-  Building2,
-  GraduationCap,
-  MapPin,
-  MessageSquare,
-  PlusCircle,
-  Scale,
-  Search,
-  Tag,
-  Users2,
-} from 'lucide-react-native';
+import { PlusCircle } from 'lucide-react-native';
 import { THEME_COLORS, SPACING_TOKENS, BORDER_RADIUS_TOKENS } from '@theme';
-import { Avatar, Button, ScreenContainer, Typography } from '@ui';
+import { Button, ScreenContainer, Typography } from '@ui';
+import { useToast } from '@hooks';
 import { useAuth, useRoleGuard } from '@features/auth';
-import { SEARCH_SCHOOLS, useSearchStore } from '@features/search';
+import {
+  DEFAULT_SEARCH_FILTERS,
+  SEARCH_SCHOOLS,
+  useFavoriteIds,
+  useSearchListings,
+  useSearchStore,
+  useToggleFavorite,
+  type SearchFilters,
+  type SearchListingItem,
+} from '@features/search';
 import { useComparisonStore } from '@features/comparison';
+import { RecommendationCard, useRecentlyViewedStore } from '@features/recommendations';
 import type { MainTabParamList, RootStackParamList } from '@navigation';
 import { useListingPostStore } from '../store/listingPostStore';
+import { useOpenListing } from '../hooks';
+import { HomeHeader } from '../components/home/HomeHeader';
+import {
+  AiBanner,
+  AreaChips,
+  HomeChipRow,
+  InfoBanner,
+  SectionHeader,
+} from '../components/home/HomeSections';
+import { HomeSkeleton } from '../components/home/HomeSkeleton';
+import { NearbyMapPreview } from '../components/home/NearbyMapPreview';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList & MainTabParamList>;
+type HomeChipId = 'near-university' | 'budget' | 'loft' | 'roommate';
 
-const QUICK_CATEGORIES = [
-  {
-    id: 'near-university',
-    label: 'Gần trường ĐH',
-    icon: GraduationCap,
-    bgColor: '#EFF6FF',
-    iconColor: THEME_COLORS.PRIMARY,
-  },
-  {
-    id: 'roommate',
-    label: 'Tìm ở ghép',
-    icon: Users2,
-    bgColor: '#ECFDF5',
-    iconColor: THEME_COLORS.SUCCESS,
-  },
-  {
-    id: 'studio',
-    label: 'Căn hộ mini',
-    icon: Building2,
-    bgColor: '#FFF7ED',
-    iconColor: THEME_COLORS.SECONDARY,
-  },
-  {
-    id: 'budget',
-    label: 'Giá sinh viên',
-    icon: Tag,
-    bgColor: '#FAF5FF',
-    iconColor: '#7C3AED',
-  },
-];
+const NEAR_SCHOOL = SEARCH_SCHOOLS[0];
+const CAROUSEL_LIMIT = 6;
+const BUDGET_MAX_PRICE = 2_000_000;
+const NEARBY_RADIUS_KM = 3;
+
+const HOME_CHIPS = [
+  { id: 'near-university', label: 'Gần trường' },
+  { id: 'budget', label: 'Dưới 2 triệu' },
+  { id: 'loft', label: 'Có gác' },
+  { id: 'roommate', label: 'Ở ghép' },
+] as const;
+
+const COLD_START_AREAS = ['Hoà Khánh Bắc', 'Hoà Khánh Nam'] as const;
+
+const buildHomeFilters = (chipId: HomeChipId): SearchFilters => ({
+  ...DEFAULT_SEARCH_FILTERS,
+  roomTypes: [],
+  amenities: [],
+  schoolId: NEAR_SCHOOL.id,
+  latitude: NEAR_SCHOOL.latitude,
+  longitude: NEAR_SCHOOL.longitude,
+  radius: NEARBY_RADIUS_KM,
+  limit: CAROUSEL_LIMIT,
+  ...(chipId === 'budget' ? { maxPrice: BUDGET_MAX_PRICE, sortBy: 'price_asc' as const } : null),
+  ...(chipId === 'loft' ? { keyword: 'gác' } : null),
+});
+
+const CarouselSeparator = () => <View style={styles.carouselSeparator} />;
 
 export const HomeScreen = () => {
   const navigation = useNavigation<NavigationProp>();
-  const { user } = useAuth();
+  const toast = useToast();
+  const { user, role } = useAuth();
   const { isLandlord } = useRoleGuard();
+  const { openListing } = useOpenListing();
   const { width } = useWindowDimensions();
   const isCompact = width < 375;
   const comparisonCount = useComparisonStore((state) => state.items.length);
   const applySearchPreset = useSearchStore((state) => state.applyPreset);
+  const openSearchFilters = useSearchStore((state) => state.openFilters);
+  const setSearchViewMode = useSearchStore((state) => state.setViewMode);
+  const recentViewCount = useRecentlyViewedStore((state) => state.listingIds.length);
+  const hasHydratedHistory = useRecentlyViewedStore((state) => state.hasHydrated);
+  const [selectedChipId, setSelectedChipId] = useState<HomeChipId>('near-university');
+
+  const isColdStart = hasHydratedHistory && recentViewCount === 0;
+  const activeChipId: HomeChipId = isColdStart ? 'near-university' : selectedChipId;
+  const filters = useMemo(() => buildHomeFilters(activeChipId), [activeChipId]);
+  const listingsQuery = useSearchListings(filters);
+  const favoriteIdsQuery = useFavoriteIds();
+  const toggleFavorite = useToggleFavorite();
+  const favoriteIds = useMemo(() => new Set(favoriteIdsQuery.data ?? []), [favoriteIdsQuery.data]);
+  const listings = useMemo(
+    () => (listingsQuery.data?.pages.flatMap((page) => page.items) ?? []).slice(0, CAROUSEL_LIMIT),
+    [listingsQuery.data]
+  );
+  const isLoading = !hasHydratedHistory || listingsQuery.isLoading;
 
   const handleGoToProfile = () => {
     navigation.navigate('Profile' as never);
@@ -71,29 +102,13 @@ export const HomeScreen = () => {
     navigation.navigate('Search' as never);
   };
 
-  const handleCategoryPress = (categoryId: string) => {
-    if (categoryId === 'roommate') {
-      handleGoToRoommateCommunity();
+  const handleGoToFilters = () => {
+    openSearchFilters();
+    handleGoToSearch();
+  };
 
-      return;
-    }
-
-    const school = SEARCH_SCHOOLS[0];
-
-    if (categoryId === 'near-university') {
-      applySearchPreset({
-        schoolId: school.id,
-        latitude: school.latitude,
-        longitude: school.longitude,
-        radius: 3,
-        sortBy: 'distance',
-      });
-    } else if (categoryId === 'studio') {
-      applySearchPreset({ roomTypes: ['chung_cu_mini', 'studio'] });
-    } else if (categoryId === 'budget') {
-      applySearchPreset({ maxPrice: 2_000_000, sortBy: 'price_asc' });
-    }
-
+  const handleGoToMap = () => {
+    setSearchViewMode('map');
     handleGoToSearch();
   };
 
@@ -101,12 +116,12 @@ export const HomeScreen = () => {
     navigation.navigate('Community', { category: 'roommate' });
   };
 
-  const handleGoToMessages = () => {
-    navigation.navigate('Messages' as never);
-  };
-
   const handleGoToComparison = () => {
     navigation.navigate('Comparison');
+  };
+
+  const handleGoToAiChat = () => {
+    navigation.navigate('AiChat' as never);
   };
 
   const handleGoToListingPost = () => {
@@ -121,8 +136,97 @@ export const HomeScreen = () => {
     navigation.navigate('Listings' as never);
   };
 
+  const handleChipPress = (chipId: string) => {
+    if (chipId === 'roommate') {
+      handleGoToRoommateCommunity();
+
+      return;
+    }
+
+    setSelectedChipId(chipId as HomeChipId);
+  };
+
+  const handleViewAll = () => {
+    applySearchPreset(filters);
+    handleGoToSearch();
+  };
+
+  const handleAreaPress = (area: string) => {
+    applySearchPreset({ keyword: area });
+    handleGoToSearch();
+  };
+
+  const handleToggleSaved = (listingId: string) => {
+    if (role !== 'student') {
+      toast.info('Chỉ Sinh viên mới có thể lưu phòng.');
+
+      return;
+    }
+
+    toggleFavorite.mutate({ listingId, isSaved: favoriteIds.has(listingId) });
+  };
+
   const userDisplayName = user?.fullName || 'Bạn';
   const locationText = user?.streetAddress || user?.fullAddress || 'Đà Nẵng, Việt Nam';
+
+  const renderListing = ({ item }: { item: SearchListingItem }) => (
+    <RecommendationCard
+      title={item.title}
+      price={item.price}
+      imageUrl={item.thumbnail}
+      areaSquareMeters={item.area}
+      capacity={item.capacity}
+      distanceMeters={item.distanceMeters}
+      campusShortName={NEAR_SCHOOL.shortName}
+      rating={item.rating}
+      reviewCount={item.reviewCount}
+      availability={item.availability}
+      isHighlighted={item.isHighlighted}
+      isSaved={favoriteIds.has(item.id)}
+      onPress={() => openListing(item.id)}
+      onToggleSaved={() => handleToggleSaved(item.id)}
+    />
+  );
+
+  const renderCarouselContent = () => {
+    if (listingsQuery.isError) {
+      return (
+        <View style={styles.carouselMessage}>
+          <Typography variant="body2" colorKey="TEXT_MUTED">
+            Không tải được gợi ý phòng.
+          </Typography>
+
+          <TouchableOpacity onPress={() => listingsQuery.refetch()} activeOpacity={0.7}>
+            <Typography variant="body2" weight="SEMIBOLD" color={THEME_COLORS.PRIMARY_DARK}>
+              Thử lại
+            </Typography>
+          </TouchableOpacity>
+        </View>
+      );
+    }
+
+    if (listings.length === 0) {
+      return (
+        <View style={styles.carouselMessage}>
+          <Typography variant="body2" colorKey="TEXT_MUTED">
+            Chưa có phòng phù hợp với lựa chọn này.
+          </Typography>
+        </View>
+      );
+    }
+
+    return (
+      <FlatList
+        horizontal
+        data={listings}
+        keyExtractor={(item) => item.id}
+        renderItem={renderListing}
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.carouselContent}
+        ItemSeparatorComponent={CarouselSeparator}
+      />
+    );
+  };
 
   return (
     <ScreenContainer
@@ -131,161 +235,142 @@ export const HomeScreen = () => {
       style={styles.container}
       contentContainerStyle={styles.contentContainer}
     >
-      <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.profileHeaderButton}
-          onPress={handleGoToProfile}
-          activeOpacity={0.8}
-        >
-          <Avatar uri={user?.avatarUrl || undefined} name={userDisplayName} size="md" />
+      {isLoading ? (
+        <HomeSkeleton />
+      ) : (
+        <>
+          <HomeHeader
+            displayName={userDisplayName}
+            avatarUrl={user?.avatarUrl}
+            locationText={locationText}
+            subtitle={isColdStart ? 'Bắt đầu tìm phòng đầu tiên nhé' : undefined}
+            comparisonCount={comparisonCount}
+            hasUnreadNotifications={!isColdStart}
+            onProfilePress={handleGoToProfile}
+            onComparisonPress={handleGoToComparison}
+            onNotificationsPress={handleGoToProfile}
+            onSearchPress={handleGoToSearch}
+            onFilterPress={handleGoToFilters}
+          />
 
-          <View style={styles.greetingContainer}>
-            <Typography
-              variant="body1"
-              weight="BOLD"
-              color={THEME_COLORS.TEXT_PRIMARY}
-              numberOfLines={1}
-            >
-              Chào {userDisplayName} 👋
-            </Typography>
+          {isColdStart ? (
+            <View style={styles.firstSection}>
+              <InfoBanner message="Xem thử vài phòng, gợi ý sẽ chính xác dần theo những gì bạn quan tâm." />
 
-            <View style={styles.locationRow}>
-              <MapPin size={13} color={THEME_COLORS.PRIMARY} />
+              <View style={styles.sectionGap}>
+                <SectionHeader
+                  title="Phổ biến gần ĐH Bách khoa"
+                  actionLabel="Xem tất cả"
+                  onActionPress={handleViewAll}
+                />
+              </View>
+            </View>
+          ) : (
+            <View style={styles.firstSection}>
+              <HomeChipRow
+                chips={HOME_CHIPS}
+                selectedId={activeChipId}
+                onChipPress={handleChipPress}
+              />
+
+              <View style={styles.sectionGap}>
+                <SectionHeader
+                  title="Gợi ý dành cho bạn"
+                  subtitle={`Dựa trên ${recentViewCount} phòng bạn đã xem gần đây`}
+                  showSparkle
+                  actionLabel="Xem tất cả"
+                  onActionPress={handleViewAll}
+                />
+              </View>
+            </View>
+          )}
+
+          <View style={styles.carousel}>{renderCarouselContent()}</View>
+
+          <View style={styles.sectionGap}>
+            {isColdStart ? (
+              <AiBanner
+                title="Tả nhu cầu bằng lời của bạn"
+                description={'"Dưới 2 triệu, gần Bách khoa, có chỗ để xe"'}
+                actionLabel="Thử"
+                onPress={handleGoToAiChat}
+              />
+            ) : (
+              <AiBanner
+                title="Chưa biết bắt đầu từ đâu?"
+                description="Mô tả nhu cầu, AI tìm phòng giúp bạn"
+                actionLabel="Hỏi ngay"
+                onPress={handleGoToAiChat}
+              />
+            )}
+          </View>
+
+          {isColdStart ? (
+            <View style={styles.sectionGap}>
+              <SectionHeader title="Chọn khu vực quan tâm" />
+
+              <View style={styles.areaChips}>
+                <AreaChips areas={COLD_START_AREAS} onAreaPress={handleAreaPress} />
+              </View>
+            </View>
+          ) : (
+            <View style={styles.sectionGap}>
+              <SectionHeader
+                title="Gần bạn"
+                actionLabel="Mở bản đồ"
+                onActionPress={handleGoToMap}
+              />
+
+              <View style={styles.map}>
+                <NearbyMapPreview />
+              </View>
+            </View>
+          )}
+
+          {isLandlord ? (
+            <View style={[styles.landlordCard, styles.sectionGap]}>
+              <View style={styles.cardHeader}>
+                <Typography variant="body1" weight="BOLD" color={THEME_COLORS.TEXT_PRIMARY}>
+                  Quản lý Cho thuê
+                </Typography>
+
+                <TouchableOpacity onPress={handleGoToListings} activeOpacity={0.7}>
+                  <Typography variant="caption" weight="SEMIBOLD" color={THEME_COLORS.PRIMARY}>
+                    Xem tất cả tin
+                  </Typography>
+                </TouchableOpacity>
+              </View>
 
               <Typography
                 variant="caption"
-                color={THEME_COLORS.TEXT_MUTED}
-                style={styles.locationText}
-                numberOfLines={1}
+                color={THEME_COLORS.TEXT_SECONDARY}
+                style={styles.cardDesc}
               >
-                {locationText}
+                Đăng tin phòng trọ của bạn để tiếp cận sinh viên đang tìm kiếm phòng ở.
               </Typography>
-            </View>
-          </View>
-        </TouchableOpacity>
 
-        <View style={styles.headerActions}>
-          <TouchableOpacity
-            style={styles.iconButton}
-            onPress={handleGoToComparison}
-            activeOpacity={0.7}
-            accessibilityLabel="Mở danh sách so sánh"
-          >
-            <Scale size={20} color={THEME_COLORS.TEXT_PRIMARY} />
-            {comparisonCount > 0 ? (
-              <View style={styles.comparisonBadge}>
-                <Typography variant="tiny" weight="BOLD" color={THEME_COLORS.WHITE}>
-                  {comparisonCount}
-                </Typography>
+              <View style={[styles.landlordButtonsRow, isCompact && styles.landlordButtonsColumn]}>
+                <Button
+                  title="Đăng tin cho thuê"
+                  variant="primary"
+                  size="md"
+                  leftIcon={<PlusCircle size={16} color={THEME_COLORS.SURFACE} />}
+                  onPress={handleGoToListingPost}
+                  style={styles.actionBtn}
+                />
+
+                <Button
+                  title="Tin đăng của bạn"
+                  variant="outline"
+                  size="md"
+                  onPress={handleGoToListings}
+                  style={styles.actionBtn}
+                />
               </View>
-            ) : null}
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.iconButton}
-            onPress={handleGoToMessages}
-            activeOpacity={0.7}
-          >
-            <MessageSquare size={20} color={THEME_COLORS.TEXT_PRIMARY} />
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.iconButton}
-            onPress={handleGoToProfile}
-            activeOpacity={0.7}
-          >
-            <Bell size={20} color={THEME_COLORS.TEXT_PRIMARY} />
-            <View style={styles.notificationDot} />
-          </TouchableOpacity>
-        </View>
-      </View>
-
-      <TouchableOpacity style={styles.searchBar} onPress={handleGoToSearch} activeOpacity={0.8}>
-        <Search size={18} color={THEME_COLORS.TEXT_PLACEHOLDER} />
-
-        <Typography
-          variant="body2"
-          color={THEME_COLORS.TEXT_PLACEHOLDER}
-          style={styles.searchPlaceholder}
-        >
-          Tìm theo khu vực, tên trường, tên đường…
-        </Typography>
-      </TouchableOpacity>
-
-      <View style={styles.categoriesSection}>
-        <View style={styles.categoriesHeader}>
-          <Typography variant="body1" weight="BOLD" color={THEME_COLORS.TEXT_PRIMARY}>
-            Danh mục nổi bật
-          </Typography>
-        </View>
-
-        <View style={[styles.categoriesGrid, isCompact && styles.categoriesGridCompact]}>
-          {QUICK_CATEGORIES.map((cat) => {
-            const Icon = cat.icon;
-
-            return (
-              <TouchableOpacity
-                key={cat.id}
-                style={[styles.categoryItem, isCompact && styles.categoryItemCompact]}
-                onPress={() => handleCategoryPress(cat.id)}
-                activeOpacity={0.7}
-              >
-                <View style={[styles.categoryIconCircle, { backgroundColor: cat.bgColor }]}>
-                  <Icon size={24} color={cat.iconColor} />
-                </View>
-
-                <Typography
-                  variant="caption"
-                  weight="SEMIBOLD"
-                  color={THEME_COLORS.TEXT_PRIMARY}
-                  style={styles.categoryLabel}
-                >
-                  {cat.label}
-                </Typography>
-              </TouchableOpacity>
-            );
-          })}
-        </View>
-      </View>
-
-      {isLandlord ? (
-        <View style={styles.landlordCard}>
-          <View style={styles.cardHeader}>
-            <Typography variant="body1" weight="BOLD" color={THEME_COLORS.TEXT_PRIMARY}>
-              Quản lý Cho thuê
-            </Typography>
-
-            <TouchableOpacity onPress={handleGoToListings} activeOpacity={0.7}>
-              <Typography variant="caption" weight="SEMIBOLD" color={THEME_COLORS.PRIMARY}>
-                Xem tất cả tin
-              </Typography>
-            </TouchableOpacity>
-          </View>
-
-          <Typography variant="caption" color={THEME_COLORS.TEXT_SECONDARY} style={styles.cardDesc}>
-            Đăng tin phòng trọ của bạn để tiếp cận sinh viên đang tìm kiếm phòng ở.
-          </Typography>
-
-          <View style={[styles.landlordButtonsRow, isCompact && styles.landlordButtonsColumn]}>
-            <Button
-              title="Đăng tin cho thuê"
-              variant="primary"
-              size="md"
-              leftIcon={<PlusCircle size={16} color={THEME_COLORS.SURFACE} />}
-              onPress={handleGoToListingPost}
-              style={styles.actionBtn}
-            />
-
-            <Button
-              title="Tin đăng của bạn"
-              variant="outline"
-              size="md"
-              onPress={handleGoToListings}
-              style={styles.actionBtn}
-            />
-          </View>
-        </View>
-      ) : null}
+            </View>
+          ) : null}
+        </>
+      )}
     </ScreenContainer>
   );
 };
@@ -293,127 +378,40 @@ export const HomeScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: THEME_COLORS.BACKGROUND,
+    backgroundColor: THEME_COLORS.SURFACE,
   },
   contentContainer: {
+    flexGrow: 1,
+    paddingBottom: SPACING_TOKENS.LG,
+    backgroundColor: THEME_COLORS.BACKGROUND,
+  },
+  firstSection: {
+    paddingTop: SPACING_TOKENS.MD,
+  },
+  sectionGap: {
+    marginTop: SPACING_TOKENS.LG,
+  },
+  carousel: {
+    marginTop: SPACING_TOKENS.MD - SPACING_TOKENS.XS,
+  },
+  carouselContent: {
     paddingHorizontal: SPACING_TOKENS.MD,
-    paddingTop: SPACING_TOKENS.SM,
-    paddingBottom: 100,
   },
-  header: {
-    flexDirection: 'row',
+  carouselSeparator: {
+    width: SPACING_TOKENS.MD - SPACING_TOKENS.XS,
+  },
+  carouselMessage: {
+    minHeight: 96,
     alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: SPACING_TOKENS.SM,
-    marginBottom: SPACING_TOKENS.SM,
-  },
-  profileHeaderButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-  },
-  greetingContainer: {
-    marginLeft: SPACING_TOKENS.SM,
-    flex: 1,
-  },
-  locationRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 2,
-  },
-  locationText: {
-    marginLeft: 4,
-  },
-  headerActions: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: SPACING_TOKENS.MD,
     gap: SPACING_TOKENS.SM,
   },
-  iconButton: {
-    width: 38,
-    height: 38,
-    borderRadius: BORDER_RADIUS_TOKENS.MD,
-    backgroundColor: THEME_COLORS.SURFACE,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: THEME_COLORS.BORDER,
+  areaChips: {
+    marginTop: SPACING_TOKENS.MD - SPACING_TOKENS.XS,
   },
-  notificationDot: {
-    position: 'absolute',
-    top: 7,
-    right: 7,
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: THEME_COLORS.ERROR,
-  },
-  comparisonBadge: {
-    position: 'absolute',
-    top: 3,
-    right: 3,
-    minWidth: 16,
-    height: 16,
-    paddingHorizontal: 3,
-    borderRadius: BORDER_RADIUS_TOKENS.FULL,
-    backgroundColor: THEME_COLORS.ERROR,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  searchBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: THEME_COLORS.SURFACE,
-    borderRadius: BORDER_RADIUS_TOKENS.LG,
-    paddingHorizontal: SPACING_TOKENS.MD,
-    paddingVertical: SPACING_TOKENS.SM + 2,
-    borderWidth: 1,
-    borderColor: THEME_COLORS.BORDER,
-    marginBottom: SPACING_TOKENS.MD,
-  },
-  searchPlaceholder: {
-    marginLeft: SPACING_TOKENS.SM,
-    flex: 1,
-  },
-  categoriesSection: {
-    backgroundColor: THEME_COLORS.SURFACE,
-    borderRadius: BORDER_RADIUS_TOKENS.LG,
-    padding: SPACING_TOKENS.MD,
-    borderWidth: 1,
-    borderColor: THEME_COLORS.BORDER,
-    marginBottom: SPACING_TOKENS.MD,
-  },
-  categoriesHeader: {
-    marginBottom: SPACING_TOKENS.MD,
-  },
-  categoriesGrid: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  categoriesGridCompact: {
-    flexWrap: 'wrap',
-    rowGap: SPACING_TOKENS.MD,
-  },
-  categoryItem: {
-    flex: 1,
-    alignItems: 'center',
-  },
-  categoryItemCompact: {
-    flexBasis: '50%',
-  },
-  categoryIconCircle: {
-    width: 48,
-    height: 48,
-    borderRadius: BORDER_RADIUS_TOKENS.MD,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 6,
-  },
-  categoryLabel: {
-    textAlign: 'center',
-    fontSize: 11,
-    lineHeight: 14,
+  map: {
+    marginTop: SPACING_TOKENS.MD - SPACING_TOKENS.XS,
   },
   landlordCard: {
     backgroundColor: THEME_COLORS.SURFACE,
@@ -421,7 +419,7 @@ const styles = StyleSheet.create({
     padding: SPACING_TOKENS.MD,
     borderWidth: 1,
     borderColor: THEME_COLORS.BORDER,
-    marginBottom: SPACING_TOKENS.MD,
+    marginHorizontal: SPACING_TOKENS.MD,
   },
   cardHeader: {
     flexDirection: 'row',
