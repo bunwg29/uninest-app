@@ -93,18 +93,19 @@ export const SEARCH_SORT_OPTIONS: ReadonlyArray<{
   value: SearchSortBy;
 }> = [
   { label: 'Phù hợp nhất', compactLabel: 'Phù hợp', value: 'relevance' },
-  { label: 'Mới nhất', compactLabel: 'Mới nhất', value: 'newest' },
-  { label: 'Giá thấp đến cao', compactLabel: 'Giá tăng', value: 'price_asc' },
-  { label: 'Giá cao đến thấp', compactLabel: 'Giá giảm', value: 'price_desc' },
+  { label: 'Gần trường nhất', compactLabel: 'Gần nhất', value: 'distance' },
+  { label: 'Giá thấp đến cao', compactLabel: 'Giá thấp', value: 'price_asc' },
+  { label: 'Giá cao đến thấp', compactLabel: 'Giá cao', value: 'price_desc' },
+  { label: 'Mới đăng nhất', compactLabel: 'Mới nhất', value: 'newest' },
   { label: 'Diện tích tăng dần', compactLabel: 'Diện tích tăng', value: 'area_asc' },
   { label: 'Diện tích giảm dần', compactLabel: 'Diện tích giảm', value: 'area_desc' },
-  { label: 'Gần nhất', compactLabel: 'Gần nhất', value: 'distance' },
 ];
 
 export interface SearchSchool {
   id: string;
   name: string;
   shortName: string;
+  address?: string;
   latitude: number;
   longitude: number;
 }
@@ -114,6 +115,7 @@ export const SEARCH_SCHOOLS: readonly SearchSchool[] = [
     id: 'dut',
     name: 'ĐH Bách khoa Đà Nẵng',
     shortName: 'BKĐN',
+    address: '54 Nguyễn Lương Bằng, Liên Chiểu',
     latitude: 16.0739,
     longitude: 108.1499,
   },
@@ -121,6 +123,7 @@ export const SEARCH_SCHOOLS: readonly SearchSchool[] = [
     id: 'ued',
     name: 'ĐH Sư phạm Đà Nẵng',
     shortName: 'ĐHSP',
+    address: '459 Tôn Đức Thắng, Liên Chiểu',
     latitude: 16.0617,
     longitude: 108.1585,
   },
@@ -128,6 +131,7 @@ export const SEARCH_SCHOOLS: readonly SearchSchool[] = [
     id: 'vku',
     name: 'ĐH CNTT & TT Việt - Hàn (VKU)',
     shortName: 'VKU',
+    address: '470 Trần Đại Nghĩa, Ngũ Hành Sơn',
     latitude: 15.9757,
     longitude: 108.2531,
   },
@@ -135,6 +139,7 @@ export const SEARCH_SCHOOLS: readonly SearchSchool[] = [
     id: 'due',
     name: 'ĐH Kinh tế Đà Nẵng',
     shortName: 'ĐH Kinh tế',
+    address: '71 Ngũ Hành Sơn, Ngũ Hành Sơn',
     latitude: 16.0481,
     longitude: 108.2402,
   },

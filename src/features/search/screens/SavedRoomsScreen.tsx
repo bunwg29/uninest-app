@@ -1,23 +1,22 @@
 import { useMemo } from 'react';
-import { ActivityIndicator, FlatList, RefreshControl, StyleSheet, View } from 'react-native';
-import { AlertTriangle, Heart } from 'lucide-react-native';
+import {
+  ActivityIndicator,
+  FlatList,
+  RefreshControl,
+  StyleSheet,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+import { AlertTriangle, ChevronLeft, Heart } from 'lucide-react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '@navigation';
 import { SPACING_TOKENS, THEME_COLORS } from '@theme';
-import { EmptyState, HeaderBar, ListingCard, ListingCardSkeleton, ScreenContainer } from '@ui';
+import { EmptyState, ScreenContainer, Typography } from '@ui';
+import { SavedRoomRow, SearchResultSkeleton } from '../components';
 import { useFavorites, useToggleFavorite } from '../hooks';
-import type { SearchListingItem } from '../types';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
-
-const getCardStatus = (listing: SearchListingItem) => {
-  if (listing.availability === 'rented') return 'rented';
-
-  if (listing.availability === 'paused') return 'paused';
-
-  return listing.availability === 'holding' ? 'holding' : 'available';
-};
 
 export const SavedRoomsScreen = () => {
   const navigation = useNavigation<NavigationProp>();
@@ -30,13 +29,7 @@ export const SavedRoomsScreen = () => {
 
   const renderContent = () => {
     if (favoritesQuery.isPending) {
-      return (
-        <View style={styles.list}>
-          {[1, 2, 3].map((item) => (
-            <ListingCardSkeleton key={item} />
-          ))}
-        </View>
-      );
+      return <SearchResultSkeleton count={4} />;
     }
 
     if (favoritesQuery.isError) {
@@ -87,22 +80,12 @@ export const SavedRoomsScreen = () => {
             <ActivityIndicator color={THEME_COLORS.PRIMARY} style={styles.loadMore} />
           ) : null
         }
+        ItemSeparatorComponent={ListSeparator}
         renderItem={({ item }) => (
-          <ListingCard
-            id={item.id}
-            title={item.title}
-            price={item.price}
-            imageUrl={item.thumbnail ?? undefined}
-            areaSquareMeters={item.area}
-            capacity={item.capacity}
-            address={item.address}
-            status={getCardStatus(item)}
-            isSaved
+          <SavedRoomRow
+            listing={item}
             onPress={() => navigation.navigate('ListingDetail', { id: item.id })}
-            onBookmarkPress={() => toggleFavorite.mutate({ listingId: item.id, isSaved: true })}
-            variant="horizontal"
-            compact
-            style={styles.card}
+            onRemove={() => toggleFavorite.mutate({ listingId: item.id, isSaved: true })}
           />
         )}
       />
@@ -111,17 +94,59 @@ export const SavedRoomsScreen = () => {
 
   return (
     <ScreenContainer keyboardAvoiding={false}>
-      <HeaderBar
-        title="Phòng đã lưu"
-        onBack={() => navigation.goBack()}
-        subtitle={listings.length > 0 ? `${listings.length} phòng` : undefined}
-      />
+      <View style={styles.header}>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => navigation.goBack()}
+          accessibilityRole="button"
+          accessibilityLabel="Quay lại"
+        >
+          <ChevronLeft size={22} color={THEME_COLORS.TEXT_PRIMARY} />
+        </TouchableOpacity>
+        <Typography variant="h3" weight="SEMIBOLD" style={styles.title}>
+          Phòng đã lưu
+        </Typography>
+      </View>
+
+      {listings.length > 0 ? (
+        <View style={styles.summary}>
+          <Typography variant="body2" weight="BOLD">
+            {`${listings.length} phòng`}
+            <Typography variant="body2" colorKey="TEXT_MUTED">
+              {' đã lưu'}
+            </Typography>
+          </Typography>
+        </View>
+      ) : null}
+
       {renderContent()}
     </ScreenContainer>
   );
 };
 
+const ListSeparator = () => <View style={styles.separator} />;
+
 const styles = StyleSheet.create({
+  header: {
+    minHeight: 56,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingHorizontal: SPACING_TOKENS.MD,
+    borderBottomWidth: 1,
+    borderBottomColor: THEME_COLORS.BORDER,
+    backgroundColor: THEME_COLORS.SURFACE,
+  },
+  backButton: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
+  title: { flex: 1, fontSize: 18, lineHeight: 26 },
+  summary: {
+    height: 47,
+    justifyContent: 'center',
+    paddingHorizontal: SPACING_TOKENS.MD,
+    borderBottomWidth: 1,
+    borderBottomColor: THEME_COLORS.BORDER,
+    backgroundColor: THEME_COLORS.SURFACE,
+  },
   list: {
     width: '100%',
     maxWidth: 720,
@@ -129,6 +154,6 @@ const styles = StyleSheet.create({
     padding: SPACING_TOKENS.MD,
     paddingBottom: SPACING_TOKENS.XL,
   },
-  card: { marginBottom: SPACING_TOKENS.SM + 4 },
+  separator: { height: 12 },
   loadMore: { marginVertical: SPACING_TOKENS.MD },
 });

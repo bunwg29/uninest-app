@@ -47,4 +47,9 @@ export const OVERLAY_COLORS = {
   MAP_LAND: '#E7EBE4',
   MAP_STRIPE: '#DFE4DB',
   MAP_TINT: 'rgba(23, 27, 34, 0.04)',
+  MAP_WATER: '#CFE2F0',
+  USER_LOCATION: '#2F6BED',
+  USER_LOCATION_HALO: 'rgba(47, 107, 237, 0.22)',
+  SHEET_BACKDROP: 'rgba(23, 27, 34, 0.45)',
+  RENTED_PILL: 'rgba(23, 27, 34, 0.72)',
 } as const;

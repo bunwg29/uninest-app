@@ -11,64 +11,54 @@ import {
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import axios from 'axios';
 import * as Location from 'expo-location';
-import {
-  AlertTriangle,
-  ArrowDownUp,
-  LayoutGrid,
-  List,
-  Map as MapIcon,
-  MapPin,
-  SearchX,
-} from 'lucide-react-native';
+import { Map as MapIcon } from 'lucide-react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { AMENITY_DISPLAY_LIST, ROOM_TYPE_OPTIONS } from '@features/listings/types/constants';
 import type { RootStackParamList } from '@navigation';
 import { useToast } from '@hooks';
-import { BORDER_RADIUS_TOKENS, SPACING_TOKENS, THEME_COLORS } from '@theme';
+import { OVERLAY_COLORS, SPACING_TOKENS, THEME_COLORS } from '@theme';
+import { Typography } from '@ui';
 import {
-  Button,
-  EmptyState,
-  ListingCard,
-  ListingCardSkeleton,
-  ScreenContainer,
-  Typography,
-} from '@ui';
-import { SearchFilterSheet, SearchHeader, SearchResultsMap, SearchSortSheet } from '../components';
+  SearchErrorView,
+  SearchEmptyView,
+  SearchFilterSheet,
+  SearchFocusView,
+  SearchHeader,
+  SearchListingGridCard,
+  SearchListingRow,
+  SearchMapPanel,
+  SearchResultSkeleton,
+  SearchResultsMap,
+  SearchSortSheet,
+  SearchToolbar,
+  type RelaxSuggestion,
+} from '../components';
 import { useAuth } from '@features/auth';
-import { useDebouncedValue, useFavoriteIds, useSearchListings, useToggleFavorite } from '../hooks';
+import {
+  useDebouncedValue,
+  useFavoriteIds,
+  useRecentSearches,
+  useSearchListings,
+  useToggleFavorite,
+} from '../hooks';
 import { useSearchStore } from '../store';
-import { SEARCH_SORT_OPTIONS, type SearchFilters, type SearchListingItem } from '../types';
+import {
+  SEARCH_SCHOOLS,
+  SEARCH_SORT_OPTIONS,
+  type SearchFilters,
+  type SearchListingItem,
+  type SearchSchool,
+} from '../types';
+import { formatMillions, getQuerySummary } from '../utils';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
-const SEARCH_DEBOUNCE_MS = 400;
-
-const getCardStatus = (listing: SearchListingItem) => {
-  if (listing.availability === 'rented') return 'rented';
-
-  if (listing.availability === 'paused') return 'paused';
-
-  if (listing.availability === 'holding' || listing.isReserved) return 'holding';
-
-  return listing.isHighlighted ? 'featured' : 'available';
-};
-
-const formatCompactPrice = (price?: number) => {
-  if (price === undefined) return undefined;
-
-  const value = price / 1000000;
-
-  return `${Number.isInteger(value) ? value : value.toFixed(1)}tr`;
-};
-
-const getRangeLabel = (minimum?: number | string, maximum?: number | string, suffix = '') => {
-  if (minimum === undefined && maximum === undefined) return undefined;
-
-  if (minimum !== undefined && maximum !== undefined) {
-    return `${minimum}${suffix} - ${maximum}${suffix}`;
-  }
-
-  return minimum !== undefined ? `Từ ${minimum}${suffix}` : `Đến ${maximum}${suffix}`;
-};
+const FILTER_COUNT_DEBOUNCE_MS = 400;
+const QUICK_PRICE_LIMIT = 2_500_000;
+const PRICE_RELAX_STEP = 400_000;
+const RADIUS_STEPS = [1, 2, 3, 5, 10, 20] as const;
 
 const getFilterValidationMessage = (filters: SearchFilters) => {
   if (
@@ -90,9 +80,12 @@ const getFilterValidationMessage = (filters: SearchFilters) => {
   return undefined;
 };
 
+const isNetworkFailure = (error: unknown) => axios.isAxiosError(error) && !error.response;
+
 export const SearchScreen = () => {
   const navigation = useNavigation<NavigationProp>();
   const toast = useToast();
+  const insets = useSafeAreaInsets();
   const {
     appliedFilters,
     draftFilters,
@@ -114,24 +107,24 @@ export const SearchScreen = () => {
     setViewMode,
     setSelectedListingId,
     setLocation,
+    applyPreset,
   } = useSearchStore();
   const { role } = useAuth();
   const { width } = useWindowDimensions();
   const favoriteIdsQuery = useFavoriteIds();
   const toggleFavorite = useToggleFavorite();
+  const recentSearches = useRecentSearches();
   const favoriteIds = useMemo(() => new Set(favoriteIdsQuery.data ?? []), [favoriteIdsQuery.data]);
   const gridColumns = width >= 900 ? 4 : width >= 600 ? 3 : 2;
+  const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [keywordInput, setKeywordInput] = useState(appliedFilters.keyword);
   const [filterValidationMessage, setFilterValidationMessage] = useState<string>();
   const [isLocating, setIsLocating] = useState(false);
   const [mapCenter, setMapCenter] = useState<{ latitude: number; longitude: number }>();
-  const debouncedKeyword = useDebouncedValue(keywordInput, SEARCH_DEBOUNCE_MS);
-
-  useEffect(() => {
-    setKeyword(debouncedKeyword.trim());
-  }, [debouncedKeyword, setKeyword]);
+  const debouncedDraftFilters = useDebouncedValue(draftFilters, FILTER_COUNT_DEBOUNCE_MS);
 
   const searchQuery = useSearchListings(appliedFilters);
+  const draftCountQuery = useSearchListings(debouncedDraftFilters, { enabled: isFilterVisible });
   const listings = useMemo(() => {
     const seenIds = new Set<string>();
 
@@ -144,22 +137,20 @@ export const SearchScreen = () => {
     });
   }, [searchQuery.data]);
   const totalResults = searchQuery.data?.pages[0]?.pagination.total ?? 0;
-  const selectedListing = listings.find((listing) => listing.id === selectedListingId) ?? null;
+  const draftResultCount = draftCountQuery.data?.pages[0]?.pagination.total;
+  const suggestion = searchQuery.data?.pages[0]?.suggestion;
   const hasLocation =
     appliedFilters.latitude !== undefined && appliedFilters.longitude !== undefined;
+  const selectedSchool = SEARCH_SCHOOLS.find((school) => school.id === appliedFilters.schoolId);
+  const distanceSuffix = selectedSchool ? 'tới trường' : 'từ vị trí của bạn';
   const selectedSortOption = SEARCH_SORT_OPTIONS.find(
     (option) => option.value === appliedFilters.sortBy
   );
   const sortLabel = selectedSortOption?.label ?? 'Phù hợp nhất';
   const compactSortLabel = selectedSortOption?.compactLabel ?? 'Phù hợp';
-  const priceLabel = useMemo(() => {
-    const minimum = formatCompactPrice(appliedFilters.minPrice);
-    const maximum = formatCompactPrice(appliedFilters.maxPrice);
-
-    return getRangeLabel(minimum, maximum) ?? 'Giá';
-  }, [appliedFilters.maxPrice, appliedFilters.minPrice]);
-  const areaLabel =
-    getRangeLabel(appliedFilters.minArea, appliedFilters.maxArea, 'm²') ?? 'Diện tích';
+  const querySummary = getQuerySummary(appliedFilters);
+  const isQuickPriceActive =
+    appliedFilters.maxPrice === QUICK_PRICE_LIMIT && appliedFilters.minPrice === undefined;
   const activeFilterCount = [
     appliedFilters.minPrice !== undefined || appliedFilters.maxPrice !== undefined,
     appliedFilters.minArea !== undefined || appliedFilters.maxArea !== undefined,
@@ -168,6 +159,21 @@ export const SearchScreen = () => {
     appliedFilters.radius !== undefined && appliedFilters.radius !== 5,
     appliedFilters.schoolId !== undefined,
   ].filter(Boolean).length;
+  const criteriaCount = activeFilterCount + (appliedFilters.keyword ? 1 : 0);
+  const mapSelectedListing = listings.find((listing) => listing.id === selectedListingId);
+  const mapListings = useMemo(
+    () => listings.filter((listing) => listing.location !== undefined),
+    [listings]
+  );
+  const schoolSuggestions = useMemo(() => {
+    const normalized = keywordInput.trim().toLowerCase();
+
+    if (!normalized) return [];
+
+    return SEARCH_SCHOOLS.filter((school) =>
+      `${school.name} ${school.shortName}`.toLowerCase().includes(normalized)
+    );
+  }, [keywordInput]);
 
   useEffect(() => {
     if (
@@ -179,9 +185,42 @@ export const SearchScreen = () => {
     }
   }, [listings, searchQuery.isPending, selectedListingId, setSelectedListingId]);
 
-  const handleSubmitSearch = () => {
+  const openSearchFocus = () => {
+    setKeywordInput(appliedFilters.keyword);
+    setIsSearchFocused(true);
+  };
+
+  const handleBack = () => {
+    if (navigation.canGoBack()) {
+      navigation.goBack();
+
+      return;
+    }
+
+    openSearchFocus();
+  };
+
+  const handleSubmitSearch = (term = keywordInput) => {
+    const normalized = term.trim();
+
     Keyboard.dismiss();
-    setKeyword(keywordInput.trim());
+    setKeywordInput(normalized);
+    setKeyword(normalized);
+    recentSearches.addTerm(normalized);
+    setIsSearchFocused(false);
+  };
+
+  const handleSelectSchoolSuggestion = (school: SearchSchool) => {
+    Keyboard.dismiss();
+    applyPreset({
+      ...appliedFilters,
+      keyword: '',
+      schoolId: school.id,
+      latitude: school.latitude,
+      longitude: school.longitude,
+    });
+    setKeywordInput('');
+    setIsSearchFocused(false);
   };
 
   const handleApplyFilters = () => {
@@ -245,6 +284,14 @@ export const SearchScreen = () => {
     toast.info('Đã cập nhật kết quả theo vùng bản đồ.');
   };
 
+  const handleToggleQuickPrice = () => {
+    applyPreset({
+      ...appliedFilters,
+      minPrice: undefined,
+      maxPrice: isQuickPriceActive ? undefined : QUICK_PRICE_LIMIT,
+    });
+  };
+
   const handleToggleSaved = (listingId: string) => {
     if (role !== 'student') {
       toast.info('Chỉ Sinh viên mới có thể lưu phòng.');
@@ -255,31 +302,7 @@ export const SearchScreen = () => {
     toggleFavorite.mutate({ listingId, isSaved: favoriteIds.has(listingId) });
   };
 
-  const renderListing = ({ item }: { item: SearchListingItem }) => (
-    <ListingCard
-      id={item.id}
-      title={item.title}
-      price={item.price}
-      imageUrl={item.thumbnail ?? undefined}
-      areaSquareMeters={item.area}
-      capacity={item.capacity}
-      distanceMeters={item.distanceMeters ?? undefined}
-      address={item.address}
-      rating={item.rating}
-      reviewCount={item.reviewCount}
-      status={getCardStatus(item)}
-      isSaved={favoriteIds.has(item.id)}
-      onPress={() => handleOpenListing(item)}
-      onBookmarkPress={() => handleToggleSaved(item.id)}
-      variant={viewMode === 'grid' ? 'vertical' : 'horizontal'}
-      compact={viewMode !== 'grid'}
-      style={viewMode === 'grid' ? styles.gridCard : styles.listingCard}
-    />
-  );
-
   const handleRelaxSearch = () => {
-    const suggestion = searchQuery.data?.pages[0]?.suggestion;
-
     if (suggestion?.type === 'expand_radius' && suggestion.radiusKm) {
       setRadius(suggestion.radiusKm);
 
@@ -289,258 +312,300 @@ export const SearchScreen = () => {
     clearAppliedFilters();
   };
 
-  const renderListContent = () => {
+  const loadNextPage = () => {
+    if (searchQuery.hasNextPage && !searchQuery.isFetchingNextPage) {
+      searchQuery.fetchNextPage();
+    }
+  };
+
+  const relaxSuggestions = useMemo<RelaxSuggestion[]>(() => {
+    const items: RelaxSuggestion[] = [];
+    const firstAmenity = AMENITY_DISPLAY_LIST.find((amenity) =>
+      appliedFilters.amenities.includes(amenity.id)
+    );
+
+    if (firstAmenity) {
+      items.push({
+        key: 'amenity',
+        label: `Bỏ "${firstAmenity.name}"`,
+        onPress: () =>
+          applyPreset({
+            ...appliedFilters,
+            amenities: appliedFilters.amenities.filter((id) => id !== firstAmenity.id),
+          }),
+      });
+    }
+
+    if (appliedFilters.maxPrice !== undefined) {
+      const nextPrice = appliedFilters.maxPrice + PRICE_RELAX_STEP;
+
+      items.push({
+        key: 'price',
+        label: `Tăng lên ${formatMillions(nextPrice)} triệu`,
+        onPress: () => applyPreset({ ...appliedFilters, maxPrice: nextPrice }),
+      });
+    }
+
+    const nextRadius = RADIUS_STEPS.find((step) => step > (appliedFilters.radius ?? 5));
+
+    if (hasLocation && nextRadius) {
+      items.push({
+        key: 'radius',
+        label: `Mở bán kính ${nextRadius} km`,
+        onPress: () => setRadius(nextRadius),
+      });
+    }
+
+    const missingRoomType = ROOM_TYPE_OPTIONS.find(
+      (option) => !appliedFilters.roomTypes.includes(option.value)
+    );
+
+    if (appliedFilters.roomTypes.length > 0 && missingRoomType) {
+      items.push({
+        key: 'room-type',
+        label: `Thêm loại "${missingRoomType.label}"`,
+        onPress: () =>
+          applyPreset({
+            ...appliedFilters,
+            roomTypes: [...appliedFilters.roomTypes, missingRoomType.value],
+          }),
+      });
+    }
+
+    return items.slice(0, 4);
+  }, [appliedFilters, applyPreset, hasLocation, setRadius]);
+
+  const renderListing = ({ item }: { item: SearchListingItem }) =>
+    viewMode === 'grid' ? (
+      <SearchListingGridCard
+        listing={item}
+        isSaved={favoriteIds.has(item.id)}
+        distanceSuffix={distanceSuffix}
+        onPress={() => handleOpenListing(item)}
+        onToggleSaved={() => handleToggleSaved(item.id)}
+      />
+    ) : (
+      <SearchListingRow
+        listing={item}
+        isSaved={favoriteIds.has(item.id)}
+        distanceSuffix={distanceSuffix}
+        onPress={() => handleOpenListing(item)}
+        onToggleSaved={() => handleToggleSaved(item.id)}
+      />
+    );
+
+  const renderHeader = () => (
+    <SearchHeader
+      querySummary={querySummary}
+      activeFilterCount={activeFilterCount}
+      onBack={handleBack}
+      onPressQuery={openSearchFocus}
+      onOpenFilters={openFilters}
+    />
+  );
+
+  const renderToolbar = () => (
+    <SearchToolbar
+      totalResults={totalResults}
+      isLocating={isLocating}
+      sortLabel={sortLabel}
+      compactSortLabel={compactSortLabel}
+      isSortOpen={isSortVisible}
+      viewMode={viewMode === 'grid' ? 'grid' : 'list'}
+      onOpenSort={openSort}
+      onChangeViewMode={setViewMode}
+    />
+  );
+
+  const renderResults = () => {
     if (searchQuery.isPending) {
       return (
-        <View style={styles.stateContent}>
-          {Array.from({ length: 4 }).map((_, index) => (
-            <ListingCardSkeleton key={index} />
-          ))}
-        </View>
+        <>
+          {renderHeader()}
+          <SearchResultSkeleton />
+        </>
       );
     }
 
     if (searchQuery.isError) {
       return (
-        <EmptyState
-          icon={<AlertTriangle size={34} color={THEME_COLORS.ERROR} />}
-          title="Không thể tải danh sách phòng"
-          description="Kết nối đang có vấn đề. Vui lòng thử lại."
-          actionTitle="Thử lại"
-          onAction={() => searchQuery.refetch()}
-          style={styles.centeredState}
-        />
+        <>
+          <SearchHeader
+            querySummary=""
+            activeFilterCount={0}
+            hasQueryPill={false}
+            hasFilterButton={false}
+            onBack={handleBack}
+          />
+          <SearchErrorView
+            isNetworkError={isNetworkFailure(searchQuery.error)}
+            onRetry={() => searchQuery.refetch()}
+            onOpenSaved={() => navigation.navigate('SavedRooms')}
+          />
+        </>
       );
     }
 
     if (listings.length === 0) {
       return (
-        <EmptyState
-          icon={<SearchX size={34} color={THEME_COLORS.TEXT_PLACEHOLDER} />}
-          title="Không tìm thấy phòng phù hợp"
-          description={
-            searchQuery.data?.pages[0]?.suggestion?.message ??
-            'Thử thay đổi khu vực, khoảng giá hoặc xóa bớt bộ lọc.'
-          }
-          actionTitle={
-            searchQuery.data?.pages[0]?.suggestion?.type === 'expand_radius'
-              ? 'Mở rộng bán kính'
-              : 'Xóa bớt bộ lọc'
-          }
-          onAction={handleRelaxSearch}
-          style={styles.centeredState}
-        />
+        <>
+          {renderHeader()}
+          <SearchEmptyView
+            criteriaCount={criteriaCount}
+            description={
+              suggestion?.message ?? 'Thử thay đổi khu vực, khoảng giá hoặc xóa bớt bộ lọc.'
+            }
+            suggestions={relaxSuggestions}
+            actionTitle={
+              suggestion?.type === 'expand_radius' ? 'Mở rộng bán kính' : 'Xoá bớt bộ lọc'
+            }
+            onAction={handleRelaxSearch}
+            onOpenAssistant={() => navigation.navigate('Main', { screen: 'AiChat' })}
+          />
+        </>
       );
     }
 
     return (
-      <FlatList
-        key={viewMode === 'grid' ? `grid-${gridColumns}` : 'list'}
-        style={styles.resultsList}
-        numColumns={viewMode === 'grid' ? gridColumns : 1}
-        columnWrapperStyle={viewMode === 'grid' ? styles.gridRow : undefined}
-        data={listings}
-        keyExtractor={(item) => item.id}
-        renderItem={renderListing}
-        contentContainerStyle={styles.listContent}
-        showsVerticalScrollIndicator={false}
-        keyboardShouldPersistTaps="handled"
-        keyboardDismissMode="on-drag"
-        nestedScrollEnabled
-        scrollEnabled
-        refreshControl={
-          <RefreshControl
-            refreshing={searchQuery.isRefetching && !searchQuery.isFetchingNextPage}
-            onRefresh={() => searchQuery.refetch()}
-            colors={[THEME_COLORS.PRIMARY]}
-            tintColor={THEME_COLORS.PRIMARY}
+      <>
+        {renderHeader()}
+        {renderToolbar()}
+
+        <View style={styles.content}>
+          <FlatList
+            key={viewMode === 'grid' ? `grid-${gridColumns}` : 'list'}
+            style={styles.resultsList}
+            numColumns={viewMode === 'grid' ? gridColumns : 1}
+            columnWrapperStyle={viewMode === 'grid' ? styles.gridRow : undefined}
+            data={listings}
+            keyExtractor={(item) => item.id}
+            renderItem={renderListing}
+            contentContainerStyle={styles.listContent}
+            ItemSeparatorComponent={ListSeparator}
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+            keyboardDismissMode="on-drag"
+            refreshControl={
+              <RefreshControl
+                refreshing={searchQuery.isRefetching && !searchQuery.isFetchingNextPage}
+                onRefresh={() => searchQuery.refetch()}
+                colors={[THEME_COLORS.PRIMARY]}
+                tintColor={THEME_COLORS.PRIMARY}
+              />
+            }
+            onEndReached={loadNextPage}
+            onEndReachedThreshold={0.35}
+            ListFooterComponent={
+              searchQuery.isFetchingNextPage ? (
+                <ActivityIndicator color={THEME_COLORS.PRIMARY} style={styles.loadMore} />
+              ) : null
+            }
           />
-        }
-        onEndReached={() => {
-          if (searchQuery.hasNextPage && !searchQuery.isFetchingNextPage) {
-            searchQuery.fetchNextPage();
-          }
-        }}
-        onEndReachedThreshold={0.35}
-        ListFooterComponent={
-          searchQuery.isFetchingNextPage ? (
-            <ActivityIndicator color={THEME_COLORS.PRIMARY} style={styles.loadMore} />
-          ) : null
-        }
-      />
-    );
-  };
 
-  const renderMapContent = () => {
-    if (searchQuery.isPending) {
-      return (
-        <View style={styles.mapLoading}>
-          <ActivityIndicator size="large" color={THEME_COLORS.PRIMARY} />
-          <Typography variant="body2" colorKey="TEXT_MUTED">
-            Đang tải bản đồ phòng trọ…
-          </Typography>
-        </View>
-      );
-    }
-
-    return (
-      <View style={styles.mapContainer}>
-        <SearchResultsMap
-          listings={listings}
-          selectedListingId={selectedListingId}
-          userLocation={
-            hasLocation
-              ? { latitude: appliedFilters.latitude!, longitude: appliedFilters.longitude! }
-              : undefined
-          }
-          onSelectListing={setSelectedListingId}
-          onRegionChange={setMapCenter}
-        />
-
-        {mapCenter ? (
-          <Button
-            title="Tìm trong khu vực này"
-            size="sm"
-            leftIcon={<MapPin size={15} color={THEME_COLORS.WHITE} />}
-            onPress={handleSearchMapArea}
-            style={styles.searchAreaButton}
-          />
-        ) : null}
-
-        {!searchQuery.isError && listings.length === 0 ? (
-          <View style={styles.mapEmptyOverlay}>
-            <Typography variant="body2" weight="SEMIBOLD" align="center">
-              Không có phòng phù hợp trong khu vực này.
-            </Typography>
-          </View>
-        ) : null}
-
-        {searchQuery.isError ? (
-          <View style={styles.mapEmptyOverlay}>
-            <Typography variant="body2" weight="SEMIBOLD" align="center">
-              Không thể tải danh sách phòng.
-            </Typography>
-            <Button title="Thử lại" size="sm" onPress={() => searchQuery.refetch()} />
-          </View>
-        ) : null}
-
-        {selectedListing ? (
-          <ListingCard
-            id={selectedListing.id}
-            title={selectedListing.title}
-            price={selectedListing.price}
-            imageUrl={selectedListing.thumbnail ?? undefined}
-            areaSquareMeters={selectedListing.area}
-            distanceMeters={selectedListing.distanceMeters ?? undefined}
-            address={selectedListing.address}
-            status={getCardStatus(selectedListing)}
-            isSaved={favoriteIds.has(selectedListing.id)}
-            onPress={() => handleOpenListing(selectedListing)}
-            onBookmarkPress={() => handleToggleSaved(selectedListing.id)}
-            variant="horizontal"
-            style={styles.previewCard}
-          />
-        ) : null}
-      </View>
-    );
-  };
-
-  return (
-    <ScreenContainer
-      applyBottomInset={false}
-      keyboardAvoiding={false}
-      maxContentWidth={null}
-      style={styles.container}
-    >
-      <SearchHeader
-        keyword={keywordInput}
-        activeFilterCount={activeFilterCount}
-        priceLabel={priceLabel}
-        areaLabel={areaLabel}
-        hasRoomTypeFilter={appliedFilters.roomTypes.length > 0}
-        hasAmenityFilter={appliedFilters.amenities.length > 0}
-        isNearbyEnabled={hasLocation}
-        onChangeKeyword={setKeywordInput}
-        onSubmit={handleSubmitSearch}
-        onOpenFilters={openFilters}
-        onEnableNearby={handleEnableNearby}
-      />
-
-      <View style={styles.resultsToolbar}>
-        <View style={styles.resultCount}>
-          <Typography variant="body1" weight="BOLD">
-            {searchQuery.isPending ? 'Đang tìm phòng…' : `${totalResults} phòng phù hợp`}
-          </Typography>
-          {isLocating ? <ActivityIndicator size="small" color={THEME_COLORS.PRIMARY} /> : null}
-        </View>
-
-        <View style={styles.toolbarActions}>
           <TouchableOpacity
-            style={styles.sortButton}
-            onPress={openSort}
+            style={styles.mapPill}
+            onPress={() => setViewMode('map')}
             accessibilityRole="button"
-            accessibilityLabel={`Sắp xếp: ${sortLabel}`}
+            accessibilityLabel="Xem bản đồ"
           >
-            <ArrowDownUp size={16} color={THEME_COLORS.TEXT_MUTED} />
-            <Typography
-              variant="caption"
-              weight="SEMIBOLD"
-              numberOfLines={1}
-              style={styles.sortLabel}
-            >
-              {compactSortLabel}
+            <MapIcon size={18} color={THEME_COLORS.WHITE} />
+            <Typography variant="body2" weight="SEMIBOLD" color={THEME_COLORS.WHITE}>
+              Xem bản đồ
             </Typography>
           </TouchableOpacity>
-
-          <View style={styles.viewToggle}>
-            <TouchableOpacity
-              style={[styles.viewButton, viewMode === 'list' && styles.viewButtonSelected]}
-              onPress={() => setViewMode('list')}
-              accessibilityRole="radio"
-              accessibilityState={{ selected: viewMode === 'list' }}
-              accessibilityLabel="Xem danh sách"
-            >
-              <List
-                size={17}
-                color={viewMode === 'list' ? THEME_COLORS.PRIMARY : THEME_COLORS.TEXT_PLACEHOLDER}
-              />
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.viewButton, viewMode === 'grid' && styles.viewButtonSelected]}
-              onPress={() => setViewMode('grid')}
-              accessibilityRole="radio"
-              accessibilityState={{ selected: viewMode === 'grid' }}
-              accessibilityLabel="Xem dạng lưới"
-            >
-              <LayoutGrid
-                size={17}
-                color={viewMode === 'grid' ? THEME_COLORS.PRIMARY : THEME_COLORS.TEXT_PLACEHOLDER}
-              />
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.viewButton, viewMode === 'map' && styles.viewButtonSelected]}
-              onPress={() => setViewMode('map')}
-              accessibilityRole="radio"
-              accessibilityState={{ selected: viewMode === 'map' }}
-              accessibilityLabel="Xem bản đồ"
-            >
-              <MapIcon
-                size={17}
-                color={viewMode === 'map' ? THEME_COLORS.PRIMARY : THEME_COLORS.TEXT_PLACEHOLDER}
-              />
-            </TouchableOpacity>
-          </View>
         </View>
-      </View>
+      </>
+    );
+  };
 
-      <View style={styles.content}>
-        {viewMode === 'map' ? renderMapContent() : renderListContent()}
-      </View>
+  const renderMap = () => (
+    <View style={styles.mapContainer}>
+      <SearchResultsMap
+        listings={listings}
+        selectedListingId={selectedListingId}
+        userLocation={
+          hasLocation && !selectedSchool
+            ? { latitude: appliedFilters.latitude!, longitude: appliedFilters.longitude! }
+            : undefined
+        }
+        school={selectedSchool}
+        onSelectListing={setSelectedListingId}
+        onPressMap={() => setSelectedListingId(null)}
+        onRegionChange={setMapCenter}
+      />
+
+      <SearchMapPanel
+        listings={mapSelectedListing ? mapListings : listings}
+        selectedListingId={selectedListingId}
+        favoriteIds={favoriteIds}
+        totalResults={totalResults}
+        querySummary={querySummary}
+        activeFilterCount={activeFilterCount}
+        compactSortLabel={compactSortLabel}
+        isNearbyEnabled={hasLocation}
+        isQuickPriceActive={isQuickPriceActive}
+        quickPriceLabel="Dưới 2,5tr"
+        canSearchArea={mapCenter !== undefined}
+        isLocating={isLocating}
+        onBack={() => setViewMode('list')}
+        onPressQuery={openSearchFocus}
+        onOpenFilters={openFilters}
+        onOpenSort={openSort}
+        onEnableNearby={handleEnableNearby}
+        onToggleQuickPrice={handleToggleQuickPrice}
+        onSearchArea={handleSearchMapArea}
+        onSelectListing={setSelectedListingId}
+        onOpenListing={handleOpenListing}
+        onToggleSaved={handleToggleSaved}
+        onShowList={() => setViewMode('list')}
+        onEndReached={loadNextPage}
+      />
+
+      {searchQuery.isPending ? (
+        <View style={styles.mapLoading}>
+          <ActivityIndicator size="large" color={THEME_COLORS.PRIMARY} />
+        </View>
+      ) : null}
+    </View>
+  );
+
+  const renderBody = () => {
+    if (isSearchFocused) {
+      return (
+        <SearchFocusView
+          keyword={keywordInput}
+          recentTerms={recentSearches.terms}
+          schoolSuggestions={schoolSuggestions}
+          onChangeKeyword={setKeywordInput}
+          onSubmit={() => handleSubmitSearch()}
+          onCancel={() => setIsSearchFocused(false)}
+          onSelectRecent={(term) => handleSubmitSearch(term)}
+          onRemoveRecent={recentSearches.removeTerm}
+          onClearRecent={recentSearches.clearTerms}
+          onSelectSchool={handleSelectSchoolSuggestion}
+        />
+      );
+    }
+
+    if (viewMode === 'map' && !searchQuery.isError) return renderMap();
+
+    return renderResults();
+  };
+
+  const isMapVisible = viewMode === 'map' && !isSearchFocused && !searchQuery.isError;
+
+  return (
+    <View style={styles.container}>
+      {isMapVisible ? null : (
+        <View style={{ height: insets.top, backgroundColor: THEME_COLORS.SURFACE }} />
+      )}
+      {renderBody()}
 
       <SearchFilterSheet
         isVisible={isFilterVisible}
         filters={draftFilters}
         validationMessage={filterValidationMessage}
+        resultCount={draftResultCount}
         onChange={(filters) => {
           setFilterValidationMessage(undefined);
           updateDraftFilters(filters);
@@ -551,6 +616,7 @@ export const SearchScreen = () => {
         }}
         onApply={handleApplyFilters}
         onClose={handleCloseFilters}
+        onUseCurrentLocation={handleEnableNearby}
       />
 
       <SearchSortSheet
@@ -564,56 +630,16 @@ export const SearchScreen = () => {
         }}
         onClose={closeSort}
       />
-    </ScreenContainer>
+    </View>
   );
 };
 
+const ListSeparator = () => <View style={styles.separator} />;
+
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: THEME_COLORS.BACKGROUND },
-  resultsToolbar: {
-    minHeight: 58,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: SPACING_TOKENS.SM,
-    paddingHorizontal: SPACING_TOKENS.MD,
-    borderBottomWidth: 1,
-    borderBottomColor: THEME_COLORS.DIVIDER,
-    backgroundColor: THEME_COLORS.SURFACE,
-  },
-  resultCount: { flex: 1, minWidth: 0, flexDirection: 'row', alignItems: 'center', gap: 6 },
-  toolbarActions: { flexDirection: 'row', alignItems: 'center', gap: SPACING_TOKENS.SM },
-  sortButton: {
-    maxWidth: 128,
-    height: 36,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-    paddingHorizontal: SPACING_TOKENS.SM,
-    borderWidth: 1,
-    borderColor: THEME_COLORS.BORDER,
-    borderRadius: BORDER_RADIUS_TOKENS.SM,
-    backgroundColor: THEME_COLORS.SURFACE,
-  },
-  sortLabel: { flexShrink: 1 },
-  viewToggle: {
-    height: 36,
-    flexDirection: 'row',
-    padding: 3,
-    borderRadius: BORDER_RADIUS_TOKENS.SM,
-    backgroundColor: THEME_COLORS.SURFACE_MUTED,
-  },
-  viewButton: { width: 32, alignItems: 'center', justifyContent: 'center', borderRadius: 6 },
-  viewButtonSelected: { backgroundColor: THEME_COLORS.SURFACE },
   content: { flex: 1 },
   resultsList: { flex: 1 },
-  stateContent: {
-    width: '100%',
-    maxWidth: 720,
-    alignSelf: 'center',
-    padding: SPACING_TOKENS.MD,
-  },
-  centeredState: { flex: 1, minHeight: 360 },
   listContent: {
     width: '100%',
     maxWidth: 720,
@@ -621,40 +647,34 @@ const styles = StyleSheet.create({
     padding: SPACING_TOKENS.MD,
     paddingBottom: 96,
   },
-  listingCard: { marginBottom: SPACING_TOKENS.SM + 4 },
-  gridRow: { gap: SPACING_TOKENS.SM + 4 },
-  gridCard: { flex: 1, marginBottom: SPACING_TOKENS.SM + 4 },
+  separator: { height: 12 },
+  gridRow: { gap: 12 },
   loadMore: { marginVertical: SPACING_TOKENS.MD },
-  mapContainer: { flex: 1, overflow: 'hidden' },
-  mapLoading: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: SPACING_TOKENS.SM },
-  searchAreaButton: {
+  mapPill: {
     position: 'absolute',
-    top: SPACING_TOKENS.MD,
+    bottom: 24,
     alignSelf: 'center',
-    shadowColor: THEME_COLORS.BLACK,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.16,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  mapEmptyOverlay: {
-    position: 'absolute',
-    top: 76,
-    left: SPACING_TOKENS.MD,
-    right: SPACING_TOKENS.MD,
+    height: 44,
+    flexDirection: 'row',
     alignItems: 'center',
-    gap: SPACING_TOKENS.SM,
-    padding: SPACING_TOKENS.MD,
-    borderWidth: 1,
-    borderColor: THEME_COLORS.BORDER,
-    borderRadius: BORDER_RADIUS_TOKENS.MD,
-    backgroundColor: THEME_COLORS.SURFACE,
+    gap: 8,
+    paddingHorizontal: 18,
+    borderRadius: 999,
+    backgroundColor: THEME_COLORS.TEXT_PRIMARY,
+    shadowColor: OVERLAY_COLORS.SHADOW,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 6,
   },
-  previewCard: {
-    position: 'absolute',
-    left: SPACING_TOKENS.MD,
-    right: SPACING_TOKENS.MD,
-    bottom: SPACING_TOKENS.MD,
-    minHeight: 146,
+  mapContainer: { flex: 1, overflow: 'hidden' },
+  mapLoading: {
+    top: 0,
+    right: 0,
+    bottom: 0,
+    left: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: OVERLAY_COLORS.FLOATING_BUTTON,
   },
 });

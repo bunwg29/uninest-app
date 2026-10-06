@@ -1,15 +1,19 @@
-import { memo, useMemo } from 'react';
+import { memo, useEffect, useMemo, useRef, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import MapView, { Marker, type Region } from 'react-native-maps';
-import { BORDER_RADIUS_TOKENS, THEME_COLORS } from '@theme';
+import { GraduationCap } from 'lucide-react-native';
+import { BORDER_RADIUS_TOKENS, OVERLAY_COLORS, THEME_COLORS } from '@theme';
 import { Typography } from '@ui';
-import type { SearchListingItem, SearchListingLocation } from '../types';
+import type { SearchListingItem, SearchListingLocation, SearchSchool } from '../types';
+import { clusterListings, formatShortPrice } from '../utils';
 
 interface SearchResultsMapProps {
   listings: SearchListingItem[];
   selectedListingId: string | null;
   userLocation?: SearchListingLocation;
+  school?: SearchSchool;
   onSelectListing: (listingId: string) => void;
+  onPressMap?: () => void;
   onRegionChange: (location: SearchListingLocation) => void;
 }
 
@@ -20,61 +24,126 @@ const DEFAULT_REGION: Region = {
   longitudeDelta: 0.08,
 };
 
-const formatShortPrice = (price: number) => {
-  const priceInMillions = price / 1000000;
-
-  return `${Number.isInteger(priceInMillions) ? priceInMillions : priceInMillions.toFixed(1)}tr`;
-};
-
 const SearchResultsMapComponent = ({
   listings,
   selectedListingId,
   userLocation,
+  school,
   onSelectListing,
+  onPressMap,
   onRegionChange,
 }: SearchResultsMapProps) => {
+  const mapRef = useRef<MapView>(null);
   const initialRegion = useMemo<Region>(
     () =>
       userLocation
         ? { ...userLocation, latitudeDelta: 0.04, longitudeDelta: 0.04 }
         : DEFAULT_REGION,
-    [userLocation]
+    // Vùng ban đầu chỉ tính một lần, các lần đổi vị trí sau được xử lý bằng animateToRegion.
+    []
   );
-  const markers = listings.filter((listing) => listing.location !== undefined);
+  const [region, setRegion] = useState<Region>(initialRegion);
+  const items = useMemo(
+    () => clusterListings(listings, region, selectedListingId),
+    [listings, region, selectedListingId]
+  );
+
+  useEffect(() => {
+    const focus = school ?? userLocation;
+
+    if (!focus) return;
+
+    mapRef.current?.animateToRegion(
+      {
+        latitude: focus.latitude,
+        longitude: focus.longitude,
+        latitudeDelta: 0.04,
+        longitudeDelta: 0.04,
+      },
+      300
+    );
+  }, [school, userLocation]);
+
+  const handleClusterPress = (location: SearchListingLocation) => {
+    mapRef.current?.animateToRegion(
+      {
+        ...location,
+        latitudeDelta: region.latitudeDelta / 3,
+        longitudeDelta: region.longitudeDelta / 3,
+      },
+      300
+    );
+  };
 
   return (
     <MapView
+      ref={mapRef}
       style={styles.map}
       initialRegion={initialRegion}
       showsUserLocation={Boolean(userLocation)}
       showsMyLocationButton={false}
-      showsCompass
+      showsCompass={false}
       loadingEnabled
       loadingIndicatorColor={THEME_COLORS.PRIMARY}
-      onRegionChangeComplete={(region) =>
-        onRegionChange({ latitude: region.latitude, longitude: region.longitude })
-      }
+      onPress={onPressMap}
+      onRegionChangeComplete={(nextRegion) => {
+        setRegion(nextRegion);
+        onRegionChange({ latitude: nextRegion.latitude, longitude: nextRegion.longitude });
+      }}
     >
-      {markers.map((listing) => {
-        const isSelected = listing.id === selectedListingId;
+      {school ? (
+        <Marker
+          coordinate={{ latitude: school.latitude, longitude: school.longitude }}
+          anchor={{ x: 0.5, y: 0.5 }}
+          tracksViewChanges={false}
+        >
+          <View style={styles.schoolMarker}>
+            <GraduationCap size={12} color={THEME_COLORS.WHITE} />
+            <Typography variant="tiny" weight="SEMIBOLD" color={THEME_COLORS.WHITE}>
+              {school.shortName}
+            </Typography>
+          </View>
+        </Marker>
+      ) : null}
+
+      {items.map((item) => {
+        if (item.type === 'cluster') {
+          return (
+            <Marker
+              key={item.key}
+              coordinate={item.location}
+              anchor={{ x: 0.5, y: 0.5 }}
+              onPress={() => handleClusterPress(item.location)}
+              tracksViewChanges={false}
+            >
+              <View style={[styles.cluster, item.count >= 10 && styles.largeCluster]}>
+                <Typography variant="body2" weight="BOLD" color={THEME_COLORS.WHITE}>
+                  {item.count}
+                </Typography>
+              </View>
+            </Marker>
+          );
+        }
+
+        const isSelected = item.listing.id === selectedListingId;
 
         return (
           <Marker
-            key={listing.id}
-            coordinate={listing.location!}
-            onPress={() => onSelectListing(listing.id)}
+            key={item.key}
+            coordinate={item.location}
+            anchor={{ x: 0.5, y: 0.5 }}
+            onPress={() => onSelectListing(item.listing.id)}
             tracksViewChanges={isSelected}
           >
             <View style={[styles.marker, isSelected && styles.selectedMarker]}>
               <Typography
-                variant="caption"
+                variant="label"
                 weight="BOLD"
                 color={isSelected ? THEME_COLORS.WHITE : THEME_COLORS.TEXT_PRIMARY}
               >
-                {formatShortPrice(listing.price)}
+                {formatShortPrice(item.listing.price)}
               </Typography>
             </View>
-            <View style={[styles.markerTip, isSelected && styles.selectedMarkerTip]} />
           </Marker>
         );
       })}
@@ -87,35 +156,43 @@ export const SearchResultsMap = memo(SearchResultsMapComponent);
 const styles = StyleSheet.create({
   map: { flex: 1 },
   marker: {
-    minWidth: 54,
-    height: 32,
+    minWidth: 50,
+    height: 30,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 9,
-    borderWidth: 1,
-    borderColor: THEME_COLORS.BORDER,
+    paddingHorizontal: 12,
     borderRadius: BORDER_RADIUS_TOKENS.FULL,
     backgroundColor: THEME_COLORS.SURFACE,
-    shadowColor: THEME_COLORS.BLACK,
+    shadowColor: OVERLAY_COLORS.SHADOW,
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.16,
+    shadowOpacity: 0.18,
     shadowRadius: 4,
     elevation: 3,
   },
-  selectedMarker: { borderColor: THEME_COLORS.PRIMARY, backgroundColor: THEME_COLORS.PRIMARY },
-  markerTip: {
-    width: 8,
-    height: 8,
-    alignSelf: 'center',
-    marginTop: -5,
-    transform: [{ rotate: '45deg' }],
-    borderRightWidth: 1,
-    borderBottomWidth: 1,
-    borderColor: THEME_COLORS.BORDER,
-    backgroundColor: THEME_COLORS.SURFACE,
-  },
-  selectedMarkerTip: {
-    borderColor: THEME_COLORS.PRIMARY,
+  selectedMarker: { backgroundColor: THEME_COLORS.PRIMARY },
+  cluster: {
+    width: 40,
+    height: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 3,
+    borderColor: THEME_COLORS.WHITE,
+    borderRadius: BORDER_RADIUS_TOKENS.FULL,
     backgroundColor: THEME_COLORS.PRIMARY,
+    shadowColor: OVERLAY_COLORS.SHADOW,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 5,
+    elevation: 4,
+  },
+  largeCluster: { width: 46, height: 46 },
+  schoolMarker: {
+    height: 28,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingHorizontal: 9,
+    borderRadius: BORDER_RADIUS_TOKENS.FULL,
+    backgroundColor: THEME_COLORS.TEXT_PRIMARY,
   },
 });

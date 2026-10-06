@@ -1,174 +1,169 @@
-import { ScrollView, StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
-import { ChevronDown, Search, SlidersHorizontal, X } from 'lucide-react-native';
-import { BORDER_RADIUS_TOKENS, SPACING_TOKENS, THEME_COLORS } from '@theme';
-import { FilterChip, Typography } from '@ui';
+import { StyleSheet, TouchableOpacity, View, type StyleProp, type ViewStyle } from 'react-native';
+import { ChevronLeft, Search, SlidersHorizontal } from 'lucide-react-native';
+import { BORDER_RADIUS_TOKENS, OVERLAY_COLORS, SPACING_TOKENS, THEME_COLORS } from '@theme';
+import { Typography } from '@ui';
 
 interface SearchHeaderProps {
-  keyword: string;
+  querySummary: string;
   activeFilterCount: number;
-  priceLabel: string;
-  areaLabel: string;
-  hasRoomTypeFilter: boolean;
-  hasAmenityFilter: boolean;
-  isNearbyEnabled: boolean;
-  onChangeKeyword: (keyword: string) => void;
-  onSubmit: () => void;
-  onOpenFilters: () => void;
-  onEnableNearby: () => void;
+  variant?: 'solid' | 'overlay';
+  hasQueryPill?: boolean;
+  hasFilterButton?: boolean;
+  style?: StyleProp<ViewStyle>;
+  onBack: () => void;
+  onPressQuery?: () => void;
+  onOpenFilters?: () => void;
 }
 
 export const SearchHeader = ({
-  keyword,
+  querySummary,
   activeFilterCount,
-  priceLabel,
-  areaLabel,
-  hasRoomTypeFilter,
-  hasAmenityFilter,
-  isNearbyEnabled,
-  onChangeKeyword,
-  onSubmit,
+  variant = 'solid',
+  hasQueryPill = true,
+  hasFilterButton = true,
+  style,
+  onBack,
+  onPressQuery,
   onOpenFilters,
-  onEnableNearby,
 }: SearchHeaderProps) => {
+  const isOverlay = variant === 'overlay';
+  const hasQuery = querySummary.length > 0;
+
   return (
-    <View style={styles.container}>
-      <Typography variant="h1" weight="BOLD" style={styles.title}>
-        Tìm trọ
-      </Typography>
+    <View style={[styles.container, !isOverlay && styles.solidContainer, style]}>
+      <TouchableOpacity
+        style={[styles.backButton, isOverlay ? styles.overlayCircle : styles.outlinedButton]}
+        onPress={onBack}
+        accessibilityRole="button"
+        accessibilityLabel="Quay lại"
+      >
+        <ChevronLeft size={20} color={THEME_COLORS.TEXT_PRIMARY} />
+      </TouchableOpacity>
 
-      <View style={styles.searchRow}>
-        <View style={styles.searchInputContainer}>
-          <Search size={19} color={THEME_COLORS.TEXT_MUTED} />
-          <TextInput
-            value={keyword}
-            onChangeText={onChangeKeyword}
-            onSubmitEditing={onSubmit}
-            placeholder="Tìm theo khu vực, tên đường…"
-            placeholderTextColor={THEME_COLORS.TEXT_PLACEHOLDER}
-            returnKeyType="search"
-            autoCapitalize="none"
-            accessibilityLabel="Từ khóa tìm phòng"
-            style={styles.searchInput}
-          />
-          {keyword.length > 0 ? (
-            <TouchableOpacity
-              onPress={() => onChangeKeyword('')}
-              accessibilityRole="button"
-              accessibilityLabel="Xóa từ khóa tìm kiếm"
-              hitSlop={{ top: 10, right: 10, bottom: 10, left: 10 }}
-            >
-              <X size={18} color={THEME_COLORS.TEXT_MUTED} />
-            </TouchableOpacity>
-          ) : null}
-        </View>
-
+      {hasQueryPill ? (
         <TouchableOpacity
-          style={styles.filterButton}
+          style={[styles.queryPill, isOverlay ? styles.overlayPill : styles.solidPill]}
+          onPress={onPressQuery}
+          activeOpacity={0.8}
+          accessibilityRole="search"
+          accessibilityLabel={`Từ khóa tìm phòng: ${hasQuery ? querySummary : 'chưa nhập'}`}
+        >
+          <Search size={18} color={THEME_COLORS.TEXT_PLACEHOLDER} />
+          <Typography
+            variant="body2"
+            weight="MEDIUM"
+            colorKey={hasQuery ? 'TEXT_PRIMARY' : 'TEXT_PLACEHOLDER'}
+            numberOfLines={1}
+            style={styles.queryText}
+          >
+            {hasQuery ? querySummary : 'Tìm theo khu vực, tên đường…'}
+          </Typography>
+        </TouchableOpacity>
+      ) : (
+        <View style={styles.spacer} />
+      )}
+
+      {hasFilterButton ? (
+        <TouchableOpacity
+          style={[
+            styles.filterButton,
+            isOverlay ? styles.overlayCircle : styles.outlinedButton,
+            activeFilterCount > 0 && !isOverlay && styles.filterButtonActive,
+          ]}
           onPress={onOpenFilters}
           accessibilityRole="button"
           accessibilityLabel={
             activeFilterCount > 0 ? `Bộ lọc, đang áp dụng ${activeFilterCount} nhóm` : 'Bộ lọc'
           }
         >
-          <SlidersHorizontal size={20} color={THEME_COLORS.TEXT_PRIMARY} />
+          <SlidersHorizontal size={20} color={THEME_COLORS.PRIMARY} />
           {activeFilterCount > 0 ? (
             <View style={styles.filterBadge}>
-              <Typography variant="tiny" color={THEME_COLORS.WHITE}>
+              <Typography
+                variant="tiny"
+                weight="BOLD"
+                color={THEME_COLORS.WHITE}
+                style={styles.badgeText}
+              >
                 {activeFilterCount}
               </Typography>
             </View>
           ) : null}
         </TouchableOpacity>
-      </View>
-
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.chipsContent}
-      >
-        <FilterChip label="Gần tôi" isSelected={isNearbyEnabled} onPress={onEnableNearby} />
-        <FilterChip
-          label={priceLabel}
-          isSelected={priceLabel !== 'Giá'}
-          onPress={onOpenFilters}
-          icon={<ChevronDown size={14} color={THEME_COLORS.TEXT_MUTED} />}
-        />
-        <FilterChip
-          label={areaLabel}
-          isSelected={areaLabel !== 'Diện tích'}
-          onPress={onOpenFilters}
-          icon={<ChevronDown size={14} color={THEME_COLORS.TEXT_MUTED} />}
-        />
-        <FilterChip label="Loại phòng" isSelected={hasRoomTypeFilter} onPress={onOpenFilters} />
-        <FilterChip label="Tiện ích" isSelected={hasAmenityFilter} onPress={onOpenFilters} />
-      </ScrollView>
+      ) : (
+        <View style={styles.spacerSmall} />
+      )}
     </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    paddingTop: SPACING_TOKENS.SM,
-    paddingBottom: SPACING_TOKENS.SM,
-    borderBottomWidth: 1,
-    borderBottomColor: THEME_COLORS.DIVIDER,
-    backgroundColor: THEME_COLORS.SURFACE,
-  },
-  title: {
-    paddingHorizontal: SPACING_TOKENS.MD,
-    marginBottom: SPACING_TOKENS.SM,
-  },
-  searchRow: {
-    flexDirection: 'row',
-    gap: SPACING_TOKENS.SM,
-    paddingHorizontal: SPACING_TOKENS.MD,
-  },
-  searchInputContainer: {
-    flex: 1,
-    minHeight: 48,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: SPACING_TOKENS.SM,
+    gap: 12,
     paddingHorizontal: SPACING_TOKENS.MD,
+  },
+  solidContainer: {
+    paddingTop: SPACING_TOKENS.XS,
+    paddingBottom: SPACING_TOKENS.SM,
+    backgroundColor: THEME_COLORS.SURFACE,
+  },
+  backButton: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
+  filterButton: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
+  outlinedButton: {
     borderWidth: 1,
     borderColor: THEME_COLORS.BORDER,
     borderRadius: BORDER_RADIUS_TOKENS.MD,
-    backgroundColor: THEME_COLORS.BACKGROUND,
+    backgroundColor: THEME_COLORS.SURFACE,
   },
-  searchInput: {
+  filterButtonActive: { borderColor: THEME_COLORS.PRIMARY },
+  overlayCircle: {
+    width: 44,
+    height: 44,
+    borderRadius: BORDER_RADIUS_TOKENS.FULL,
+    backgroundColor: THEME_COLORS.SURFACE,
+    shadowColor: OVERLAY_COLORS.SHADOW,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.12,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  queryPill: {
     flex: 1,
     minWidth: 0,
-    paddingVertical: SPACING_TOKENS.SM,
-    color: THEME_COLORS.TEXT_PRIMARY,
-    fontSize: 15,
-  },
-  filterButton: {
-    width: 48,
-    height: 48,
+    height: 44,
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: THEME_COLORS.BORDER,
+    gap: SPACING_TOKENS.SM,
+    paddingHorizontal: 12,
     borderRadius: BORDER_RADIUS_TOKENS.MD,
-    backgroundColor: THEME_COLORS.SURFACE,
   },
+  solidPill: { backgroundColor: THEME_COLORS.SURFACE_MUTED },
+  overlayPill: {
+    backgroundColor: THEME_COLORS.SURFACE,
+    shadowColor: OVERLAY_COLORS.SHADOW,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.14,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  queryText: { flex: 1 },
+  spacer: { flex: 1 },
+  spacerSmall: { width: 40 },
   filterBadge: {
     position: 'absolute',
     top: -5,
-    right: -5,
-    minWidth: 20,
-    height: 20,
-    paddingHorizontal: 5,
+    right: -7,
+    minWidth: 19,
+    height: 18,
+    paddingHorizontal: 4,
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: BORDER_RADIUS_TOKENS.FULL,
+    borderWidth: 1,
+    borderColor: THEME_COLORS.WHITE,
     backgroundColor: THEME_COLORS.PRIMARY,
-    borderWidth: 2,
-    borderColor: THEME_COLORS.SURFACE,
   },
-  chipsContent: {
-    gap: SPACING_TOKENS.SM,
-    paddingHorizontal: SPACING_TOKENS.MD,
-    paddingTop: SPACING_TOKENS.SM,
-  },
+  badgeText: { fontSize: 10, lineHeight: 14 },
 });

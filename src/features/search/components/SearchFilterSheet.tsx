@@ -1,41 +1,73 @@
+import { useState, type ReactNode } from 'react';
 import { Modal, ScrollView, StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
-import { ChevronLeft } from 'lucide-react-native';
+import { GraduationCap, X } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AMENITY_DISPLAY_LIST, ROOM_TYPE_OPTIONS } from '@features/listings/types/constants';
-import { BORDER_RADIUS_TOKENS, SPACING_TOKENS, THEME_COLORS } from '@theme';
-import { Button, FilterChip, Typography } from '@ui';
+import { BORDER_RADIUS_TOKENS, OVERLAY_COLORS, THEME_COLORS } from '@theme';
+import { Button, Typography } from '@ui';
 import { SEARCH_SCHOOLS, type SearchFilters } from '../types';
+import { formatMillions } from '../utils';
+import { PriceRangeSlider } from './PriceRangeSlider';
+import { SearchSchoolSheet } from './SearchSchoolSheet';
 
 interface SearchFilterSheetProps {
   isVisible: boolean;
   filters: SearchFilters;
   validationMessage?: string;
+  resultCount?: number;
   onChange: (filters: Partial<SearchFilters>) => void;
   onReset: () => void;
   onApply: () => void;
   onClose: () => void;
+  onUseCurrentLocation: () => void;
 }
 
-const RADIUS_OPTIONS = [1, 2, 3, 5, 10] as const;
+const RADIUS_OPTIONS = [
+  { value: 0.5, label: 'Dưới 500 m' },
+  { value: 1, label: 'Dưới 1 km' },
+  { value: 2, label: 'Dưới 2 km' },
+  { value: 5, label: 'Dưới 5 km' },
+] as const;
 
 const parseNumber = (value: string) => {
-  if (!value.trim()) return undefined;
+  const digits = value.replace(/[^0-9]/g, '');
 
-  const parsedValue = Number(value.replace(/[^0-9]/g, ''));
+  if (!digits) return undefined;
+
+  const parsedValue = Number(digits);
 
   return Number.isFinite(parsedValue) ? parsedValue : undefined;
+};
+
+const formatThousands = (value?: number) =>
+  value === undefined ? '' : value.toLocaleString('vi-VN');
+
+const getPriceSummary = (minPrice?: number, maxPrice?: number) => {
+  if (minPrice === undefined && maxPrice === undefined) return 'Tất cả mức giá';
+
+  if (minPrice !== undefined && maxPrice !== undefined) {
+    return `${formatMillions(minPrice)} – ${formatMillions(maxPrice)} triệu`;
+  }
+
+  return minPrice !== undefined
+    ? `Từ ${formatMillions(minPrice)} triệu`
+    : `Đến ${formatMillions(maxPrice ?? 0)} triệu`;
 };
 
 export const SearchFilterSheet = ({
   isVisible,
   filters,
   validationMessage,
+  resultCount,
   onChange,
   onReset,
   onApply,
   onClose,
+  onUseCurrentLocation,
 }: SearchFilterSheetProps) => {
   const insets = useSafeAreaInsets();
+  const [isSchoolSheetVisible, setIsSchoolSheetVisible] = useState(false);
+  const selectedSchool = SEARCH_SCHOOLS.find((school) => school.id === filters.schoolId);
 
   const toggleRoomType = (roomType: string) => {
     onChange({
@@ -53,23 +85,33 @@ export const SearchFilterSheet = ({
     });
   };
 
+  const handleApplySchool = (schoolId: string | undefined) => {
+    const school = SEARCH_SCHOOLS.find((item) => item.id === schoolId);
+
+    onChange(
+      school
+        ? { schoolId: school.id, latitude: school.latitude, longitude: school.longitude }
+        : { schoolId: undefined, latitude: undefined, longitude: undefined }
+    );
+  };
+
   return (
     <Modal visible={isVisible} animationType="slide" onRequestClose={onClose}>
       <View style={[styles.container, { paddingTop: insets.top }]}>
         <View style={styles.header}>
           <TouchableOpacity
-            style={styles.backButton}
+            style={styles.closeButton}
             onPress={onClose}
             accessibilityRole="button"
             accessibilityLabel="Đóng bộ lọc"
           >
-            <ChevronLeft size={24} color={THEME_COLORS.TEXT_PRIMARY} />
+            <X size={20} color={THEME_COLORS.TEXT_PRIMARY} />
           </TouchableOpacity>
-          <Typography variant="h2" weight="BOLD" style={styles.headerTitle}>
+          <Typography variant="h3" weight="SEMIBOLD" style={styles.headerTitle}>
             Bộ lọc
           </Typography>
           <TouchableOpacity onPress={onReset} accessibilityRole="button">
-            <Typography variant="body2" weight="SEMIBOLD" colorKey="PRIMARY">
+            <Typography variant="body2" weight="SEMIBOLD" colorKey="PRIMARY_DARK">
               Đặt lại
             </Typography>
           </TouchableOpacity>
@@ -80,34 +122,28 @@ export const SearchFilterSheet = ({
           contentContainerStyle={styles.content}
           showsVerticalScrollIndicator={false}
         >
-          <FilterSection title="Khoảng giá" subtitle="đồng / tháng">
+          <FilterSection
+            title="Khoảng giá"
+            summary={getPriceSummary(filters.minPrice, filters.maxPrice)}
+            isFirst
+          >
+            <PriceRangeSlider
+              minValue={filters.minPrice}
+              maxValue={filters.maxPrice}
+              onChange={({ minPrice, maxPrice }) => onChange({ minPrice, maxPrice })}
+            />
             <View style={styles.inputRow}>
               <NumberField
                 label="Tối thiểu"
                 value={filters.minPrice}
+                suffix="đ"
                 onChange={(value) => onChange({ minPrice: value })}
               />
-              <View style={styles.inputSeparator} />
               <NumberField
                 label="Tối đa"
                 value={filters.maxPrice}
+                suffix="đ"
                 onChange={(value) => onChange({ maxPrice: value })}
-              />
-            </View>
-          </FilterSection>
-
-          <FilterSection title="Diện tích" subtitle="m²">
-            <View style={styles.inputRow}>
-              <NumberField
-                label="Từ"
-                value={filters.minArea}
-                onChange={(value) => onChange({ minArea: value })}
-              />
-              <View style={styles.inputSeparator} />
-              <NumberField
-                label="Đến"
-                value={filters.maxArea}
-                onChange={(value) => onChange({ maxArea: value })}
               />
             </View>
           </FilterSection>
@@ -115,7 +151,7 @@ export const SearchFilterSheet = ({
           <FilterSection title="Loại phòng">
             <View style={styles.wrapRow}>
               {ROOM_TYPE_OPTIONS.map((option) => (
-                <FilterChip
+                <OptionChip
                   key={option.value}
                   label={option.label}
                   isSelected={filters.roomTypes.includes(option.value)}
@@ -125,10 +161,46 @@ export const SearchFilterSheet = ({
             </View>
           </FilterSection>
 
+          <FilterSection title="Khoảng cách tới trường">
+            <TouchableOpacity
+              style={styles.schoolRow}
+              onPress={() => setIsSchoolSheetVisible(true)}
+              accessibilityRole="button"
+              accessibilityLabel="Chọn trường tham chiếu"
+            >
+              <GraduationCap size={20} color={THEME_COLORS.TEXT_SECONDARY} />
+              <Typography
+                variant="body2"
+                weight="MEDIUM"
+                colorKey={selectedSchool ? 'TEXT_PRIMARY' : 'TEXT_PLACEHOLDER'}
+                numberOfLines={1}
+                style={styles.schoolName}
+              >
+                {selectedSchool?.name ?? 'Chưa chọn trường'}
+              </Typography>
+              <Typography variant="label" weight="SEMIBOLD" colorKey="PRIMARY_DARK">
+                {selectedSchool ? 'Đổi' : 'Chọn'}
+              </Typography>
+            </TouchableOpacity>
+
+            <View style={styles.wrapRow}>
+              {RADIUS_OPTIONS.map((option) => (
+                <OptionChip
+                  key={option.value}
+                  label={option.label}
+                  isSelected={filters.radius === option.value}
+                  onPress={() =>
+                    onChange({ radius: filters.radius === option.value ? undefined : option.value })
+                  }
+                />
+              ))}
+            </View>
+          </FilterSection>
+
           <FilterSection title="Tiện ích">
             <View style={styles.wrapRow}>
               {AMENITY_DISPLAY_LIST.map((amenity) => (
-                <FilterChip
+                <OptionChip
                   key={amenity.id}
                   label={amenity.name}
                   isSelected={filters.amenities.includes(amenity.id)}
@@ -138,62 +210,18 @@ export const SearchFilterSheet = ({
             </View>
           </FilterSection>
 
-          <FilterSection
-            title="Khoảng cách tới trường"
-            subtitle={
-              SEARCH_SCHOOLS.find((school) => school.id === filters.schoolId)?.name ??
-              'Chưa chọn trường'
-            }
-          >
-            <View style={styles.wrapRow}>
-              {SEARCH_SCHOOLS.map((school) => (
-                <FilterChip
-                  key={school.id}
-                  label={school.name}
-                  isSelected={filters.schoolId === school.id}
-                  onPress={() =>
-                    onChange(
-                      filters.schoolId === school.id
-                        ? { schoolId: undefined, latitude: undefined, longitude: undefined }
-                        : {
-                            schoolId: school.id,
-                            latitude: school.latitude,
-                            longitude: school.longitude,
-                          }
-                    )
-                  }
-                />
-              ))}
-            </View>
-          </FilterSection>
-
-          <FilterSection
-            title="Bán kính tìm"
-            subtitle={filters.radius === undefined ? 'Không giới hạn' : `${filters.radius} km`}
-          >
-            <View style={styles.radiusRow}>
-              {RADIUS_OPTIONS.map((radius) => (
-                <TouchableOpacity
-                  key={radius}
-                  style={[
-                    styles.radiusButton,
-                    filters.radius === radius && styles.radiusButtonSelected,
-                  ]}
-                  onPress={() =>
-                    onChange({ radius: filters.radius === radius ? undefined : radius })
-                  }
-                  accessibilityRole="radio"
-                  accessibilityState={{ selected: filters.radius === radius }}
-                >
-                  <Typography
-                    variant="caption"
-                    weight="SEMIBOLD"
-                    colorKey={filters.radius === radius ? 'PRIMARY' : 'TEXT_SECONDARY'}
-                  >
-                    {radius} km
-                  </Typography>
-                </TouchableOpacity>
-              ))}
+          <FilterSection title="Diện tích" summary="m²">
+            <View style={styles.inputRow}>
+              <NumberField
+                label="Từ"
+                value={filters.minArea}
+                onChange={(value) => onChange({ minArea: value })}
+              />
+              <NumberField
+                label="Đến"
+                value={filters.maxArea}
+                onChange={(value) => onChange({ maxArea: value })}
+              />
             </View>
           </FilterSection>
 
@@ -206,10 +234,30 @@ export const SearchFilterSheet = ({
           ) : null}
         </ScrollView>
 
-        <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 16) }]}>
-          <Button title="Đặt lại" variant="outline" onPress={onReset} style={styles.footerButton} />
-          <Button title="Xem kết quả" onPress={onApply} style={styles.applyButton} />
+        <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 14) }]}>
+          <Button
+            title="Đặt lại"
+            variant="outline"
+            size="lg"
+            onPress={onReset}
+            style={[styles.footerButton, styles.resetButton]}
+            textStyle={styles.resetButtonText}
+          />
+          <Button
+            title={resultCount === undefined ? 'Xem kết quả' : `Xem ${resultCount} kết quả`}
+            size="lg"
+            onPress={onApply}
+            style={styles.applyButton}
+          />
         </View>
+
+        <SearchSchoolSheet
+          isVisible={isSchoolSheetVisible}
+          selectedSchoolId={filters.schoolId}
+          onApplySchool={handleApplySchool}
+          onUseCurrentLocation={onUseCurrentLocation}
+          onClose={() => setIsSchoolSheetVisible(false)}
+        />
       </View>
     </Modal>
   );
@@ -217,21 +265,23 @@ export const SearchFilterSheet = ({
 
 const FilterSection = ({
   title,
-  subtitle,
+  summary,
+  isFirst = false,
   children,
 }: {
   title: string;
-  subtitle?: string;
-  children: React.ReactNode;
+  summary?: string;
+  isFirst?: boolean;
+  children: ReactNode;
 }) => (
-  <View style={styles.section}>
+  <View style={[styles.section, !isFirst && styles.sectionSpacing]}>
     <View style={styles.sectionHeader}>
-      <Typography variant="body1" weight="BOLD">
+      <Typography variant="h3" weight="SEMIBOLD" style={styles.sectionTitle}>
         {title}
       </Typography>
-      {subtitle ? (
-        <Typography variant="caption" colorKey="TEXT_MUTED">
-          {subtitle}
+      {summary ? (
+        <Typography variant="body2" weight="SEMIBOLD" colorKey="PRIMARY_DARK">
+          {summary}
         </Typography>
       ) : null}
     </View>
@@ -239,106 +289,148 @@ const FilterSection = ({
   </View>
 );
 
+const OptionChip = ({
+  label,
+  isSelected,
+  onPress,
+}: {
+  label: string;
+  isSelected: boolean;
+  onPress: () => void;
+}) => (
+  <TouchableOpacity
+    style={[styles.chip, isSelected && styles.chipSelected]}
+    onPress={onPress}
+    activeOpacity={0.8}
+    accessibilityRole="checkbox"
+    accessibilityState={{ checked: isSelected }}
+  >
+    <Typography
+      variant="body2"
+      weight={isSelected ? 'SEMIBOLD' : 'MEDIUM'}
+      colorKey={isSelected ? 'PRIMARY_DARK' : 'TEXT_SECONDARY'}
+    >
+      {label}
+    </Typography>
+  </TouchableOpacity>
+);
+
 const NumberField = ({
   label,
   value,
+  suffix,
   onChange,
 }: {
   label: string;
   value?: number;
+  suffix?: string;
   onChange: (value?: number) => void;
 }) => (
   <View style={styles.numberField}>
-    <Typography variant="caption" colorKey="TEXT_MUTED">
+    <Typography
+      variant="caption"
+      weight="MEDIUM"
+      colorKey="TEXT_PLACEHOLDER"
+      style={styles.fieldLabel}
+    >
       {label}
     </Typography>
-    <TextInput
-      value={value === undefined ? '' : String(value)}
-      onChangeText={(text) => onChange(parseNumber(text))}
-      keyboardType="numeric"
-      placeholder="Không giới hạn"
-      placeholderTextColor={THEME_COLORS.TEXT_PLACEHOLDER}
-      style={styles.numberInput}
-      accessibilityLabel={label}
-    />
+    <View style={styles.numberInputBox}>
+      <TextInput
+        value={formatThousands(value)}
+        onChangeText={(text) => onChange(parseNumber(text))}
+        keyboardType="numeric"
+        placeholder="Không giới hạn"
+        placeholderTextColor={THEME_COLORS.TEXT_PLACEHOLDER}
+        style={styles.numberInput}
+        accessibilityLabel={label}
+      />
+      {suffix && value !== undefined ? (
+        <Typography variant="body2" weight="SEMIBOLD">
+          {suffix}
+        </Typography>
+      ) : null}
+    </View>
   </View>
 );
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: THEME_COLORS.BACKGROUND },
+  container: { flex: 1, backgroundColor: THEME_COLORS.SURFACE },
   header: {
     minHeight: 56,
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: SPACING_TOKENS.MD,
+    gap: 12,
+    paddingHorizontal: 16,
     borderBottomWidth: 1,
-    borderBottomColor: THEME_COLORS.DIVIDER,
-    backgroundColor: THEME_COLORS.SURFACE,
+    borderBottomColor: THEME_COLORS.BORDER,
   },
-  backButton: {
-    width: 40,
-    height: 40,
-    alignItems: 'flex-start',
-    justifyContent: 'center',
-  },
-  headerTitle: { flex: 1 },
-  content: { padding: SPACING_TOKENS.MD, paddingBottom: SPACING_TOKENS.XL },
-  section: {
-    paddingVertical: SPACING_TOKENS.MD,
-    borderBottomWidth: 1,
-    borderBottomColor: THEME_COLORS.DIVIDER,
-  },
-  sectionHeader: {
+  closeButton: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
+  headerTitle: { flex: 1, fontSize: 18, lineHeight: 26 },
+  content: { paddingHorizontal: 16, paddingTop: 20, paddingBottom: 32 },
+  section: { gap: 12 },
+  sectionSpacing: { marginTop: 36 },
+  sectionHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  sectionTitle: { fontSize: 18, lineHeight: 26 },
+  inputRow: { flexDirection: 'row', gap: 16, marginTop: 8 },
+  numberField: { flex: 1, minWidth: 0, gap: 6 },
+  fieldLabel: { letterSpacing: 0.2 },
+  numberInputBox: {
+    height: 46,
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: SPACING_TOKENS.MD,
-  },
-  inputRow: { flexDirection: 'row', alignItems: 'center', gap: SPACING_TOKENS.SM },
-  inputSeparator: { width: 12, height: 1, backgroundColor: THEME_COLORS.TEXT_PLACEHOLDER },
-  numberField: {
-    flex: 1,
-    minWidth: 0,
-    gap: 4,
-    paddingHorizontal: SPACING_TOKENS.MD,
-    paddingVertical: SPACING_TOKENS.SM,
+    paddingHorizontal: 12,
     borderWidth: 1,
-    borderColor: THEME_COLORS.BORDER,
+    borderColor: OVERLAY_COLORS.FIELD_BORDER,
     borderRadius: BORDER_RADIUS_TOKENS.MD,
-    backgroundColor: THEME_COLORS.SURFACE,
   },
-  numberInput: { height: 24, padding: 0, color: THEME_COLORS.TEXT_PRIMARY, fontSize: 14 },
-  wrapRow: { flexDirection: 'row', flexWrap: 'wrap', gap: SPACING_TOKENS.SM },
-  radiusRow: { flexDirection: 'row', gap: SPACING_TOKENS.SM },
-  radiusButton: {
+  numberInput: {
     flex: 1,
     minWidth: 0,
+    padding: 0,
+    color: THEME_COLORS.TEXT_PRIMARY,
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  wrapRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  chip: {
     height: 40,
-    alignItems: 'center',
     justifyContent: 'center',
+    paddingHorizontal: 16,
     borderWidth: 1,
-    borderColor: THEME_COLORS.BORDER,
-    borderRadius: BORDER_RADIUS_TOKENS.SM,
+    borderColor: OVERLAY_COLORS.FIELD_BORDER,
+    borderRadius: BORDER_RADIUS_TOKENS.FULL,
     backgroundColor: THEME_COLORS.SURFACE,
   },
-  radiusButtonSelected: {
-    borderColor: THEME_COLORS.PRIMARY,
-    backgroundColor: THEME_COLORS.PRIMARY_LIGHT,
+  chipSelected: { borderColor: THEME_COLORS.PRIMARY, backgroundColor: THEME_COLORS.PRIMARY_LIGHT },
+  schoolRow: {
+    height: 52,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingHorizontal: 14,
+    borderWidth: 1,
+    borderColor: OVERLAY_COLORS.FIELD_BORDER,
+    borderRadius: BORDER_RADIUS_TOKENS.MD,
   },
+  schoolName: { flex: 1, minWidth: 0 },
   validationBox: {
-    marginTop: SPACING_TOKENS.MD,
-    padding: SPACING_TOKENS.MD,
+    marginTop: 24,
+    padding: 12,
     borderRadius: BORDER_RADIUS_TOKENS.SM,
     backgroundColor: THEME_COLORS.ERROR_LIGHT,
   },
   footer: {
     flexDirection: 'row',
-    gap: SPACING_TOKENS.SM,
-    padding: SPACING_TOKENS.MD,
+    gap: 12,
+    paddingHorizontal: 16,
+    paddingTop: 14,
     borderTopWidth: 1,
-    borderTopColor: THEME_COLORS.DIVIDER,
+    borderTopColor: THEME_COLORS.BORDER,
     backgroundColor: THEME_COLORS.SURFACE,
   },
   footerButton: { flex: 1 },
-  applyButton: { flex: 1.6 },
+  resetButton: { borderColor: THEME_COLORS.PRIMARY, backgroundColor: THEME_COLORS.SURFACE },
+  resetButtonText: { color: THEME_COLORS.PRIMARY_DARK },
+  applyButton: { flex: 2.1 },
 });

@@ -1,27 +1,27 @@
 import { memo, useMemo } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
-import { BORDER_RADIUS_TOKENS, THEME_COLORS } from '@theme';
+import { GraduationCap } from 'lucide-react-native';
+import { BORDER_RADIUS_TOKENS, OVERLAY_COLORS, THEME_COLORS } from '@theme';
 import { Typography } from '@ui';
-import type { SearchListingItem, SearchListingLocation } from '../types';
+import type { SearchListingItem, SearchListingLocation, SearchSchool } from '../types';
+import { formatShortPrice } from '../utils';
 
 interface SearchResultsMapProps {
   listings: SearchListingItem[];
   selectedListingId: string | null;
   userLocation?: SearchListingLocation;
+  school?: SearchSchool;
   onSelectListing: (listingId: string) => void;
+  onPressMap?: () => void;
   onRegionChange: (location: SearchListingLocation) => void;
 }
-
-const formatShortPrice = (price: number) => {
-  const priceInMillions = price / 1000000;
-
-  return `${Number.isInteger(priceInMillions) ? priceInMillions : priceInMillions.toFixed(1)}tr`;
-};
 
 const SearchResultsMapComponent = ({
   listings,
   selectedListingId,
+  school,
   onSelectListing,
+  onPressMap,
 }: SearchResultsMapProps) => {
   const markers = useMemo(
     () => listings.filter((listing) => listing.location !== undefined),
@@ -29,14 +29,23 @@ const SearchResultsMapComponent = ({
   );
 
   return (
-    <View style={styles.map}>
+    <Pressable style={styles.map} onPress={onPressMap} accessible={false}>
+      <View style={styles.tint} />
       <View style={[styles.road, styles.horizontalRoad]} />
       <View style={[styles.road, styles.verticalRoad]} />
-      <View style={[styles.road, styles.diagonalRoad]} />
+      <View style={[styles.road, styles.secondaryRoad]} />
+      {school ? (
+        <View style={styles.schoolMarker}>
+          <GraduationCap size={12} color={THEME_COLORS.WHITE} />
+          <Typography variant="tiny" weight="SEMIBOLD" color={THEME_COLORS.WHITE}>
+            {school.shortName}
+          </Typography>
+        </View>
+      ) : null}
       {markers.map((listing, index) => {
         const isSelected = listing.id === selectedListingId;
-        const left = `${10 + ((index * 23) % 76)}%` as `${number}%`;
-        const top = `${12 + ((index * 31) % 68)}%` as `${number}%`;
+        const left = `${10 + ((index * 23) % 66)}%` as `${number}%`;
+        const top = `${14 + ((index * 31) % 50)}%` as `${number}%`;
 
         return (
           <Pressable
@@ -47,7 +56,7 @@ const SearchResultsMapComponent = ({
             accessibilityLabel={`${listing.title}, ${formatShortPrice(listing.price)}`}
           >
             <Typography
-              variant="caption"
+              variant="label"
               weight="BOLD"
               color={isSelected ? THEME_COLORS.WHITE : THEME_COLORS.TEXT_PRIMARY}
             >
@@ -56,39 +65,44 @@ const SearchResultsMapComponent = ({
           </Pressable>
         );
       })}
-    </View>
+    </Pressable>
   );
 };
 
 export const SearchResultsMap = memo(SearchResultsMapComponent);
 
 const styles = StyleSheet.create({
-  map: { flex: 1, overflow: 'hidden', backgroundColor: '#E8EDE5' },
-  road: { position: 'absolute', backgroundColor: THEME_COLORS.SURFACE },
-  horizontalRoad: { left: 0, right: 0, top: '54%', height: 14 },
-  verticalRoad: { top: 0, bottom: 0, left: '42%', width: 12 },
-  diagonalRoad: {
-    top: '20%',
-    left: '-10%',
-    width: '125%',
-    height: 9,
-    transform: [{ rotate: '-18deg' }],
+  map: { flex: 1, overflow: 'hidden', backgroundColor: OVERLAY_COLORS.MAP_LAND },
+  tint: { top: 0, right: 0, bottom: 0, left: 0, backgroundColor: OVERLAY_COLORS.MAP_TINT },
+  road: { position: 'absolute', backgroundColor: THEME_COLORS.WHITE },
+  horizontalRoad: { left: 0, right: 0, top: '38%', height: 12 },
+  verticalRoad: { top: 0, bottom: 0, left: '25%', width: 11 },
+  secondaryRoad: { top: 0, bottom: 0, left: '72%', width: 7 },
+  schoolMarker: {
+    position: 'absolute',
+    top: '28%',
+    left: '11%',
+    height: 28,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingHorizontal: 9,
+    borderRadius: BORDER_RADIUS_TOKENS.FULL,
+    backgroundColor: THEME_COLORS.TEXT_PRIMARY,
   },
   marker: {
     position: 'absolute',
-    minWidth: 54,
-    height: 32,
+    minWidth: 50,
+    height: 30,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 9,
-    borderWidth: 1,
-    borderColor: THEME_COLORS.BORDER,
+    paddingHorizontal: 12,
     borderRadius: BORDER_RADIUS_TOKENS.FULL,
     backgroundColor: THEME_COLORS.SURFACE,
-    shadowColor: THEME_COLORS.BLACK,
+    shadowColor: OVERLAY_COLORS.SHADOW,
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.16,
+    shadowOpacity: 0.18,
     shadowRadius: 4,
   },
-  selectedMarker: { borderColor: THEME_COLORS.PRIMARY, backgroundColor: THEME_COLORS.PRIMARY },
+  selectedMarker: { backgroundColor: THEME_COLORS.PRIMARY },
 });
