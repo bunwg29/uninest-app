@@ -10,7 +10,7 @@
 
 Tab **Tìm trọ** gọi `GET /api/v1/rooms` và hiển thị toàn bộ phòng từ dữ liệu seed, gồm ảnh đại diện, tên, địa chỉ, giá và diện tích. Giao diện có trạng thái loading, lỗi/thử lại, rỗng và pull-to-refresh. Nút **Đặt lịch xem phòng** truyền `resourceId` sang luồng booking; màn đặt lịch tự tải lại chi tiết bằng `GET /api/v1/rooms/:id`.
 
-Trước khi kiểm thử thủ công, chạy `npm run seed -- rooms` trong repository backend. Có thể đăng nhập bằng tài khoản mẫu `0900000001` / `UniNest@123`.
+Trước khi kiểm thử thủ công, chạy `npm run seed -- rooms` trong repository backend. Tài khoản mẫu `0900000001` có mật khẩu mặc định khai báo trong seeder của backend (`rooms.seeder.ts`); đặt mật khẩu đó vào biến môi trường `E2E_LOGIN_PASSWORD` (và `E2E_LOGIN_PHONE` nếu đổi tài khoản) trước khi chạy `npm run test:e2e`.
 
 ## Luồng Booking
 
