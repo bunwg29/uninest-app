@@ -6,7 +6,7 @@ import type { MainTabParamList } from '../types';
 import { HomeScreen, LandlordListingsScreen, LandlordPlaceholderScreen } from '@features/listings';
 import { SearchScreen } from '@features/search';
 import { AiChatScreen } from '@features/ai-chat';
-import { MessagesScreen } from '@features/chat';
+import { MessagesScreen, useChatSummary } from '@features/chat';
 import { ProfileScreen } from '@features/auth';
 import { useRoleGuard } from '@features/auth';
 import { LandlordTabNavigator } from './LandlordTabNavigator';
@@ -18,6 +18,7 @@ const TAB_ICON_SIZE = 22;
 
 export const MainTabNavigator = () => {
   const { isLandlord } = useRoleGuard();
+  const { data: chatSummary } = useChatSummary(!isLandlord);
   const insets = useSafeAreaInsets();
   const bottomPadding = Math.max(insets.bottom, 8);
 
@@ -78,7 +79,7 @@ export const MainTabNavigator = () => {
         component={MessagesScreen}
         options={{
           title: 'Tin nhắn',
-          tabBarBadge: 2,
+          tabBarBadge: chatSummary?.unreadMessages ? chatSummary.unreadMessages : undefined,
           tabBarBadgeStyle: BOTTOM_TAB_STYLES.badge,
           tabBarIcon: ({ color }) => <MessageSquare size={TAB_ICON_SIZE} color={color} />,
         }}
