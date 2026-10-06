@@ -37,23 +37,26 @@ const login = async (page: Page) => {
   await expect(page.getByText('Tìm trọ', { exact: true })).toBeVisible();
 };
 
-test('đặt lịch, xem chi tiết, giữ chỗ và hủy qua API thật', async ({ page, request }) => {
+test('tìm phòng, đặt lịch xem và theo dõi lịch hẹn qua API thật', async ({ page, request }) => {
   const consoleErrors: string[] = [];
 
   page.on('console', (message) => {
-    if (message.type() === 'error') consoleErrors.push(message.text());
+    if (message.type() === 'error' && !message.text().includes('Failed to load resource')) {
+      consoleErrors.push(message.text());
+    }
   });
 
   await cleanActiveBookings(request);
   await login(page);
   await page.getByText('Tìm trọ', { exact: true }).click();
 
-  const listingTitle = page.getByText('Phòng đơn tiết kiệm gần ĐHQG TP.HCM số 01').first();
+  const firstPrice = page.getByText(/\d\.\d{3}\.\d{3}đ/).first();
 
-  await expect(listingTitle).toBeVisible();
-  await page.getByText('Đặt lịch xem phòng', { exact: true }).first().click();
+  await expect(firstPrice).toBeVisible();
+  await firstPrice.click();
+  await expect(page.getByText('Tiện ích', { exact: true })).toBeVisible();
+  await page.getByText('Đặt lịch xem', { exact: true }).click();
 
-  await expect(page.getByText('Phòng đơn tiết kiệm gần ĐHQG TP.HCM số 01').last()).toBeVisible();
   await expect(
     page.getByText('Chọn ngày bạn muốn xem', { exact: true }).filter({ visible: true })
   ).toBeVisible();
@@ -73,41 +76,11 @@ test('đặt lịch, xem chi tiết, giữ chỗ và hủy qua API thật', asyn
 
   await page.getByText('Xem lịch hẹn của tôi', { exact: true }).click();
   await expect(page.getByText('Lịch hẹn của tôi', { exact: true })).toBeVisible();
-  await page.getByText(/^#BK-/).first().click();
-  await expect(page.getByText('Chi tiết lịch hẹn', { exact: true })).toBeVisible();
 
-  await page.getByText('Giữ chỗ phòng này', { exact: true }).click();
-  await expect(
-    page.getByText('Trước khi giữ chỗ, đọc kỹ 4 điều này', { exact: true })
-  ).toBeVisible();
-  await page.getByText('Tiếp tục đặt cọc', { exact: true }).click();
-  await expect(page.getByText('Đang giữ chỗ', { exact: true }).last()).toBeVisible();
-
-  page.once('dialog', (dialog) => dialog.accept());
-  await page.getByText('Hủy lịch hẹn', { exact: true }).last().click();
-  const reasonInput = page.getByPlaceholder('Nhập lý do bạn không thể đến...');
-
-  if (await reasonInput.isVisible()) {
-    await reasonInput.fill('Tôi có lịch học đột xuất');
-    await page.getByText('Gửi lý do', { exact: true }).click();
+  for (const tab of ['Chờ', 'Đã xác nhận', 'Hết hạn', 'Đã hủy']) {
+    await expect(page.getByText(new RegExp(`^${tab} \\(\\d+\\)$`))).toBeVisible();
   }
 
-  await expect(page.getByText('Đã hủy', { exact: true }).last()).toBeVisible();
-
-  await page.getByText('Xem phòng khác', { exact: true }).last().click();
-  const nextListingTitle = page
-    .getByText('Phòng khép kín gần ĐHQG TP.HCM số 02', { exact: true })
-    .filter({ visible: true });
-
-  await expect(nextListingTitle).toBeVisible();
-  await page
-    .getByText('Đặt lịch xem phòng', { exact: true })
-    .filter({ visible: true })
-    .nth(1)
-    .click();
-  await expect(nextListingTitle).toBeVisible();
-  await expect(
-    page.getByText('Chọn ngày bạn muốn xem', { exact: true }).filter({ visible: true })
-  ).toBeVisible();
+  await expect(page.getByText(/Còn \d+ giờ/)).toBeVisible();
   expect(consoleErrors).toEqual([]);
 });

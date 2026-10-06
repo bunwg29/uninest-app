@@ -16,6 +16,8 @@ export const useRecordListingView = (id: string) => {
   return useMutation({
     mutationFn: () => listingService.recordListingView(id),
     onSuccess: (response) => {
+      if (response.viewCount === null) return;
+
       queryClient.setQueryData(
         [...LISTING_DETAIL_QUERY_KEY, id],
         (current: { viewCount: number } | undefined) =>
@@ -24,3 +26,9 @@ export const useRecordListingView = (id: string) => {
     },
   });
 };
+
+export const useReportListing = (id: string) =>
+  useMutation({
+    mutationFn: ({ reason, note }: { reason: string; note?: string }) =>
+      listingService.reportListing(id, reason, note),
+  });

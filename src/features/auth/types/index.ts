@@ -25,6 +25,7 @@ export interface Profile {
   bio?: string | null;
   interestedAreas: string[];
   role: UserRole;
+  verificationStatus?: 'pending_verification' | 'verified' | null;
   stats: {
     savedRooms: number;
     appointments: number;

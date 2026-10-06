@@ -48,4 +48,4 @@ export const AMENITY_DISPLAY_LIST = [
   { id: 16, group: 'Phòng', name: 'Thang máy' },
 ] as const;
 
-export const SUPPORTED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp'] as const;
+export const SUPPORTED_IMAGE_TYPES = ['image/jpeg', 'image/png'] as const;

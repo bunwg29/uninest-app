@@ -50,9 +50,22 @@ jest.mock('../src/features/booking/hooks', () => ({
   useCancelBooking: () => mockCancel,
   useHoldBooking: () => mockHold,
 }));
-jest.mock('@features/search', () => ({
-  useRoom: () => mockRoomQuery,
+jest.mock('@features/listings', () => ({
+  useListingDetail: () => mockRoomQuery,
 }));
+jest.mock('@features/chat', () => ({
+  useOpenListingChat: () => ({ openChat: jest.fn(), isOpening: false }),
+}));
+
+const toListingDetail = (room) => ({
+  id: room.id,
+  title: room.title,
+  price: room.price,
+  deposit: room.deposit,
+  address: { fullAddress: room.address },
+  images: room.imageUrl ? [{ id: 'img', url: room.imageUrl, isCover: true, sortOrder: 0 }] : [],
+  availability: 'available',
+});
 
 const resource = {
   id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
@@ -112,7 +125,7 @@ describe('Các màn hình Booking', () => {
       refetch: mockRefetch,
     };
     mockRoomQuery = {
-      data: resource,
+      data: toListingDetail(resource),
       isLoading: false,
       isError: false,
       refetch: mockRefetch,
@@ -152,7 +165,7 @@ describe('Các màn hình Booking', () => {
     const nextRoom = { ...resource, id: 'cccccccc-cccc-4ccc-8ccc-cccccccccccc' };
 
     mockRouteParams = { resourceId: nextRoom.id };
-    mockRoomQuery = { ...mockRoomQuery, data: nextRoom };
+    mockRoomQuery = { ...mockRoomQuery, data: toListingDetail(nextRoom) };
     const screen = await render(<BookingNewScreen />);
 
     await waitFor(() => expect(mockFlowState.startBooking).toHaveBeenCalledTimes(1));
@@ -246,9 +259,12 @@ describe('Các màn hình Booking', () => {
     await fireEvent.press(screen.getByText('Đã xác nhận (0)'));
 
     expect(mockNavigation.navigate).toHaveBeenCalledWith('BookingDetail', { id: mockBooking.id });
-    expect(isInTab('holding', 'pending')).toBe(true);
+    expect(isInTab('pending', 'pending')).toBe(true);
+    expect(isInTab('holding', 'confirmed')).toBe(true);
     expect(isInTab('confirmed', 'confirmed')).toBe(true);
-    expect(isInTab('expired', 'cancelled')).toBe(true);
+    expect(isInTab('expired', 'expired')).toBe(true);
+    expect(isInTab('cancelled', 'cancelled')).toBe(true);
+    expect(isInTab('rejected', 'cancelled')).toBe(true);
   });
 
   it('hiển thị chi tiết xác nhận và mở Google Calendar', async () => {
@@ -338,12 +354,21 @@ describe('Các màn hình Booking', () => {
   });
 
   it('hiển thị bốn quy tắc và tạo yêu cầu giữ chỗ', async () => {
+    mockDetailQuery = { ...mockDetailQuery, data: { ...mockBooking, status: 'confirmed' } };
     const screen = await render(<BookingHoldScreen />);
 
     await fireEvent.press(screen.getByText('Tiếp tục đặt cọc'));
 
     expect(screen.getByText('Trước khi giữ chỗ, đọc kỹ 4 điều này')).toBeTruthy();
     expect(mockHold.mutateAsync).toHaveBeenCalledWith(mockBooking.id);
+  });
+
+  it('không cho giữ chỗ khi lịch hẹn chưa được Chủ trọ xác nhận', async () => {
+    const screen = await render(<BookingHoldScreen />);
+
+    await fireEvent.press(screen.getByText('Tiếp tục đặt cọc'));
+
+    expect(mockHold.mutateAsync).not.toHaveBeenCalled();
   });
 
   it('bao phủ card, badge và tiện ích định dạng', async () => {

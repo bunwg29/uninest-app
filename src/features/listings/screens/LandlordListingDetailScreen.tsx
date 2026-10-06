@@ -38,6 +38,7 @@ const STATUS_LABELS: Record<LandlordListingStatus, string> = {
   rejected: 'BỊ TỪ CHỐI',
   hidden: 'ĐÃ ẨN',
   expired: 'HẾT HẠN',
+  paused: 'NGỪNG NHẬN YÊU CẦU',
 };
 
 const STATUS_VARIANTS: Record<
@@ -49,6 +50,7 @@ const STATUS_VARIANTS: Record<
   rejected: 'danger',
   hidden: 'neutral',
   expired: 'neutral',
+  paused: 'neutral',
 };
 
 export const LandlordListingDetailScreen = () => {

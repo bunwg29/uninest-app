@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import type { AddComparisonResult, ComparisonItem } from '../types';
 
-export const MAX_COMPARISON_ITEMS = 5;
+export const MAX_COMPARISON_ITEMS = 4;
 
 interface ComparisonState {
   items: ComparisonItem[];

@@ -6,6 +6,7 @@ import {
   RefreshControl,
   StyleSheet,
   TouchableOpacity,
+  useWindowDimensions,
   View,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
@@ -14,6 +15,7 @@ import * as Location from 'expo-location';
 import {
   AlertTriangle,
   ArrowDownUp,
+  LayoutGrid,
   List,
   Map as MapIcon,
   MapPin,
@@ -31,13 +33,24 @@ import {
   Typography,
 } from '@ui';
 import { SearchFilterSheet, SearchHeader, SearchResultsMap, SearchSortSheet } from '../components';
-import { useDebouncedValue, useSearchListings } from '../hooks';
+import { useAuth } from '@features/auth';
+import { useDebouncedValue, useFavoriteIds, useSearchListings, useToggleFavorite } from '../hooks';
 import { useSearchStore } from '../store';
 import { SEARCH_SORT_OPTIONS, type SearchFilters, type SearchListingItem } from '../types';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 const SEARCH_DEBOUNCE_MS = 400;
+
+const getCardStatus = (listing: SearchListingItem) => {
+  if (listing.availability === 'rented') return 'rented';
+
+  if (listing.availability === 'paused') return 'paused';
+
+  if (listing.availability === 'holding' || listing.isReserved) return 'holding';
+
+  return listing.isHighlighted ? 'featured' : 'available';
+};
 
 const formatCompactPrice = (price?: number) => {
   if (price === undefined) return undefined;
@@ -85,7 +98,6 @@ export const SearchScreen = () => {
     draftFilters,
     viewMode,
     selectedListingId,
-    savedListingIds,
     isFilterVisible,
     isSortVisible,
     setKeyword,
@@ -95,14 +107,20 @@ export const SearchScreen = () => {
     resetDraftFilters,
     applyDraftFilters,
     clearAppliedFilters,
+    setRadius,
     openSort,
     closeSort,
     setSortBy,
     setViewMode,
     setSelectedListingId,
     setLocation,
-    toggleSavedListing,
   } = useSearchStore();
+  const { role } = useAuth();
+  const { width } = useWindowDimensions();
+  const favoriteIdsQuery = useFavoriteIds();
+  const toggleFavorite = useToggleFavorite();
+  const favoriteIds = useMemo(() => new Set(favoriteIdsQuery.data ?? []), [favoriteIdsQuery.data]);
+  const gridColumns = width >= 900 ? 4 : width >= 600 ? 3 : 2;
   const [keywordInput, setKeywordInput] = useState(appliedFilters.keyword);
   const [filterValidationMessage, setFilterValidationMessage] = useState<string>();
   const [isLocating, setIsLocating] = useState(false);
@@ -132,8 +150,8 @@ export const SearchScreen = () => {
   const selectedSortOption = SEARCH_SORT_OPTIONS.find(
     (option) => option.value === appliedFilters.sortBy
   );
-  const sortLabel = selectedSortOption?.label ?? 'Mới nhất';
-  const compactSortLabel = selectedSortOption?.compactLabel ?? 'Mới nhất';
+  const sortLabel = selectedSortOption?.label ?? 'Phù hợp nhất';
+  const compactSortLabel = selectedSortOption?.compactLabel ?? 'Phù hợp';
   const priceLabel = useMemo(() => {
     const minimum = formatCompactPrice(appliedFilters.minPrice);
     const maximum = formatCompactPrice(appliedFilters.maxPrice);
@@ -148,6 +166,7 @@ export const SearchScreen = () => {
     appliedFilters.roomTypes.length > 0,
     appliedFilters.amenities.length > 0,
     appliedFilters.radius !== undefined && appliedFilters.radius !== 5,
+    appliedFilters.schoolId !== undefined,
   ].filter(Boolean).length;
 
   useEffect(() => {
@@ -226,6 +245,16 @@ export const SearchScreen = () => {
     toast.info('Đã cập nhật kết quả theo vùng bản đồ.');
   };
 
+  const handleToggleSaved = (listingId: string) => {
+    if (role !== 'student') {
+      toast.info('Chỉ Sinh viên mới có thể lưu phòng.');
+
+      return;
+    }
+
+    toggleFavorite.mutate({ listingId, isSaved: favoriteIds.has(listingId) });
+  };
+
   const renderListing = ({ item }: { item: SearchListingItem }) => (
     <ListingCard
       id={item.id}
@@ -238,15 +267,27 @@ export const SearchScreen = () => {
       address={item.address}
       rating={item.rating}
       reviewCount={item.reviewCount}
-      status={item.isReserved ? 'holding' : item.isHighlighted ? 'featured' : 'available'}
-      isSaved={savedListingIds.includes(item.id)}
+      status={getCardStatus(item)}
+      isSaved={favoriteIds.has(item.id)}
       onPress={() => handleOpenListing(item)}
-      onBookmarkPress={() => toggleSavedListing(item.id)}
-      variant="horizontal"
-      compact
-      style={styles.listingCard}
+      onBookmarkPress={() => handleToggleSaved(item.id)}
+      variant={viewMode === 'grid' ? 'vertical' : 'horizontal'}
+      compact={viewMode !== 'grid'}
+      style={viewMode === 'grid' ? styles.gridCard : styles.listingCard}
     />
   );
+
+  const handleRelaxSearch = () => {
+    const suggestion = searchQuery.data?.pages[0]?.suggestion;
+
+    if (suggestion?.type === 'expand_radius' && suggestion.radiusKm) {
+      setRadius(suggestion.radiusKm);
+
+      return;
+    }
+
+    clearAppliedFilters();
+  };
 
   const renderListContent = () => {
     if (searchQuery.isPending) {
@@ -277,9 +318,16 @@ export const SearchScreen = () => {
         <EmptyState
           icon={<SearchX size={34} color={THEME_COLORS.TEXT_PLACEHOLDER} />}
           title="Không tìm thấy phòng phù hợp"
-          description="Thử thay đổi khu vực, khoảng giá hoặc xóa bớt bộ lọc."
-          actionTitle="Xóa bớt bộ lọc"
-          onAction={clearAppliedFilters}
+          description={
+            searchQuery.data?.pages[0]?.suggestion?.message ??
+            'Thử thay đổi khu vực, khoảng giá hoặc xóa bớt bộ lọc.'
+          }
+          actionTitle={
+            searchQuery.data?.pages[0]?.suggestion?.type === 'expand_radius'
+              ? 'Mở rộng bán kính'
+              : 'Xóa bớt bộ lọc'
+          }
+          onAction={handleRelaxSearch}
           style={styles.centeredState}
         />
       );
@@ -287,7 +335,10 @@ export const SearchScreen = () => {
 
     return (
       <FlatList
+        key={viewMode === 'grid' ? `grid-${gridColumns}` : 'list'}
         style={styles.resultsList}
+        numColumns={viewMode === 'grid' ? gridColumns : 1}
+        columnWrapperStyle={viewMode === 'grid' ? styles.gridRow : undefined}
         data={listings}
         keyExtractor={(item) => item.id}
         renderItem={renderListing}
@@ -382,10 +433,10 @@ export const SearchScreen = () => {
             areaSquareMeters={selectedListing.area}
             distanceMeters={selectedListing.distanceMeters ?? undefined}
             address={selectedListing.address}
-            status={selectedListing.isReserved ? 'holding' : 'available'}
-            isSaved={savedListingIds.includes(selectedListing.id)}
+            status={getCardStatus(selectedListing)}
+            isSaved={favoriteIds.has(selectedListing.id)}
             onPress={() => handleOpenListing(selectedListing)}
-            onBookmarkPress={() => toggleSavedListing(selectedListing.id)}
+            onBookmarkPress={() => handleToggleSaved(selectedListing.id)}
             variant="horizontal"
             style={styles.previewCard}
           />
@@ -455,6 +506,18 @@ export const SearchScreen = () => {
               />
             </TouchableOpacity>
             <TouchableOpacity
+              style={[styles.viewButton, viewMode === 'grid' && styles.viewButtonSelected]}
+              onPress={() => setViewMode('grid')}
+              accessibilityRole="radio"
+              accessibilityState={{ selected: viewMode === 'grid' }}
+              accessibilityLabel="Xem dạng lưới"
+            >
+              <LayoutGrid
+                size={17}
+                color={viewMode === 'grid' ? THEME_COLORS.PRIMARY : THEME_COLORS.TEXT_PLACEHOLDER}
+              />
+            </TouchableOpacity>
+            <TouchableOpacity
               style={[styles.viewButton, viewMode === 'map' && styles.viewButtonSelected]}
               onPress={() => setViewMode('map')}
               accessibilityRole="radio"
@@ -471,7 +534,7 @@ export const SearchScreen = () => {
       </View>
 
       <View style={styles.content}>
-        {viewMode === 'list' ? renderListContent() : renderMapContent()}
+        {viewMode === 'map' ? renderMapContent() : renderListContent()}
       </View>
 
       <SearchFilterSheet
@@ -559,6 +622,8 @@ const styles = StyleSheet.create({
     paddingBottom: 96,
   },
   listingCard: { marginBottom: SPACING_TOKENS.SM + 4 },
+  gridRow: { gap: SPACING_TOKENS.SM + 4 },
+  gridCard: { flex: 1, marginBottom: SPACING_TOKENS.SM + 4 },
   loadMore: { marginVertical: SPACING_TOKENS.MD },
   mapContainer: { flex: 1, overflow: 'hidden' },
   mapLoading: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: SPACING_TOKENS.SM },

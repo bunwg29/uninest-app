@@ -3,6 +3,8 @@ import {
   ActivityIndicator,
   FlatList,
   Image,
+  ScrollView,
+  Share,
   StyleSheet,
   TouchableOpacity,
   useWindowDimensions,
@@ -11,46 +13,102 @@ import {
 import { useNavigation, useRoute } from '@react-navigation/native';
 import type { RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import MapView, { Marker } from 'react-native-maps';
 import {
+  ArrowLeft,
   CalendarCheck,
+  Clock3,
   Eye,
+  Flag,
+  Footprints,
   Heart,
   ImageOff,
   MapPin,
+  MessageSquare,
   Scale,
+  Share2,
   ShieldCheck,
   Star,
   Users,
 } from 'lucide-react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AppError, formatVND } from '@core';
 import { useToast } from '@hooks';
 import type { RootStackParamList } from '@navigation';
 import { BORDER_RADIUS_TOKENS, SPACING_TOKENS, THEME_COLORS } from '@theme';
-import { Avatar, Button, HeaderBar, ScreenContainer, Typography } from '@ui';
+import { Avatar, Badge, Button, HeaderBar, ScreenContainer, Typography } from '@ui';
 import { useAuth } from '@features/auth';
+import { useHoldableBooking } from '@features/booking/hooks';
+import { ImageViewerModal } from '@features/chat/components/ImageViewerModal';
+import { useOpenListingChat } from '@features/chat/hooks/useOpenListingChat';
 import { MAX_COMPARISON_ITEMS, useComparisonStore } from '@features/comparison';
-import { useListingDetail, useRecordListingView } from '../hooks';
-import type { ListingDetailImage } from '../types';
+import {
+  SEARCH_SCHOOLS,
+  estimateWalkingMinutes,
+  formatDistanceMeters,
+  haversineMeters,
+  useSearchStore,
+  useToggleFavorite,
+} from '@features/search';
+import { useListingDetail, useRecordListingView, useReportListing } from '../hooks';
+import {
+  AmenitiesModal,
+  ListingLocationMap,
+  ReportListingModal,
+  getAmenityIcon,
+  type ListingReportReason,
+} from '../components';
+import type { ListingAvailability, ListingDetailImage } from '../types';
 import { ROOM_TYPE_OPTIONS } from '../types/constants';
 
 type DetailRoute = RouteProp<RootStackParamList, 'ListingDetail'>;
 type DetailNavigation = NativeStackNavigationProp<RootStackParamList>;
 
+const MAX_CONTENT_WIDTH = 720;
+const MAX_GALLERY_HEIGHT = 360;
+const VISIBLE_AMENITY_COUNT = 6;
+const ACTION_BAR_HEIGHT = 76;
+
+const AVAILABILITY_BADGES: Record<
+  ListingAvailability,
+  { label: string; variant: 'available' | 'holding' | 'neutral' }
+> = {
+  available: { label: 'CÒN TRỐNG', variant: 'available' },
+  holding: { label: 'ĐANG GIỮ CHỖ', variant: 'holding' },
+  rented: { label: 'ĐÃ CHO THUÊ', variant: 'neutral' },
+  paused: { label: 'NGỪNG NHẬN YÊU CẦU', variant: 'neutral' },
+};
+
+const formatShortDate = (value: string) => {
+  const date = new Date(value);
+
+  return `${String(date.getDate()).padStart(2, '0')}/${String(date.getMonth() + 1).padStart(2, '0')}`;
+};
+
 export const ListingDetailScreen = () => {
   const route = useRoute<DetailRoute>();
   const navigation = useNavigation<DetailNavigation>();
+  const insets = useSafeAreaInsets();
   const { role } = useAuth();
   const toast = useToast();
   const { width } = useWindowDimensions();
   const listingId = route.params.id;
   const detailQuery = useListingDetail(listingId);
   const viewMutation = useRecordListingView(listingId);
+  const reportMutation = useReportListing(listingId);
+  const toggleFavorite = useToggleFavorite();
+  const { openChat, isOpening } = useOpenListingChat();
+  const isStudent = role === 'student';
+  const holdable = useHoldableBooking(listingId, isStudent);
   const recordedListingId = useRef<string | null>(null);
   const comparisonItems = useComparisonStore((state) => state.items);
   const addComparison = useComparisonStore((state) => state.add);
-  const removeComparison = useComparisonStore((state) => state.remove);
+  const appliedFilters = useSearchStore((state) => state.appliedFilters);
   const isCompared = comparisonItems.some((item) => item.id === listingId);
+  const [viewerIndex, setViewerIndex] = useState<number | null>(null);
+  const [isAmenitiesVisible, setIsAmenitiesVisible] = useState(false);
+  const [isReportVisible, setIsReportVisible] = useState(false);
+  const columnWidth = Math.min(width, MAX_CONTENT_WIDTH);
+  const galleryHeight = Math.min(Math.round(columnWidth * 0.8), MAX_GALLERY_HEIGHT);
 
   const handleBack = () => {
     if (navigation.canGoBack()) {
@@ -71,14 +129,13 @@ export const ListingDetailScreen = () => {
     viewMutation.mutate();
   }, [detailQuery.data, listingId, viewMutation]);
 
-  const handleToggleComparison = () => {
+  const handleCompare = () => {
     if (!detailQuery.data) {
       return;
     }
 
     if (isCompared) {
-      removeComparison(listingId);
-      toast.info('Đã bỏ tin khỏi danh sách so sánh');
+      navigation.navigate('Comparison');
 
       return;
     }
@@ -87,16 +144,78 @@ export const ListingDetailScreen = () => {
 
     if (result === 'limit-reached') {
       toast.warning(
-        `Bạn chỉ có thể so sánh tối đa ${MAX_COMPARISON_ITEMS} phòng. Hãy bỏ bớt một phòng để thêm phòng khác.`
+        `Danh sách so sánh đã đạt giới hạn ${MAX_COMPARISON_ITEMS} phòng. Hãy bỏ bớt một phòng để thêm phòng khác.`
+      );
+      navigation.navigate('Comparison');
+
+      return;
+    }
+
+    toast.success('Đã thêm tin vào danh sách so sánh');
+  };
+
+  const handleToggleFavorite = () => {
+    if (!detailQuery.data) {
+      return;
+    }
+
+    if (!isStudent) {
+      toast.info('Chỉ Sinh viên mới có thể lưu phòng.');
+
+      return;
+    }
+
+    toggleFavorite.mutate({
+      listingId,
+      isSaved: detailQuery.data.isFavorite,
+    });
+  };
+
+  const handleShare = () => {
+    if (!detailQuery.data) {
+      return;
+    }
+
+    void Share.share({
+      message: `${detailQuery.data.title} - ${formatVND(detailQuery.data.price)}/tháng. Xem trên UniNest.`,
+    });
+  };
+
+  const handleHold = () => {
+    if (!holdable.confirmedBooking) {
+      toast.info(
+        holdable.activeBooking
+          ? 'Bạn có thể giữ chỗ sau khi đã đến xem phòng và Chủ trọ đã xác nhận lịch hẹn.'
+          : 'Hãy đặt lịch và đến xem phòng trước khi giữ chỗ.'
       );
 
       return;
     }
 
-    if (result === 'added') {
-      toast.success('Đã thêm tin vào danh sách so sánh');
-    }
+    navigation.navigate('BookingHold', { id: holdable.confirmedBooking.id });
   };
+
+  const handleSubmitReport = (reason: ListingReportReason, note: string) => {
+    reportMutation.mutate(
+      { reason, note },
+      {
+        onSuccess: () => {
+          setIsReportVisible(false);
+          toast.success('Đã gửi báo cáo. Cảm ơn bạn đã giúp UniNest an toàn hơn.');
+        },
+        onError: (error) =>
+          toast.error(error instanceof Error ? error.message : 'Không thể gửi báo cáo'),
+      }
+    );
+  };
+
+  const orderedImages = useMemo(
+    () =>
+      [...(detailQuery.data?.images ?? [])].sort(
+        (first, second) => Number(second.isCover) - Number(first.isCover)
+      ),
+    [detailQuery.data?.images]
+  );
 
   if (detailQuery.isLoading) {
     return (
@@ -140,238 +259,386 @@ export const ListingDetailScreen = () => {
     Number.isFinite(listing.location?.latitude) && Number.isFinite(listing.location?.longitude);
   const roomTypeLabel =
     ROOM_TYPE_OPTIONS.find((option) => option.value === listing.roomType)?.label ?? 'Chưa cập nhật';
+  const availabilityBadge = AVAILABILITY_BADGES[listing.availability];
+  const isHolding = listing.availability === 'holding';
+  const canBook = listing.availability === 'available' || isHolding;
+  const reference = getDistanceReference(appliedFilters);
+  const distanceMeters =
+    reference && hasCoordinates
+      ? haversineMeters(reference, listing.location)
+      : (listing.distanceMeters ?? null);
+  const visibleAmenities = listing.amenities.slice(0, VISIBLE_AMENITY_COUNT);
 
   return (
-    <ScreenContainer keyboardAvoiding={false}>
-      <HeaderBar
-        title="Chi tiết phòng"
-        onBack={handleBack}
-        rightAction={
-          <TouchableOpacity
-            accessibilityLabel="Mở danh sách so sánh"
-            style={styles.compareHeaderButton}
-            onPress={() => navigation.navigate('Comparison')}
-          >
-            <Scale size={22} color={THEME_COLORS.PRIMARY} />
-            {comparisonItems.length > 0 ? (
-              <View style={styles.compareCount}>
-                <Typography variant="tiny" weight="BOLD" color={THEME_COLORS.WHITE}>
-                  {comparisonItems.length}
+    <View style={styles.root}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{
+          paddingBottom: isStudent ? ACTION_BAR_HEIGHT + insets.bottom + SPACING_TOKENS.LG : 0,
+        }}
+      >
+        <View style={styles.column}>
+          <ListingImageGallery
+            images={orderedImages}
+            width={columnWidth}
+            height={galleryHeight}
+            onPressImage={setViewerIndex}
+          />
+
+          <View style={styles.content}>
+            <View style={styles.badgeRow}>
+              <Badge label={availabilityBadge.label} variant={availabilityBadge.variant} />
+            </View>
+
+            <Typography variant="h2" weight="BOLD" style={styles.title}>
+              {listing.title}
+            </Typography>
+
+            <Typography variant="h2" weight="BOLD" colorKey="PRIMARY" style={styles.price}>
+              {formatNullablePrice(listing.price)}
+              <Typography variant="body2" colorKey="TEXT_MUTED">
+                {' / tháng'}
+              </Typography>
+            </Typography>
+
+            <View style={styles.metaRow}>
+              <InfoPill label={formatMeasuredValue(listing.area, 'm²')} />
+              <InfoPill label={formatMeasuredValue(listing.maxOccupants, 'người')} icon="users" />
+              <InfoPill label={roomTypeLabel} />
+              {listing.viewCount !== null ? (
+                <InfoPill label={formatMeasuredValue(listing.viewCount, 'lượt xem')} icon="eye" />
+              ) : null}
+            </View>
+
+            <View style={styles.addressRow}>
+              <MapPin size={18} color={THEME_COLORS.TEXT_MUTED} />
+              <Typography variant="body2" colorKey="TEXT_SECONDARY" style={styles.flexText}>
+                {listing.address?.fullAddress || 'Chưa cập nhật địa chỉ'}
+              </Typography>
+            </View>
+
+            {distanceMeters !== null && reference ? (
+              <View style={styles.distancePill}>
+                <Footprints size={15} color={THEME_COLORS.PRIMARY_DARK} />
+                <Typography variant="caption" weight="SEMIBOLD" colorKey="PRIMARY_DARK">
+                  {`Cách ${reference.label} ${formatDistanceMeters(distanceMeters)} · ~${estimateWalkingMinutes(distanceMeters)} phút đi bộ`}
                 </Typography>
               </View>
             ) : null}
-          </TouchableOpacity>
-        }
-      />
 
-      <FlatList
-        data={[listing]}
-        keyExtractor={(item) => item.id}
-        showsVerticalScrollIndicator={false}
-        renderItem={() => (
-          <View>
-            <ListingImageGallery images={listing.images ?? []} width={width} />
-
-            <View style={styles.content}>
-              <View style={styles.priceRow}>
-                <Typography variant="h2" weight="BOLD" colorKey="PRIMARY">
-                  {formatNullablePrice(listing.price, ' / tháng')}
+            {listing.averageRating !== null && Number.isFinite(listing.averageRating) ? (
+              <View style={styles.ratingRow}>
+                <Star size={16} color={THEME_COLORS.SECONDARY} fill={THEME_COLORS.SECONDARY} />
+                <Typography variant="body2" weight="BOLD">
+                  {listing.averageRating.toFixed(1)}
                 </Typography>
               </View>
+            ) : null}
 
-              <Typography variant="h2" weight="BOLD" style={styles.title}>
-                {listing.title}
-              </Typography>
-
-              <View style={styles.metaRow}>
-                <InfoPill label={formatMeasuredValue(listing.area, 'm²')} />
-                <InfoPill label={formatMeasuredValue(listing.maxOccupants, 'người')} icon="users" />
-                <InfoPill label={formatMeasuredValue(listing.viewCount, 'lượt xem')} icon="eye" />
-              </View>
-
-              <View style={styles.addressRow}>
-                <MapPin size={18} color={THEME_COLORS.TEXT_MUTED} />
-                <Typography variant="body2" colorKey="TEXT_SECONDARY" style={styles.flexText}>
-                  {listing.address?.fullAddress || 'Chưa cập nhật địa chỉ'}
+            {isHolding && listing.hold ? (
+              <View style={styles.holdNotice}>
+                <Clock3 size={18} color={THEME_COLORS.WARNING} />
+                <Typography variant="body2" color={THEME_COLORS.WARNING} style={styles.flexText}>
+                  {`Phòng đang được một bạn khác giữ chỗ đến ${formatShortDate(listing.hold.expiresAt)}. Nếu bạn ấy không hoàn tất, phòng sẽ mở lại. Bạn vẫn nhắn tin hỏi Chủ trọ được.`}
                 </Typography>
               </View>
+            ) : null}
 
-              <Section title="Mô tả">
-                <Typography variant="body1" colorKey="TEXT_SECONDARY">
-                  {listing.description?.trim() || 'Chủ trọ chưa bổ sung mô tả.'}
-                </Typography>
-              </Section>
+            <Section title="Tiện ích">
+              {visibleAmenities.length > 0 ? (
+                <>
+                  <View style={styles.amenityGrid}>
+                    {visibleAmenities.map((amenity) => {
+                      const Icon = getAmenityIcon(amenity.id);
 
-              <Section title="Chi phí và thông tin phòng">
-                <DetailRow label="Loại phòng" value={roomTypeLabel} />
-                <DetailRow label="Tiền cọc" value={formatNullablePrice(listing.deposit)} />
-                <DetailRow
-                  label="Giá điện"
-                  value={formatNullablePrice(listing.electricPrice, ' / kWh')}
-                />
-                <DetailRow
-                  label="Giá nước"
-                  value={formatNullablePrice(listing.waterPrice, ' / m³')}
-                />
-              </Section>
-
-              <Section title="Tiện ích">
-                {listing.amenities?.length ? (
-                  <View style={styles.amenities}>
-                    {listing.amenities.map((amenity) => (
-                      <View key={amenity.id} style={styles.amenityChip}>
-                        <Typography variant="caption" colorKey="TEXT_SECONDARY">
-                          {amenity.name}
-                        </Typography>
-                      </View>
-                    ))}
+                      return (
+                        <View key={amenity.id} style={styles.amenityItem}>
+                          <Icon size={18} color={THEME_COLORS.TEXT_SECONDARY} />
+                          <Typography
+                            variant="body2"
+                            colorKey="TEXT_SECONDARY"
+                            numberOfLines={1}
+                            style={styles.flexText}
+                          >
+                            {amenity.name}
+                          </Typography>
+                        </View>
+                      );
+                    })}
                   </View>
-                ) : (
-                  <Typography variant="body2" colorKey="TEXT_MUTED">
-                    Chưa có thông tin tiện ích.
-                  </Typography>
-                )}
-              </Section>
-
-              <Section title="Vị trí">
-                {hasCoordinates ? (
-                  <View style={styles.mapWrapper}>
-                    <MapView
-                      style={styles.map}
-                      initialRegion={{
-                        latitude: listing.location.latitude,
-                        longitude: listing.location.longitude,
-                        latitudeDelta: 0.01,
-                        longitudeDelta: 0.01,
-                      }}
-                      scrollEnabled={false}
-                      zoomEnabled={false}
-                      rotateEnabled={false}
-                      pitchEnabled={false}
+                  {listing.amenities.length > VISIBLE_AMENITY_COUNT ? (
+                    <TouchableOpacity
+                      onPress={() => setIsAmenitiesVisible(true)}
+                      style={styles.linkButton}
                     >
-                      <Marker
-                        coordinate={listing.location}
-                        title={listing.title}
-                        description={listing.address?.fullAddress}
-                        pinColor={THEME_COLORS.PRIMARY}
-                      />
-                    </MapView>
-                  </View>
-                ) : (
-                  <Typography variant="body2" colorKey="TEXT_MUTED">
-                    Chưa có tọa độ phòng trọ.
-                  </Typography>
-                )}
-              </Section>
+                      <Typography variant="body2" weight="SEMIBOLD" colorKey="PRIMARY">
+                        {`Xem tất cả ${listing.amenities.length} tiện ích`}
+                      </Typography>
+                    </TouchableOpacity>
+                  ) : null}
+                </>
+              ) : (
+                <Typography variant="body2" colorKey="TEXT_MUTED">
+                  Chưa có thông tin tiện ích.
+                </Typography>
+              )}
+            </Section>
 
-              <Section title="Chủ trọ">
-                {listing.landlord ? (
-                  <View style={styles.landlordRow}>
-                    <Avatar
-                      uri={listing.landlord.avatarUrl}
-                      name={listing.landlord.fullName}
-                      size="lg"
-                    />
-                    <View style={styles.landlordInfo}>
-                      <View style={styles.landlordNameRow}>
-                        <Typography variant="body1" weight="BOLD">
-                          {listing.landlord.fullName}
-                        </Typography>
-                        {listing.landlord.isVerified ? (
-                          <ShieldCheck size={17} color={THEME_COLORS.SUCCESS} />
-                        ) : null}
-                      </View>
-                      {listing.landlord.bio ? (
-                        <Typography variant="caption" colorKey="TEXT_MUTED">
-                          {listing.landlord.bio}
-                        </Typography>
+            <Section title="Mô tả">
+              <Typography variant="body1" colorKey="TEXT_SECONDARY">
+                {listing.description?.trim() || 'Chủ trọ chưa bổ sung mô tả.'}
+              </Typography>
+            </Section>
+
+            <Section title="Chi phí và thông tin phòng">
+              <DetailRow label="Loại phòng" value={roomTypeLabel} />
+              <DetailRow label="Tiền cọc" value={formatNullablePrice(listing.deposit)} />
+              <DetailRow
+                label="Giá điện"
+                value={formatNullablePrice(listing.electricPrice, ' / kWh')}
+              />
+              <DetailRow
+                label="Giá nước"
+                value={formatNullablePrice(listing.waterPrice, ' / m³')}
+              />
+            </Section>
+
+            <Section title="Vị trí">
+              {hasCoordinates ? (
+                <View style={styles.mapWrapper}>
+                  <ListingLocationMap
+                    latitude={listing.location.latitude}
+                    longitude={listing.location.longitude}
+                    title={listing.title}
+                    description={listing.address?.fullAddress}
+                  />
+                </View>
+              ) : (
+                <Typography variant="body2" colorKey="TEXT_MUTED">
+                  Chưa có tọa độ phòng trọ.
+                </Typography>
+              )}
+            </Section>
+
+            <Section title="Chủ trọ">
+              {listing.landlord ? (
+                <View style={styles.landlordRow}>
+                  <Avatar
+                    uri={listing.landlord.avatarUrl}
+                    name={listing.landlord.fullName}
+                    size="lg"
+                  />
+                  <View style={styles.landlordInfo}>
+                    <View style={styles.landlordNameRow}>
+                      <Typography variant="body1" weight="BOLD">
+                        {listing.landlord.fullName}
+                      </Typography>
+                      {listing.landlord.isVerified ? (
+                        <ShieldCheck size={17} color={THEME_COLORS.SUCCESS} />
                       ) : null}
                     </View>
+                    {listing.landlord.bio ? (
+                      <Typography variant="caption" colorKey="TEXT_MUTED">
+                        {listing.landlord.bio}
+                      </Typography>
+                    ) : null}
                   </View>
-                ) : (
-                  <Typography variant="body2" colorKey="TEXT_MUTED">
-                    Chưa có thông tin chủ trọ.
-                  </Typography>
-                )}
-              </Section>
+                </View>
+              ) : (
+                <Typography variant="body2" colorKey="TEXT_MUTED">
+                  Chưa có thông tin chủ trọ.
+                </Typography>
+              )}
+            </Section>
 
-              <Section title="Đánh giá">
-                {listing.averageRating === null ||
-                listing.averageRating === undefined ||
-                !Number.isFinite(listing.averageRating) ? (
-                  <Typography variant="body2" colorKey="TEXT_MUTED">
-                    Chưa có dữ liệu đánh giá.
+            <Section title="Đánh giá">
+              {listing.averageRating === null || !Number.isFinite(listing.averageRating) ? (
+                <Typography variant="body2" colorKey="TEXT_MUTED">
+                  Chưa có đánh giá cho tin đăng này.
+                </Typography>
+              ) : (
+                <View style={styles.ratingRow}>
+                  <Star size={20} color={THEME_COLORS.SECONDARY} fill={THEME_COLORS.SECONDARY} />
+                  <Typography variant="h3" weight="BOLD">
+                    {listing.averageRating.toFixed(1)}
                   </Typography>
-                ) : (
-                  <View style={styles.ratingRow}>
-                    <Star size={20} color={THEME_COLORS.SECONDARY} fill={THEME_COLORS.SECONDARY} />
-                    <Typography variant="h3" weight="BOLD">
-                      {listing.averageRating.toFixed(1)}
-                    </Typography>
-                  </View>
-                )}
-              </Section>
+                </View>
+              )}
+            </Section>
 
-              {listing.isFavorite ? (
-                <View style={styles.savedNotice}>
-                  <Heart size={17} color={THEME_COLORS.ERROR} fill={THEME_COLORS.ERROR} />
-                  <Typography variant="caption" colorKey="TEXT_SECONDARY">
-                    Tin này đang nằm trong danh sách yêu thích của bạn.
+            {isStudent ? (
+              <TouchableOpacity
+                onPress={() => setIsReportVisible(true)}
+                style={styles.reportButton}
+                accessibilityRole="button"
+              >
+                <Flag size={16} color={THEME_COLORS.TEXT_MUTED} />
+                <Typography variant="caption" weight="SEMIBOLD" colorKey="TEXT_MUTED">
+                  Báo cáo tin đăng này
+                </Typography>
+              </TouchableOpacity>
+            ) : null}
+          </View>
+        </View>
+      </ScrollView>
+
+      <View
+        pointerEvents="box-none"
+        style={[styles.overlayHeader, { paddingTop: insets.top + SPACING_TOKENS.SM }]}
+      >
+        <View style={styles.overlayRow}>
+          <RoundButton label="Quay lại" onPress={handleBack}>
+            <ArrowLeft size={20} color={THEME_COLORS.TEXT_PRIMARY} />
+          </RoundButton>
+          <View style={styles.overlayActions}>
+            <RoundButton label="Chia sẻ" onPress={handleShare}>
+              <Share2 size={19} color={THEME_COLORS.TEXT_PRIMARY} />
+            </RoundButton>
+            <RoundButton
+              label={listing.isFavorite ? 'Bỏ lưu phòng' : 'Lưu phòng'}
+              onPress={handleToggleFavorite}
+            >
+              <Heart
+                size={19}
+                color={listing.isFavorite ? THEME_COLORS.ERROR : THEME_COLORS.TEXT_PRIMARY}
+                fill={listing.isFavorite ? THEME_COLORS.ERROR : 'transparent'}
+              />
+            </RoundButton>
+            <RoundButton label="So sánh phòng" onPress={handleCompare}>
+              <Scale
+                size={19}
+                color={isCompared ? THEME_COLORS.PRIMARY : THEME_COLORS.TEXT_PRIMARY}
+              />
+              {comparisonItems.length > 0 ? (
+                <View style={styles.compareCount}>
+                  <Typography variant="tiny" weight="BOLD" color={THEME_COLORS.WHITE}>
+                    {comparisonItems.length}
                   </Typography>
                 </View>
               ) : null}
-
-              {role === 'student' && listing.status === 'active' ? (
-                <Button
-                  title="Đặt lịch xem phòng"
-                  fullWidth
-                  leftIcon={<CalendarCheck size={18} color={THEME_COLORS.WHITE} />}
-                  onPress={() => navigation.navigate('BookingNew', { resourceId: listing.id })}
-                  style={styles.bookingButton}
-                />
-              ) : null}
-
-              <Button
-                title={isCompared ? 'Bỏ khỏi so sánh' : 'Thêm vào so sánh'}
-                variant={isCompared ? 'secondary' : 'primary'}
-                fullWidth
-                leftIcon={
-                  <Scale size={18} color={isCompared ? THEME_COLORS.PRIMARY : THEME_COLORS.WHITE} />
-                }
-                onPress={handleToggleComparison}
-                style={styles.compareButton}
-              />
-              {comparisonItems.length > 0 ? (
-                <TouchableOpacity onPress={() => navigation.navigate('Comparison')}>
-                  <Typography variant="body2" weight="SEMIBOLD" colorKey="PRIMARY" align="center">
-                    {`Xem so sánh (${comparisonItems.length}/${MAX_COMPARISON_ITEMS})`}
-                  </Typography>
-                </TouchableOpacity>
-              ) : null}
-            </View>
+            </RoundButton>
           </View>
-        )}
+        </View>
+      </View>
+
+      {isStudent ? (
+        <View
+          style={[styles.actionBar, { paddingBottom: Math.max(insets.bottom, SPACING_TOKENS.SM) }]}
+        >
+          {isHolding && listing.hold ? (
+            <View style={styles.holdStrip}>
+              <Clock3 size={15} color={THEME_COLORS.WARNING} />
+              <Typography variant="caption" weight="SEMIBOLD" color={THEME_COLORS.WARNING}>
+                {`Phòng được giữ chỗ đến ${formatShortDate(listing.hold.expiresAt)} · còn ${listing.hold.daysLeft} ngày`}
+              </Typography>
+            </View>
+          ) : null}
+          <View style={styles.actionRow}>
+            <TouchableOpacity
+              style={styles.chatButton}
+              onPress={() => void openChat(listing.id)}
+              disabled={isOpening}
+              accessibilityRole="button"
+              accessibilityLabel="Nhắn tin với Chủ trọ"
+            >
+              {isOpening ? (
+                <ActivityIndicator size="small" color={THEME_COLORS.PRIMARY} />
+              ) : (
+                <MessageSquare size={20} color={THEME_COLORS.PRIMARY} />
+              )}
+            </TouchableOpacity>
+            <Button
+              title="Đặt lịch xem"
+              variant="outline"
+              disabled={!canBook}
+              leftIcon={<CalendarCheck size={17} color={THEME_COLORS.PRIMARY} />}
+              onPress={() => navigation.navigate('BookingNew', { resourceId: listing.id })}
+              style={styles.actionFlex}
+            />
+            <Button
+              title="Giữ chỗ"
+              disabled={listing.availability !== 'available'}
+              onPress={handleHold}
+              style={styles.actionFlex}
+            />
+          </View>
+        </View>
+      ) : null}
+
+      <ImageViewerModal
+        isVisible={viewerIndex !== null}
+        imageUrls={orderedImages.map((image) => image.url)}
+        initialIndex={viewerIndex ?? 0}
+        onClose={() => setViewerIndex(null)}
       />
-    </ScreenContainer>
+      <AmenitiesModal
+        isVisible={isAmenitiesVisible}
+        amenities={listing.amenities}
+        onClose={() => setIsAmenitiesVisible(false)}
+      />
+      <ReportListingModal
+        isVisible={isReportVisible}
+        isSubmitting={reportMutation.isPending}
+        onClose={() => setIsReportVisible(false)}
+        onSubmit={handleSubmitReport}
+      />
+    </View>
   );
 };
+
+const getDistanceReference = (filters: {
+  latitude?: number;
+  longitude?: number;
+  schoolId?: string;
+}) => {
+  if (filters.latitude === undefined || filters.longitude === undefined) {
+    return null;
+  }
+
+  const school = SEARCH_SCHOOLS.find((item) => item.id === filters.schoolId);
+
+  return {
+    latitude: filters.latitude,
+    longitude: filters.longitude,
+    label: school ? school.name : 'vị trí của bạn',
+  };
+};
+
+const RoundButton = ({
+  label,
+  onPress,
+  children,
+}: {
+  label: string;
+  onPress: () => void;
+  children: React.ReactNode;
+}) => (
+  <TouchableOpacity
+    onPress={onPress}
+    style={styles.roundButton}
+    accessibilityRole="button"
+    accessibilityLabel={label}
+  >
+    {children}
+  </TouchableOpacity>
+);
 
 const ListingImageGallery = ({
   images,
   width,
+  height,
+  onPressImage,
 }: {
   images: ListingDetailImage[];
   width: number;
+  height: number;
+  onPressImage: (index: number) => void;
 }) => {
   const [activeIndex, setActiveIndex] = useState(0);
-  const orderedImages = useMemo(
-    () => [...images].sort((first, second) => Number(second.isCover) - Number(first.isCover)),
-    [images]
-  );
 
-  if (orderedImages.length === 0) {
+  if (images.length === 0) {
     return (
-      <View style={[styles.imageFallback, { width }]}>
+      <View style={[styles.imageFallback, { width, height }]}>
         <ImageOff size={42} color={THEME_COLORS.TEXT_PLACEHOLDER} />
         <Typography variant="body2" colorKey="TEXT_MUTED" style={styles.stateText}>
           Tin đăng chưa có hình ảnh.
@@ -385,36 +652,58 @@ const ListingImageGallery = ({
       <FlatList
         horizontal
         pagingEnabled
-        data={orderedImages}
+        data={images}
         keyExtractor={(item) => item.id}
         showsHorizontalScrollIndicator={false}
         onMomentumScrollEnd={(event) =>
           setActiveIndex(Math.round(event.nativeEvent.contentOffset.x / width))
         }
-        renderItem={({ item }) => <GalleryImage image={item} width={width} />}
+        renderItem={({ item, index }) => (
+          <GalleryImage
+            image={item}
+            width={width}
+            height={height}
+            onPress={() => onPressImage(index)}
+          />
+        )}
       />
       <View style={styles.imageCounter}>
         <Typography variant="caption" weight="SEMIBOLD" color={THEME_COLORS.WHITE}>
-          {`${activeIndex + 1}/${orderedImages.length}`}
+          {`${activeIndex + 1}/${images.length}`}
         </Typography>
       </View>
     </View>
   );
 };
 
-const GalleryImage = ({ image, width }: { image: ListingDetailImage; width: number }) => {
+const GalleryImage = ({
+  image,
+  width,
+  height,
+  onPress,
+}: {
+  image: ListingDetailImage;
+  width: number;
+  height: number;
+  onPress: () => void;
+}) => {
   const [hasError, setHasError] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
   return hasError || !image.url ? (
-    <View style={[styles.imageFallback, { width }]}>
+    <View style={[styles.imageFallback, { width, height }]}>
       <ImageOff size={42} color={THEME_COLORS.TEXT_PLACEHOLDER} />
       <Typography variant="caption" colorKey="TEXT_MUTED" style={styles.stateText}>
         Không thể tải hình ảnh.
       </Typography>
     </View>
   ) : (
-    <View style={[styles.galleryImageWrapper, { width }]}>
+    <TouchableOpacity
+      activeOpacity={0.95}
+      onPress={onPress}
+      style={[styles.galleryImageWrapper, { width, height }]}
+      accessibilityLabel="Xem ảnh toàn màn hình"
+    >
       <Image
         source={{ uri: image.url }}
         style={styles.galleryImage}
@@ -429,7 +718,7 @@ const GalleryImage = ({ image, width }: { image: ListingDetailImage; width: numb
           color={THEME_COLORS.PRIMARY}
         />
       ) : null}
-    </View>
+    </TouchableOpacity>
   );
 };
 
@@ -474,6 +763,8 @@ const formatMeasuredValue = (value: number | null | undefined, unit: string): st
     : `${value} ${unit}`;
 
 const styles = StyleSheet.create({
+  root: { flex: 1, backgroundColor: THEME_COLORS.BACKGROUND },
+  column: { width: '100%', maxWidth: MAX_CONTENT_WIDTH, alignSelf: 'center' },
   stateContainer: {
     flex: 1,
     alignItems: 'center',
@@ -483,11 +774,33 @@ const styles = StyleSheet.create({
   },
   stateText: { marginTop: SPACING_TOKENS.SM },
   retry: { marginTop: SPACING_TOKENS.LG, minWidth: 140 },
-  compareHeaderButton: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
+  overlayHeader: { position: 'absolute', top: 0, left: 0, right: 0 },
+  overlayRow: {
+    width: '100%',
+    maxWidth: MAX_CONTENT_WIDTH,
+    alignSelf: 'center',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingHorizontal: SPACING_TOKENS.MD,
+  },
+  overlayActions: { flexDirection: 'row', gap: SPACING_TOKENS.SM },
+  roundButton: {
+    width: 44,
+    height: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: BORDER_RADIUS_TOKENS.FULL,
+    backgroundColor: THEME_COLORS.SURFACE,
+    shadowColor: THEME_COLORS.BLACK,
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 3,
+  },
   compareCount: {
     position: 'absolute',
-    top: 1,
-    right: 1,
+    top: -2,
+    right: -2,
     minWidth: 16,
     height: 16,
     paddingHorizontal: 3,
@@ -496,11 +809,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  galleryImageWrapper: { height: 280, backgroundColor: THEME_COLORS.SURFACE_MUTED },
+  galleryImageWrapper: { backgroundColor: THEME_COLORS.SURFACE_MUTED },
   galleryImage: { width: '100%', height: '100%' },
   imageLoader: { ...StyleSheet.absoluteFill },
   imageFallback: {
-    height: 280,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: THEME_COLORS.SURFACE_MUTED,
@@ -508,15 +820,23 @@ const styles = StyleSheet.create({
   imageCounter: {
     position: 'absolute',
     right: SPACING_TOKENS.MD,
-    bottom: SPACING_TOKENS.SM,
+    bottom: SPACING_TOKENS.XL,
     paddingHorizontal: SPACING_TOKENS.SM,
     paddingVertical: SPACING_TOKENS.XS,
     borderRadius: BORDER_RADIUS_TOKENS.FULL,
     backgroundColor: 'rgba(0, 0, 0, 0.6)',
   },
-  content: { padding: SPACING_TOKENS.MD, paddingBottom: SPACING_TOKENS.XL },
-  priceRow: { flexDirection: 'row', alignItems: 'baseline', gap: SPACING_TOKENS.XS },
+  content: {
+    marginTop: -SPACING_TOKENS.LG,
+    padding: SPACING_TOKENS.MD,
+    paddingBottom: SPACING_TOKENS.XL,
+    borderTopLeftRadius: BORDER_RADIUS_TOKENS.XL,
+    borderTopRightRadius: BORDER_RADIUS_TOKENS.XL,
+    backgroundColor: THEME_COLORS.SURFACE,
+  },
+  badgeRow: { flexDirection: 'row', gap: SPACING_TOKENS.SM },
   title: { marginTop: SPACING_TOKENS.SM },
+  price: { marginTop: SPACING_TOKENS.SM },
   metaRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -534,6 +854,33 @@ const styles = StyleSheet.create({
   },
   addressRow: { flexDirection: 'row', gap: SPACING_TOKENS.SM, marginTop: SPACING_TOKENS.MD },
   flexText: { flex: 1 },
+  distancePill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    gap: SPACING_TOKENS.XS,
+    marginTop: SPACING_TOKENS.MD,
+    paddingHorizontal: SPACING_TOKENS.SM + 2,
+    paddingVertical: SPACING_TOKENS.SM,
+    borderRadius: BORDER_RADIUS_TOKENS.MD,
+    backgroundColor: THEME_COLORS.PRIMARY_LIGHT,
+  },
+  ratingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING_TOKENS.XS,
+    marginTop: SPACING_TOKENS.SM,
+  },
+  holdNotice: {
+    flexDirection: 'row',
+    gap: SPACING_TOKENS.SM,
+    marginTop: SPACING_TOKENS.MD,
+    padding: SPACING_TOKENS.MD,
+    borderWidth: 1,
+    borderColor: THEME_COLORS.WARNING,
+    borderRadius: BORDER_RADIUS_TOKENS.MD,
+    backgroundColor: THEME_COLORS.WARNING_LIGHT,
+  },
   section: {
     marginTop: SPACING_TOKENS.LG,
     paddingTop: SPACING_TOKENS.MD,
@@ -547,28 +894,62 @@ const styles = StyleSheet.create({
     paddingVertical: SPACING_TOKENS.XS,
   },
   detailValue: { flex: 1, textAlign: 'right', marginLeft: SPACING_TOKENS.MD },
-  amenities: { flexDirection: 'row', flexWrap: 'wrap', gap: SPACING_TOKENS.SM },
-  amenityChip: {
-    paddingHorizontal: SPACING_TOKENS.SM + 2,
-    paddingVertical: SPACING_TOKENS.SM,
-    borderRadius: BORDER_RADIUS_TOKENS.FULL,
-    backgroundColor: THEME_COLORS.PRIMARY_LIGHT,
-  },
-  mapWrapper: { height: 220, overflow: 'hidden', borderRadius: BORDER_RADIUS_TOKENS.MD },
-  map: { flex: 1 },
-  landlordRow: { flexDirection: 'row', alignItems: 'center' },
-  landlordInfo: { flex: 1, marginLeft: SPACING_TOKENS.MD },
-  landlordNameRow: { flexDirection: 'row', alignItems: 'center', gap: SPACING_TOKENS.XS },
-  ratingRow: { flexDirection: 'row', alignItems: 'center', gap: SPACING_TOKENS.SM },
-  savedNotice: {
+  amenityGrid: { flexDirection: 'row', flexWrap: 'wrap', rowGap: SPACING_TOKENS.MD },
+  amenityItem: {
+    width: '50%',
     flexDirection: 'row',
     alignItems: 'center',
     gap: SPACING_TOKENS.SM,
+    paddingRight: SPACING_TOKENS.SM,
+  },
+  linkButton: { marginTop: SPACING_TOKENS.MD },
+  mapWrapper: { height: 220, overflow: 'hidden', borderRadius: BORDER_RADIUS_TOKENS.MD },
+  landlordRow: { flexDirection: 'row', alignItems: 'center' },
+  landlordInfo: { flex: 1, marginLeft: SPACING_TOKENS.MD },
+  landlordNameRow: { flexDirection: 'row', alignItems: 'center', gap: SPACING_TOKENS.XS },
+  reportButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'center',
+    gap: SPACING_TOKENS.XS,
     marginTop: SPACING_TOKENS.LG,
     padding: SPACING_TOKENS.SM,
-    borderRadius: BORDER_RADIUS_TOKENS.SM,
-    backgroundColor: THEME_COLORS.ERROR_LIGHT,
   },
-  bookingButton: { marginTop: SPACING_TOKENS.LG },
-  compareButton: { marginTop: SPACING_TOKENS.SM, marginBottom: SPACING_TOKENS.MD },
+  actionBar: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: THEME_COLORS.SURFACE,
+    borderTopWidth: 1,
+    borderTopColor: THEME_COLORS.DIVIDER,
+  },
+  holdStrip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: SPACING_TOKENS.XS,
+    paddingVertical: SPACING_TOKENS.SM,
+    backgroundColor: THEME_COLORS.WARNING_LIGHT,
+  },
+  actionRow: {
+    width: '100%',
+    maxWidth: MAX_CONTENT_WIDTH,
+    alignSelf: 'center',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING_TOKENS.SM,
+    paddingHorizontal: SPACING_TOKENS.MD,
+    paddingTop: SPACING_TOKENS.SM,
+  },
+  chatButton: {
+    width: 48,
+    height: 48,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: THEME_COLORS.PRIMARY,
+    borderRadius: BORDER_RADIUS_TOKENS.MD,
+  },
+  actionFlex: { flex: 1 },
 });

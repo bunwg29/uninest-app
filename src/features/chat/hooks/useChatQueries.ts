@@ -82,19 +82,6 @@ export const useStartConversation = () => {
   });
 };
 
-export const useEditMessage = (conversationId: string) => {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: ({ messageId, content }: { messageId: string; content: string }) =>
-      chatService.editMessage(conversationId, messageId, content),
-    onSuccess: (message) => {
-      upsertMessageInCache(queryClient, message);
-      invalidateChatLists(queryClient);
-    },
-  });
-};
-
 export const useDeleteConversation = () => {
   const queryClient = useQueryClient();
 

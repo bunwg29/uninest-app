@@ -33,7 +33,6 @@ import {
   useChatRoom,
   useConversation,
   useDeleteConversation,
-  useEditMessage,
   useNetworkStatus,
   useRecallMessage,
 } from '../hooks';
@@ -61,7 +60,6 @@ export const ChatRoomScreen = ({ navigation, route }: ChatRoomScreenProps) => {
   const conversationQuery = useConversation(conversationId);
   const room = useChatRoom(conversationId, currentUserId);
   const recallMutation = useRecallMessage(conversationId);
-  const editMutation = useEditMessage(conversationId);
   const deleteMutation = useDeleteConversation();
   const { pickFromLibrary, takePhoto } = useChatImagePicker();
 
@@ -71,8 +69,6 @@ export const ChatRoomScreen = ({ navigation, route }: ChatRoomScreenProps) => {
   const [selectedMessage, setSelectedMessage] = useState<DisplayMessage | null>(null);
   const [viewer, setViewer] = useState<ViewerState | null>(null);
   const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
-  const [editingMessage, setEditingMessage] = useState<DisplayMessage | null>(null);
-  const [editText, setEditText] = useState('');
   const [isDeleteVisible, setIsDeleteVisible] = useState(false);
 
   const conversation = conversationQuery.data;
@@ -91,62 +87,14 @@ export const ChatRoomScreen = ({ navigation, route }: ChatRoomScreenProps) => {
   }, []);
 
   const handleChangeText = useCallback(
-    (text: string) => (editingMessage ? setEditText(text) : setDraft(conversationId, text)),
-    [editingMessage, conversationId, setDraft]
+    (text: string) => setDraft(conversationId, text),
+    [conversationId, setDraft]
   );
 
-  const handleCancelEdit = useCallback(() => {
-    setEditingMessage(null);
-    setEditText('');
-  }, []);
-
   const handleSend = useCallback(() => {
-    if (editingMessage?.id) {
-      const content = editText.trim();
-
-      if (!content) {
-        return;
-      }
-
-      if (content === editingMessage.content) {
-        handleCancelEdit();
-
-        return;
-      }
-
-      editMutation.mutate(
-        { messageId: editingMessage.id, content },
-        {
-          onSuccess: handleCancelEdit,
-          onError: (error) => toast.error(error.message || 'Không thể chỉnh sửa tin nhắn'),
-        }
-      );
-
-      return;
-    }
-
     room.sendMessage(draft);
     setDraft(conversationId, '');
-  }, [
-    editingMessage,
-    editText,
-    editMutation,
-    handleCancelEdit,
-    toast,
-    room,
-    draft,
-    conversationId,
-    setDraft,
-  ]);
-
-  const handleStartEdit = useCallback(() => {
-    if (selectedMessage) {
-      setEditingMessage(selectedMessage);
-      setEditText(selectedMessage.content ?? '');
-    }
-
-    setSelectedMessage(null);
-  }, [selectedMessage]);
+  }, [room, draft, conversationId, setDraft]);
 
   const handleConfirmDeleteConversation = useCallback(() => {
     deleteMutation.mutate(conversationId, {
@@ -226,16 +174,7 @@ export const ChatRoomScreen = ({ navigation, route }: ChatRoomScreenProps) => {
     }
   }, [room]);
 
-  const canRecallSelected =
-    selectedMessage !== null &&
-    selectedMessage.isMine &&
-    Date.now() - new Date(selectedMessage.createdAt).getTime() <= CHAT_LIMITS.RECALL_WINDOW_MS;
-
-  const canEditSelected =
-    selectedMessage !== null &&
-    selectedMessage.isMine &&
-    Boolean(selectedMessage.content) &&
-    Date.now() - new Date(selectedMessage.createdAt).getTime() <= CHAT_LIMITS.EDIT_WINDOW_MS;
+  const canRecallSelected = selectedMessage !== null && selectedMessage.isMine;
 
   const renderMessage = ({ item, index }: { item: DisplayMessage; index: number }) => {
     const newerMessage = room.messages[index - 1];
@@ -342,10 +281,8 @@ export const ChatRoomScreen = ({ navigation, route }: ChatRoomScreenProps) => {
           style={[styles.composerWrapper, { paddingBottom: isKeyboardVisible ? 0 : insets.bottom }]}
         >
           <ChatComposer
-            value={editingMessage ? editText : draft}
+            value={draft}
             onChangeText={handleChangeText}
-            isEditing={editingMessage !== null}
-            onCancelEdit={handleCancelEdit}
             onSend={handleSend}
             onPickImages={() => void handlePickImages()}
             onTakePhoto={() => void handleTakePhoto()}
@@ -358,11 +295,9 @@ export const ChatRoomScreen = ({ navigation, route }: ChatRoomScreenProps) => {
       <MessageActionSheet
         isVisible={selectedMessage !== null}
         canCopy={Boolean(selectedMessage?.content)}
-        canEdit={canEditSelected}
         canRecall={canRecallSelected}
         onClose={() => setSelectedMessage(null)}
         onCopy={() => void handleCopy()}
-        onEdit={handleStartEdit}
         onRecall={handleRecall}
       />
 

@@ -4,7 +4,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AMENITY_DISPLAY_LIST, ROOM_TYPE_OPTIONS } from '@features/listings/types/constants';
 import { BORDER_RADIUS_TOKENS, SPACING_TOKENS, THEME_COLORS } from '@theme';
 import { Button, FilterChip, Typography } from '@ui';
-import type { SearchFilters } from '../types';
+import { SEARCH_SCHOOLS, type SearchFilters } from '../types';
 
 interface SearchFilterSheetProps {
   isVisible: boolean;
@@ -133,6 +133,35 @@ export const SearchFilterSheet = ({
                   label={amenity.name}
                   isSelected={filters.amenities.includes(amenity.id)}
                   onPress={() => toggleAmenity(amenity.id)}
+                />
+              ))}
+            </View>
+          </FilterSection>
+
+          <FilterSection
+            title="Khoảng cách tới trường"
+            subtitle={
+              SEARCH_SCHOOLS.find((school) => school.id === filters.schoolId)?.name ??
+              'Chưa chọn trường'
+            }
+          >
+            <View style={styles.wrapRow}>
+              {SEARCH_SCHOOLS.map((school) => (
+                <FilterChip
+                  key={school.id}
+                  label={school.name}
+                  isSelected={filters.schoolId === school.id}
+                  onPress={() =>
+                    onChange(
+                      filters.schoolId === school.id
+                        ? { schoolId: undefined, latitude: undefined, longitude: undefined }
+                        : {
+                            schoolId: school.id,
+                            latitude: school.latitude,
+                            longitude: school.longitude,
+                          }
+                    )
+                  }
                 />
               ))}
             </View>

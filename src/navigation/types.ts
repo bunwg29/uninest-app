@@ -83,6 +83,8 @@ export type RootStackParamList = {
   ResetPassword: { target: string; otpCode: string };
   ListingDetail: { id: string };
   Comparison: undefined;
+  SavedRooms: undefined;
+  LandlordVerification: undefined;
   Community: { category?: ForumCategory } | undefined;
   ForumPostDetail: { postId: string };
   ForumPostComposer: { postId?: string; category?: ForumCategory } | undefined;

@@ -63,6 +63,13 @@ export interface ListingDetailLandlord {
   isVerified: boolean;
 }
 
+export type ListingAvailability = 'available' | 'holding' | 'rented' | 'paused';
+
+export interface ListingHold {
+  expiresAt: string;
+  daysLeft: number;
+}
+
 export interface ListingDetail {
   id: string;
   title: string;
@@ -85,7 +92,9 @@ export interface ListingDetail {
   status: string;
   viewingSchedule: Record<string, unknown> | null;
   averageRating: number | null;
-  viewCount: number;
+  viewCount: number | null;
+  availability: ListingAvailability;
+  hold: ListingHold | null;
   isFavorite: boolean;
   createdAt: string;
   updatedAt: string;
@@ -93,13 +102,14 @@ export interface ListingDetail {
 }
 
 export interface RecordListingViewResponse {
-  viewCount: number;
+  viewCount: number | null;
   incremented: boolean;
 }
 
 export interface PresignedUploadRequest {
   fileName: string;
   contentType: string;
+  fileSize?: number;
   folder?: string;
 }
 
@@ -118,6 +128,7 @@ export interface LocalImageItem {
   sortOrder: number;
   fileName: string;
   contentType: string;
+  fileSize?: number;
 }
 
 export interface UploadedImageItem {

@@ -19,6 +19,7 @@ import {
   Edit3,
   LogOut,
   Settings2,
+  ShieldCheck,
   Star,
   Home,
 } from 'lucide-react-native';
@@ -159,6 +160,17 @@ export const ProfileScreen = () => {
                       tone: ICON_TONES.AMBER,
                       onPress: () => navigation.navigate('Main', { screen: 'Appointments' }),
                     },
+                    ...(profile.verificationStatus === 'pending_verification'
+                      ? [
+                          {
+                            label: 'Xác minh tài khoản Chủ trọ',
+                            icon: ShieldCheck,
+                            tone: ICON_TONES.RED,
+                            detail: 'Chờ xác minh',
+                            onPress: () => navigation.navigate('LandlordVerification'),
+                          },
+                        ]
+                      : []),
                   ]
                 : [
                     {
@@ -166,7 +178,7 @@ export const ProfileScreen = () => {
                       icon: Heart,
                       tone: ICON_TONES.RED,
                       detail: `${profile.stats.savedRooms}`,
-                      onPress: () => toast.info('Tính năng danh sách phòng đã lưu đang phát triển'),
+                      onPress: () => navigation.navigate('SavedRooms'),
                     },
                     {
                       label: 'Lịch hẹn xem phòng',
@@ -182,7 +194,7 @@ export const ProfileScreen = () => {
                       label: 'Danh sách so sánh',
                       icon: Columns2,
                       tone: ICON_TONES.BLUE,
-                      onPress: () => toast.info('Tính năng so sánh phòng đang phát triển'),
+                      onPress: () => navigation.navigate('Comparison'),
                     },
                     {
                       label: 'Lịch sử giao dịch',

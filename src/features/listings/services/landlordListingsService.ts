@@ -5,7 +5,8 @@ import type {
   LandlordListingsPage,
 } from '../types/landlord';
 
-type ApiListingStatus = 'active' | 'pending' | 'rejected' | 'hidden' | 'rented' | 'deleted';
+type ApiListingStatus =
+  'active' | 'pending' | 'rejected' | 'hidden' | 'rented' | 'paused' | 'deleted';
 
 interface ApiLandlordListing extends Omit<LandlordListing, 'status'> {
   status: ApiListingStatus;
@@ -35,6 +36,8 @@ const getApiStatus = (status: LandlordListingStatus): ApiListingStatus => {
 
   if (status === 'expired') return 'rented';
 
+  if (status === 'paused') return 'paused';
+
   return status;
 };
 
@@ -55,6 +58,7 @@ const mapPage = (page: ApiLandlordListingsPage): LandlordListingsPage => ({
     rejected: page.countsByStatus.rejected ?? 0,
     hidden: page.countsByStatus.hidden ?? 0,
     expired: page.countsByStatus.rented ?? 0,
+    paused: page.countsByStatus.paused ?? 0,
   },
   page: page.pagination.page,
   totalPages: page.pagination.totalPages,
@@ -88,7 +92,10 @@ export const landlordListingsService = {
     await apiClient.patch(`/landlord/listings/${id}/visibility`, { hidden: false });
   },
 
-  async deleteListing(id: string): Promise<void> {
-    await apiClient.delete(`/landlord/listings/${id}`);
+  async deleteListing(id: string): Promise<{ deleted: boolean }> {
+    const response = await apiClient.delete(`/landlord/listings/${id}`);
+    const result = unwrapData<{ deleted?: boolean } | null>(response.data);
+
+    return { deleted: result?.deleted !== false };
   },
 };

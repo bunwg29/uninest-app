@@ -17,6 +17,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { Controller, useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { ImagePlus, X } from 'lucide-react-native';
+import { filterValidUploadImages, resolveImageContentType } from '@core';
 import { BORDER_RADIUS_TOKENS, SPACING_TOKENS, THEME_COLORS } from '@theme';
 import { Badge, Button, FilterChip, HeaderBar, Input, ScreenContainer, Typography } from '@ui';
 import { useToast } from '@hooks';
@@ -157,10 +158,14 @@ export const ForumPostComposerScreen = () => {
 
     if (result.canceled || !result.assets.length) return;
 
-    const pickedImages = result.assets.map((asset, index) => ({
+    const { valid, firstError } = filterValidUploadImages(result.assets);
+
+    if (firstError) Alert.alert('Ảnh không hợp lệ', firstError);
+
+    const pickedImages = valid.map((asset, index) => ({
       uri: asset.uri,
       fileName: asset.fileName ?? `forum_${Date.now()}_${index}.jpg`,
-      contentType: asset.mimeType ?? 'image/jpeg',
+      contentType: resolveImageContentType(asset),
     }));
 
     setImages((currentImages) => [...currentImages, ...pickedImages].slice(0, FORUM_MAX_IMAGES));

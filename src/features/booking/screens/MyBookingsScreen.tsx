@@ -7,12 +7,13 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { CalendarX2, ChevronRight, MessageCircle } from 'lucide-react-native';
+import { CalendarX2, MessageCircle } from 'lucide-react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '@navigation';
+import { useOpenListingChat } from '@features/chat';
 import { useToast } from '@hooks';
-import { BORDER_RADIUS_TOKENS, SPACING_TOKENS, THEME_COLORS } from '@theme';
+import { SPACING_TOKENS, THEME_COLORS } from '@theme';
 import {
   Button,
   EmptyState,
@@ -21,31 +22,42 @@ import {
   ScreenContainer,
   Typography,
 } from '@ui';
-import { CountdownTimer, ResourceCard, StatusBadge } from '../components';
+import { BookingCard } from '../components';
 import { useBookings, useCancelBooking } from '../hooks';
 import type { Booking, BookingStatus } from '../types';
-import { formatBookingDateTime, getHoursUntil } from '../utils';
+import { getHoursUntil } from '../utils';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
-type TabKey = 'pending' | 'confirmed' | 'cancelled';
+type TabKey = 'pending' | 'confirmed' | 'expired' | 'cancelled';
 
 const TABS: Array<{ key: TabKey; label: string }> = [
   { key: 'pending', label: 'Chờ' },
   { key: 'confirmed', label: 'Đã xác nhận' },
+  { key: 'expired', label: 'Hết hạn' },
   { key: 'cancelled', label: 'Đã hủy' },
 ];
+
+export const isInTab = (status: BookingStatus, tab: TabKey) => {
+  if (tab === 'pending') return status === 'pending';
+
+  if (tab === 'confirmed') return status === 'confirmed' || status === 'holding';
+
+  if (tab === 'expired') return status === 'expired';
+
+  return status === 'cancelled' || status === 'rejected';
+};
 
 export const MyBookingsScreen = () => {
   const navigation = useNavigation<NavigationProp>();
   const [activeTab, setActiveTab] = useState<TabKey>('pending');
   const bookingsQuery = useBookings();
   const cancelBooking = useCancelBooking();
+  const { openChat } = useOpenListingChat();
   const toast = useToast();
-  const items = (bookingsQuery.data?.items ?? []).filter((booking) =>
-    isInTab(booking.status, activeTab)
-  );
+  const allBookings = bookingsQuery.data?.items ?? [];
+  const items = allBookings.filter((booking) => isInTab(booking.status, activeTab));
   const countFor = (tab: TabKey) =>
-    (bookingsQuery.data?.items ?? []).filter((booking) => isInTab(booking.status, tab)).length;
+    allBookings.filter((booking) => isInTab(booking.status, tab)).length;
 
   const handleCancel = (booking: Booking) => {
     if (getHoursUntil(booking.startTime) < 24) {
@@ -71,6 +83,44 @@ export const MyBookingsScreen = () => {
     ]);
   };
 
+  const renderActions = (booking: Booking) => {
+    if (
+      booking.status === 'expired' ||
+      booking.status === 'cancelled' ||
+      booking.status === 'rejected'
+    ) {
+      return (
+        <Button
+          title="Xem phòng khác"
+          variant="outline"
+          onPress={() => navigation.navigate('Main', { screen: 'Search' })}
+          style={styles.actionButton}
+        />
+      );
+    }
+
+    return (
+      <>
+        <Button
+          title="Nhắn tin"
+          variant="outline"
+          leftIcon={<MessageCircle size={17} color={THEME_COLORS.TEXT_PRIMARY} />}
+          onPress={() => void openChat(booking.listing.id)}
+          style={styles.actionButton}
+        />
+        {booking.status !== 'holding' ? (
+          <Button
+            title="Hủy yêu cầu"
+            variant="outline"
+            onPress={() => handleCancel(booking)}
+            style={[styles.actionButton, styles.dangerButton]}
+            textStyle={styles.dangerText}
+          />
+        ) : null}
+      </>
+    );
+  };
+
   return (
     <ScreenContainer keyboardAvoiding={false}>
       <HeaderBar title="Lịch hẹn của tôi" onBack={() => navigation.goBack()} />
@@ -82,8 +132,9 @@ export const MyBookingsScreen = () => {
             style={[styles.tab, activeTab === tab.key && styles.activeTab]}
           >
             <Typography
-              variant="body2"
+              variant="caption"
               weight="BOLD"
+              align="center"
               color={activeTab === tab.key ? THEME_COLORS.PRIMARY : THEME_COLORS.TEXT_MUTED}
             >
               {tab.label} ({countFor(tab.key)})
@@ -105,7 +156,7 @@ export const MyBookingsScreen = () => {
       ) : items.length === 0 ? (
         <EmptyState
           icon={<CalendarX2 size={42} color={THEME_COLORS.TEXT_PLACEHOLDER} />}
-          title="Bạn chưa có lịch hẹn nào"
+          title="Chưa có lịch hẹn nào ở mục này"
           description="Các yêu cầu xem phòng sẽ xuất hiện tại đây."
           actionTitle="Tìm phòng ngay"
           onAction={() => navigation.navigate('Main', { screen: 'Search' })}
@@ -121,64 +172,18 @@ export const MyBookingsScreen = () => {
           }
         >
           {items.map((booking) => (
-            <View key={booking.id} style={styles.card}>
-              <TouchableOpacity
-                onPress={() => navigation.navigate('BookingDetail', { id: booking.id })}
-              >
-                <ResourceCard resource={booking.listing} />
-                <View style={styles.metaRow}>
-                  <StatusBadge status={booking.status} />
-                  <ChevronRight size={20} color={THEME_COLORS.TEXT_MUTED} />
-                </View>
-                <Typography variant="body2" weight="BOLD" style={styles.time}>
-                  {formatBookingDateTime(booking.startTime)}
-                </Typography>
-                <Typography variant="caption" colorKey="TEXT_MUTED">
-                  #{booking.code}
-                </Typography>
-                {booking.expiresAt &&
-                (booking.status === 'pending' || booking.status === 'holding') ? (
-                  <CountdownTimer
-                    expiresAt={booking.expiresAt}
-                    onExpire={() => bookingsQuery.refetch()}
-                  />
-                ) : null}
-              </TouchableOpacity>
-              {booking.status === 'pending' ||
-              booking.status === 'confirmed' ||
-              booking.status === 'holding' ? (
-                <View style={styles.actions}>
-                  <Button
-                    title="Nhắn tin"
-                    variant="outline"
-                    leftIcon={<MessageCircle size={17} color={THEME_COLORS.TEXT_PRIMARY} />}
-                    onPress={() => navigation.navigate('Main', { screen: 'Messages' })}
-                    style={styles.actionButton}
-                  />
-                  {booking.status !== 'confirmed' ? (
-                    <Button
-                      title="Hủy yêu cầu"
-                      variant="ghost"
-                      onPress={() => handleCancel(booking)}
-                      style={styles.actionButton}
-                    />
-                  ) : null}
-                </View>
-              ) : null}
-            </View>
+            <BookingCard
+              key={booking.id}
+              booking={booking}
+              actions={renderActions(booking)}
+              onPress={() => navigation.navigate('BookingDetail', { id: booking.id })}
+              onExpire={() => void bookingsQuery.refetch()}
+            />
           ))}
         </ScrollView>
       )}
     </ScreenContainer>
   );
-};
-
-export const isInTab = (status: BookingStatus, tab: TabKey) => {
-  if (tab === 'pending') return status === 'pending' || status === 'holding';
-
-  if (tab === 'confirmed') return status === 'confirmed';
-
-  return status === 'cancelled' || status === 'expired';
 };
 
 const styles = StyleSheet.create({
@@ -192,28 +197,21 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     paddingVertical: SPACING_TOKENS.MD,
+    paddingHorizontal: SPACING_TOKENS.XS,
     borderBottomWidth: 2,
     borderBottomColor: THEME_COLORS.TRANSPARENT,
   },
   activeTab: { borderBottomColor: THEME_COLORS.PRIMARY },
-  list: { padding: SPACING_TOKENS.MD, gap: SPACING_TOKENS.MD },
-  loading: { padding: SPACING_TOKENS.MD },
-  card: {
+  list: {
+    width: '100%',
+    maxWidth: 720,
+    alignSelf: 'center',
     padding: SPACING_TOKENS.MD,
-    gap: SPACING_TOKENS.SM,
-    borderWidth: 1,
-    borderColor: THEME_COLORS.BORDER,
-    borderRadius: BORDER_RADIUS_TOKENS.LG,
-    backgroundColor: THEME_COLORS.SURFACE,
+    gap: SPACING_TOKENS.MD,
   },
-  metaRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginTop: SPACING_TOKENS.MD,
-  },
-  time: { marginTop: SPACING_TOKENS.SM },
-  actions: { flexDirection: 'row', gap: SPACING_TOKENS.SM, marginTop: SPACING_TOKENS.SM },
+  loading: { padding: SPACING_TOKENS.MD },
   actionButton: { flex: 1 },
+  dangerButton: { borderColor: THEME_COLORS.ERROR },
+  dangerText: { color: THEME_COLORS.ERROR },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: SPACING_TOKENS.MD },
 });

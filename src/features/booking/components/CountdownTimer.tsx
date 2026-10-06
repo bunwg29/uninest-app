@@ -4,8 +4,20 @@ import { StyleSheet, View } from 'react-native';
 import { SPACING_TOKENS, THEME_COLORS } from '@theme';
 import { Typography } from '@ui';
 
-const getRemainingSeconds = (expiresAt: string) =>
-  Math.max(0, Math.ceil((new Date(expiresAt).getTime() - Date.now()) / 1000));
+const TICK_INTERVAL_MS = 30_000;
+
+const getRemainingMs = (expiresAt: string) =>
+  Math.max(0, new Date(expiresAt).getTime() - Date.now());
+
+export const formatRemaining = (remainingMs: number) => {
+  const minutes = Math.ceil(remainingMs / 60_000);
+
+  if (minutes >= 2 * 24 * 60) return `Còn ${Math.ceil(minutes / (24 * 60))} ngày`;
+
+  if (minutes >= 60) return `Còn ${Math.ceil(minutes / 60)} giờ`;
+
+  return `Còn ${Math.max(minutes, 0)} phút`;
+};
 
 export const CountdownTimer = ({
   expiresAt,
@@ -14,38 +26,30 @@ export const CountdownTimer = ({
   expiresAt: string;
   onExpire?: () => void;
 }) => {
-  const [seconds, setSeconds] = useState(() => getRemainingSeconds(expiresAt));
+  const [remainingMs, setRemainingMs] = useState(() => getRemainingMs(expiresAt));
 
   useEffect(() => {
-    setSeconds(getRemainingSeconds(expiresAt));
+    setRemainingMs(getRemainingMs(expiresAt));
+
     const timer = setInterval(() => {
-      setSeconds((current) => {
-        if (current <= 1) {
-          clearInterval(timer);
-          onExpire?.();
+      const next = getRemainingMs(expiresAt);
 
-          return 0;
-        }
+      setRemainingMs(next);
 
-        return current - 1;
-      });
-    }, 1000);
+      if (next <= 0) {
+        clearInterval(timer);
+        onExpire?.();
+      }
+    }, TICK_INTERVAL_MS);
 
     return () => clearInterval(timer);
   }, [expiresAt, onExpire]);
-
-  const hours = Math.floor(seconds / 3600);
-  const minutes = Math.floor((seconds % 3600) / 60);
-  const remainingSeconds = seconds % 60;
-  const value = [hours, minutes, remainingSeconds]
-    .map((part) => String(part).padStart(2, '0'))
-    .join(':');
 
   return (
     <View style={styles.row}>
       <Clock3 size={15} color={THEME_COLORS.WARNING} />
       <Typography variant="caption" weight="BOLD" colorKey="WARNING">
-        Còn {value}
+        {formatRemaining(remainingMs)}
       </Typography>
     </View>
   );

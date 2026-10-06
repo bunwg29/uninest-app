@@ -1,7 +1,9 @@
 export type SearchSortBy =
-  'newest' | 'price_asc' | 'price_desc' | 'area_asc' | 'area_desc' | 'distance';
+  'relevance' | 'newest' | 'price_asc' | 'price_desc' | 'area_asc' | 'area_desc' | 'distance';
 
-export type SearchViewMode = 'list' | 'map';
+export type SearchViewMode = 'list' | 'grid' | 'map';
+
+export type ListingAvailability = 'available' | 'holding' | 'rented' | 'paused';
 
 export type PublicListingStatus = 'active' | 'pending' | 'rejected' | 'hidden' | 'deleted';
 
@@ -16,6 +18,7 @@ export interface SearchFilters {
   latitude?: number;
   longitude?: number;
   radius?: number;
+  schoolId?: string;
   sortBy: SearchSortBy;
   page: number;
   limit: number;
@@ -24,11 +27,6 @@ export interface SearchFilters {
 export interface SearchListingLocation {
   latitude: number;
   longitude: number;
-}
-
-export interface SearchListingStats {
-  views?: number;
-  saved?: number;
 }
 
 export interface SearchListingItem {
@@ -50,7 +48,8 @@ export interface SearchListingItem {
   capacity?: number;
   description?: string;
   status: PublicListingStatus;
-  stats?: SearchListingStats;
+  availability: ListingAvailability;
+  holdExpiresAt?: string | null;
   createdAt: string;
 }
 
@@ -61,9 +60,17 @@ export interface SearchPagination {
   totalPages: number;
 }
 
+export interface SearchSuggestion {
+  type: 'expand_radius' | 'relax_filters';
+  radiusKm?: number;
+  message: string;
+}
+
 export interface SearchListingsPage {
   items: SearchListingItem[];
   pagination: SearchPagination;
+  hasResults: boolean;
+  suggestion?: SearchSuggestion;
 }
 
 export interface SearchRepository {
@@ -75,7 +82,7 @@ export const DEFAULT_SEARCH_FILTERS: SearchFilters = {
   roomTypes: [],
   amenities: [],
   radius: 5,
-  sortBy: 'newest',
+  sortBy: 'relevance',
   page: 1,
   limit: 10,
 };
@@ -85,6 +92,7 @@ export const SEARCH_SORT_OPTIONS: ReadonlyArray<{
   compactLabel: string;
   value: SearchSortBy;
 }> = [
+  { label: 'Phù hợp nhất', compactLabel: 'Phù hợp', value: 'relevance' },
   { label: 'Mới nhất', compactLabel: 'Mới nhất', value: 'newest' },
   { label: 'Giá thấp đến cao', compactLabel: 'Giá tăng', value: 'price_asc' },
   { label: 'Giá cao đến thấp', compactLabel: 'Giá giảm', value: 'price_desc' },
@@ -93,28 +101,16 @@ export const SEARCH_SORT_OPTIONS: ReadonlyArray<{
   { label: 'Gần nhất', compactLabel: 'Gần nhất', value: 'distance' },
 ];
 
-export interface Room {
+export interface SearchSchool {
   id: string;
-  title: string;
-  description: string | null;
-  address: string;
-  streetAddress: string;
-  provinceCode: string;
-  wardCode: string;
+  name: string;
   latitude: number;
   longitude: number;
-  price: number;
-  area: number;
-  roomType: string;
-  maxOccupants: number;
-  electricPrice: number | null;
-  waterPrice: number | null;
-  deposit: number | null;
-  imageUrl: string | null;
-  imageUrls: string[];
-  amenityIds: number[];
-  status: string;
-  isActive: boolean;
-  createdAt: string;
-  updatedAt: string;
 }
+
+export const SEARCH_SCHOOLS: readonly SearchSchool[] = [
+  { id: 'dut', name: 'ĐH Bách khoa Đà Nẵng', latitude: 16.0739, longitude: 108.1499 },
+  { id: 'ued', name: 'ĐH Sư phạm Đà Nẵng', latitude: 16.0617, longitude: 108.1585 },
+  { id: 'vku', name: 'ĐH CNTT & TT Việt - Hàn (VKU)', latitude: 15.9757, longitude: 108.2531 },
+  { id: 'due', name: 'ĐH Kinh tế Đà Nẵng', latitude: 16.0481, longitude: 108.2402 },
+];

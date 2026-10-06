@@ -183,6 +183,15 @@ export const authService = {
     return { success: true };
   },
 
+  async submitLandlordVerification(payload: {
+    identityNumber: string;
+    streetAddress?: string;
+  }): Promise<Profile> {
+    const response = await apiClient.post('/profile/landlord-verification', payload);
+
+    return unwrapData<Profile>(response.data);
+  },
+
   async getProfile(): Promise<Profile> {
     const response = await apiClient.get('/profile');
     const result = unwrapData<Profile>(response.data);

@@ -1,2 +1,3 @@
 export * from './searchRepository';
-export * from './roomsApi';
+export * from './favoriteService';
+export * from './searchParams';

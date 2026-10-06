@@ -3,7 +3,7 @@ import { CalendarDays, Grid2X2, Home, MessageSquare, Plus } from 'lucide-react-n
 import { useNavigation } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { LandlordAppointmentsScreen } from '@features/booking';
+import { LandlordAppointmentsScreen, useLandlordBookings } from '@features/booking';
 import { LandlordListingsScreen, LandlordOverviewScreen } from '@features/listings';
 import { useListingPostStore } from '@features/listings/store/listingPostStore';
 import { MessagesScreen, useChatSummary } from '@features/chat';
@@ -19,6 +19,9 @@ const EmptyCreateScreen = () => null;
 export const LandlordTabNavigator = () => {
   const rootNavigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { data: chatSummary } = useChatSummary();
+  const { data: landlordBookings } = useLandlordBookings();
+  const pendingAppointments =
+    landlordBookings?.items.filter((booking) => booking.status === 'pending').length ?? 0;
   const insets = useSafeAreaInsets();
   const bottomPadding = Math.max(insets.bottom, 8);
 
@@ -82,7 +85,7 @@ export const LandlordTabNavigator = () => {
         component={LandlordAppointmentsScreen}
         options={{
           title: 'Lịch hẹn',
-          tabBarBadge: 2,
+          tabBarBadge: pendingAppointments > 0 ? pendingAppointments : undefined,
           tabBarBadgeStyle: BOTTOM_TAB_STYLES.badge,
           tabBarIcon: ({ color }) => <CalendarDays size={TAB_ICON_SIZE} color={color} />,
         }}

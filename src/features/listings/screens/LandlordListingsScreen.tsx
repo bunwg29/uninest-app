@@ -54,6 +54,7 @@ const STATUS_TABS: StatusTab[] = [
   { key: 'rejected', label: 'Bị từ chối' },
   { key: 'hidden', label: 'Đã ẩn' },
   { key: 'expired', label: 'Đã cho thuê' },
+  { key: 'paused', label: 'Ngừng nhận yêu cầu' },
 ];
 
 const STATUS_LABELS: Record<LandlordListingStatus, string> = {
@@ -62,6 +63,7 @@ const STATUS_LABELS: Record<LandlordListingStatus, string> = {
   rejected: 'BỊ TỪ CHỐI',
   hidden: 'ĐÃ ẨN',
   expired: 'ĐÃ CHO THUÊ',
+  paused: 'NGỪNG NHẬN YÊU CẦU',
 };
 
 const STATUS_VARIANTS: Record<LandlordListingStatus, 'available' | 'holding' | 'neutral'> = {
@@ -70,6 +72,7 @@ const STATUS_VARIANTS: Record<LandlordListingStatus, 'available' | 'holding' | '
   rejected: 'holding',
   hidden: 'neutral',
   expired: 'neutral',
+  paused: 'neutral',
 };
 
 type ListingAction = {
@@ -164,9 +167,12 @@ export const LandlordListingsScreen = () => {
     listingMutation.mutate(
       { action, id: listingId },
       {
-        onSuccess: () => {
-          const successMessage =
-            action === 'hide'
+        onSuccess: (result) => {
+          const wasPaused =
+            action === 'delete' && typeof result === 'object' && result?.deleted === false;
+          const successMessage = wasPaused
+            ? 'Tin đã có lịch hẹn hoặc giữ chỗ nên chuyển sang "Ngừng nhận yêu cầu"'
+            : action === 'hide'
               ? 'Đã ẩn tin đăng'
               : action === 'republish'
                 ? 'Đã hiển thị lại tin đăng'
@@ -579,11 +585,25 @@ function getListingActions(status: LandlordListingStatus): ListingAction[] {
   const viewDetail: ListingAction = { key: 'viewDetail', label: 'Xem chi tiết phòng' };
 
   if (status === 'published') {
-    return [viewDetail, { key: 'edit', label: 'Sửa' }, { key: 'hide', label: 'Ẩn tin' }];
+    return [
+      viewDetail,
+      { key: 'edit', label: 'Sửa' },
+      { key: 'hide', label: 'Ẩn tin' },
+      commonDelete,
+    ];
   }
 
   if (status === 'hidden') {
-    return [viewDetail, { key: 'edit', label: 'Sửa' }, { key: 'republish', label: 'Hiện tin' }];
+    return [
+      viewDetail,
+      { key: 'edit', label: 'Sửa' },
+      { key: 'republish', label: 'Hiện tin' },
+      commonDelete,
+    ];
+  }
+
+  if (status === 'paused') {
+    return [viewDetail, { key: 'edit', label: 'Sửa' }, { key: 'republish', label: 'Mở lại tin' }];
   }
 
   if (status === 'rejected') {

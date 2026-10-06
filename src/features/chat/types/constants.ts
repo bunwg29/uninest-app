@@ -1,8 +1,6 @@
 export const CHAT_LIMITS = {
   MAX_CONTENT_LENGTH: 2000,
   MAX_IMAGES_PER_MESSAGE: 10,
-  RECALL_WINDOW_MS: 24 * 60 * 60 * 1000,
-  EDIT_WINDOW_MS: 24 * 60 * 60 * 1000,
   SEARCH_DEBOUNCE_MS: 400,
   MESSAGE_PAGE_SIZE: 30,
   CONVERSATION_PAGE_SIZE: 20,
@@ -16,7 +14,6 @@ export const CHAT_SOCKET_EVENTS = {
   MARK_READ: 'conversation.read',
   NEW_MESSAGE: 'message.new',
   MESSAGE_RECALLED: 'message.recalled',
-  MESSAGE_UPDATED: 'message.updated',
   MESSAGES_READ: 'conversation.read',
   CONVERSATION_DELETED: 'conversation.deleted',
 } as const;

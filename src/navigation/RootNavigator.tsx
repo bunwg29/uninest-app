@@ -3,6 +3,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import {
   ChangePasswordScreen,
+  LandlordVerificationScreen,
   OtpScreen,
   ProfileEditScreen,
   ResetPasswordScreen,
@@ -18,6 +19,7 @@ import {
   StudentListingPreviewScreen,
 } from '@features/listings';
 import { ComparisonScreen } from '@features/comparison';
+import { SavedRoomsScreen } from '@features/search';
 import {
   BookingConfirmScreen,
   BookingDetailScreen,
@@ -72,6 +74,8 @@ export const RootNavigator = () => {
             <Stack.Screen name="StudentListingPreview" component={StudentListingPreviewScreen} />
             <Stack.Screen name="ListingDetail" component={ListingDetailScreen} />
             <Stack.Screen name="Comparison" component={ComparisonScreen} />
+            <Stack.Screen name="SavedRooms" component={SavedRoomsScreen} />
+            <Stack.Screen name="LandlordVerification" component={LandlordVerificationScreen} />
             <Stack.Screen name="BookingNew" component={BookingNewScreen} />
             <Stack.Screen name="BookingConfirm" component={BookingConfirmScreen} />
             <Stack.Screen name="BookingSuccess" component={BookingSuccessScreen} />

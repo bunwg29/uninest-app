@@ -14,6 +14,7 @@ import { formatVND } from '@core';
 import type { RootStackParamList } from '@navigation';
 import { BORDER_RADIUS_TOKENS, SPACING_TOKENS, THEME_COLORS } from '@theme';
 import { Button, EmptyState, HeaderBar, ScreenContainer, Typography } from '@ui';
+import { haversineMeters, useSearchStore } from '@features/search';
 import type { ComparisonItem } from '../types';
 import { MAX_COMPARISON_ITEMS, useComparisonStore } from '../store';
 
@@ -25,6 +26,7 @@ export const ComparisonScreen = () => {
   const items = useComparisonStore((state) => state.items);
   const remove = useComparisonStore((state) => state.remove);
   const clear = useComparisonStore((state) => state.clear);
+  const reference = useSearchStore((state) => state.appliedFilters);
   const columnWidth = Math.min(300, Math.max(220, width - SPACING_TOKENS.XL * 2));
 
   const handleBack = () => {
@@ -105,7 +107,10 @@ export const ComparisonScreen = () => {
               </ComparisonRow>
               <ComparisonRow items={items} width={columnWidth}>
                 {(item) => (
-                  <Criterion label="Khoảng cách" value={formatDistance(item.distanceMeters)} />
+                  <Criterion
+                    label="Khoảng cách"
+                    value={formatDistance(getItemDistance(item, reference))}
+                  />
                 )}
               </ComparisonRow>
               <ComparisonRow items={items} width={columnWidth}>
@@ -235,6 +240,20 @@ const Criterion = ({
     </View>
   </View>
 );
+
+const getItemDistance = (
+  item: ComparisonItem,
+  reference: { latitude?: number; longitude?: number }
+): number | undefined => {
+  if (reference.latitude !== undefined && reference.longitude !== undefined && item.location) {
+    return haversineMeters(
+      { latitude: reference.latitude, longitude: reference.longitude },
+      item.location
+    );
+  }
+
+  return item.distanceMeters;
+};
 
 const formatDistance = (distanceMeters?: number): string => {
   if (distanceMeters === undefined || !Number.isFinite(distanceMeters)) {

@@ -20,12 +20,6 @@ const resolveContentType = (fileName: string): string => {
 
   if (ext === 'png') return 'image/png';
 
-  if (ext === 'webp') return 'image/webp';
-
-  if (ext === 'gif') return 'image/gif';
-
-  if (ext === 'heic') return 'image/heic';
-
   return 'image/jpeg';
 };
 
@@ -54,6 +48,7 @@ export const useUploadImages = (): UseUploadImagesResult => {
           const { uploadUrl, publicUrl, key } = await listingService.getPresignedUploadUrl({
             fileName: image.fileName,
             contentType,
+            fileSize: image.fileSize,
             folder: 'listings',
           });
 

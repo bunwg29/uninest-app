@@ -1,6 +1,7 @@
 import type { ViewingSchedule } from './index';
 
-export type LandlordListingStatus = 'published' | 'pending' | 'rejected' | 'hidden' | 'expired';
+export type LandlordListingStatus =
+  'published' | 'pending' | 'rejected' | 'hidden' | 'expired' | 'paused';
 
 export interface LandlordListing {
   id: string;
@@ -45,6 +46,7 @@ export interface LandlordListingCounters {
   rejected: number;
   hidden: number;
   expired: number;
+  paused: number;
 }
 
 export interface LandlordListingsPage {

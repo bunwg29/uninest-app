@@ -4,7 +4,7 @@ import { X } from 'lucide-react-native';
 import { useNavigation, useRoute, type RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '@navigation';
-import { useRoom } from '@features/search';
+import { useListingDetail } from '@features/listings';
 import { BORDER_RADIUS_TOKENS, SPACING_TOKENS, THEME_COLORS } from '@theme';
 import { Button, HeaderBar, ScreenContainer, Typography } from '@ui';
 import { ResourceCard, SlotGrid } from '../components';
@@ -16,6 +16,29 @@ type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 type ScreenRouteProp = RouteProp<RootStackParamList, 'BookingNew'>;
 const WEEKDAYS = ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'];
 
+const useBookableListing = (id: string | undefined) => {
+  const query = useListingDetail(id ?? '');
+  const detail = query.data;
+  const cover = detail?.images.find((image) => image.isCover) ?? detail?.images[0];
+
+  return {
+    isLoading: query.isLoading,
+    isError: query.isError,
+    refetch: query.refetch,
+    data: detail
+      ? {
+          id: detail.id,
+          title: detail.title,
+          price: detail.price,
+          address: detail.address.fullAddress,
+          imageUrl: cover?.url ?? null,
+          deposit: detail.deposit,
+          availability: detail.availability,
+        }
+      : undefined,
+  };
+};
+
 export const BookingNewScreen = () => {
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<ScreenRouteProp>();
@@ -23,7 +46,7 @@ export const BookingNewScreen = () => {
   const { resource, selectedDate, selectedSlot, startBooking, selectDate, selectSlot } =
     useBookingStore();
   const initializedResourceId = useRef<string | null>(null);
-  const roomQuery = useRoom(resourceId);
+  const roomQuery = useBookableListing(resourceId);
   const activeResource = roomQuery.data ?? (resource?.id === resourceId ? resource : null);
   const date = selectedDate ?? getDefaultDate();
   const slotsQuery = useBookingSlots(activeResource?.id, date);
@@ -84,6 +107,27 @@ export const BookingNewScreen = () => {
             variant="ghost"
             onPress={() => navigation.replace('Main', { screen: 'Search' })}
           />
+        </View>
+      </ScreenContainer>
+    );
+  }
+
+  if (roomQuery.data && roomQuery.data.availability !== 'available') {
+    return (
+      <ScreenContainer keyboardAvoiding={false}>
+        <HeaderBar title="Đặt lịch xem phòng" onBack={() => navigation.goBack()} />
+        <View style={styles.centerState}>
+          <Typography variant="h3" weight="BOLD" align="center">
+            Phòng hiện chưa nhận lịch xem
+          </Typography>
+          <Typography variant="body2" colorKey="TEXT_MUTED" align="center">
+            {roomQuery.data.availability === 'holding'
+              ? 'Phòng đang được sinh viên khác giữ chỗ.'
+              : roomQuery.data.availability === 'rented'
+                ? 'Phòng đã được cho thuê.'
+                : 'Chủ trọ đã ngừng nhận yêu cầu cho phòng này.'}
+          </Typography>
+          <Button title="Quay lại" variant="outline" onPress={() => navigation.goBack()} />
         </View>
       </ScreenContainer>
     );

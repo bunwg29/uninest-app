@@ -28,7 +28,13 @@ export const useLandlordListingMutation = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ action, id }: { action: 'hide' | 'republish' | 'delete'; id: string }) => {
+    mutationFn: ({
+      action,
+      id,
+    }: {
+      action: 'hide' | 'republish' | 'delete';
+      id: string;
+    }): Promise<{ deleted: boolean } | void> => {
       if (action === 'hide') return landlordListingsService.hideListing(id);
 
       if (action === 'republish') return landlordListingsService.republishListing(id);

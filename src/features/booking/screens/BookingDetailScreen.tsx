@@ -1,13 +1,15 @@
 import { Alert, Linking, Platform, ScrollView, StyleSheet, View } from 'react-native';
-import { Check, Circle, Clock3, MapPin, TriangleAlert } from 'lucide-react-native';
+import { Check, Circle, Clock3, MapPin, MessageCircle, TriangleAlert } from 'lucide-react-native';
 import { useNavigation, useRoute, type RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '@navigation';
+import { useOpenListingChat } from '@features/chat';
 import { useToast } from '@hooks';
 import { BORDER_RADIUS_TOKENS, SPACING_TOKENS, THEME_COLORS } from '@theme';
 import { Button, HeaderBar, ScreenContainer, Typography } from '@ui';
 import { ResourceCard, StatusBadge } from '../components';
 import { useBookingDetail, useCancelBooking } from '../hooks';
+import type { BookingStatus } from '../types';
 import { formatBookingDateTime, getHoursUntil } from '../utils';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
@@ -20,6 +22,7 @@ export const BookingDetailScreen = () => {
   const cancelBooking = useCancelBooking();
   const toast = useToast();
   const booking = bookingQuery.data;
+  const { openChat } = useOpenListingChat();
 
   const cancelWithoutReason = async () => {
     if (!booking) return;
@@ -82,10 +85,10 @@ export const BookingDetailScreen = () => {
           <View
             style={[
               styles.banner,
-              booking.status === 'confirmed' ? styles.successBanner : styles.warningBanner,
+              isPositiveStatus(booking.status) ? styles.successBanner : styles.warningBanner,
             ]}
           >
-            {booking.status === 'confirmed' ? (
+            {isPositiveStatus(booking.status) ? (
               <Check size={22} color={THEME_COLORS.SUCCESS} />
             ) : (
               <TriangleAlert size={22} color={THEME_COLORS.WARNING} />
@@ -94,15 +97,9 @@ export const BookingDetailScreen = () => {
               <Typography
                 variant="body1"
                 weight="BOLD"
-                colorKey={booking.status === 'confirmed' ? 'SUCCESS' : 'WARNING'}
+                colorKey={isPositiveStatus(booking.status) ? 'SUCCESS' : 'WARNING'}
               >
-                {booking.status === 'confirmed'
-                  ? 'Cả 2 bên đã xác nhận'
-                  : booking.status === 'cancelled'
-                    ? 'Đã hủy'
-                    : booking.status === 'expired'
-                      ? 'Yêu cầu đã hết hạn'
-                      : 'Đang chờ xác nhận'}
+                {BANNER_LABELS[booking.status]}
               </Typography>
               {booking.cancelReason ? (
                 <Typography variant="caption" colorKey="TEXT_SECONDARY">
@@ -127,11 +124,7 @@ export const BookingDetailScreen = () => {
               completed={Boolean(booking.confirmedAt)}
             />
             <TimelineStep
-              label={
-                booking.status === 'cancelled' || booking.status === 'expired'
-                  ? 'Hủy — không có phản hồi'
-                  : 'Xem phòng trực tiếp'
-              }
+              label={isClosedStatus(booking.status) ? 'Lịch hẹn đã đóng' : 'Xem phòng trực tiếp'}
               value={formatBookingDateTime(booking.startTime)}
               completed={false}
             />
@@ -170,7 +163,7 @@ export const BookingDetailScreen = () => {
             </View>
             <StatusBadge status={booking.status} />
           </View>
-          {booking.status === 'cancelled' || booking.status === 'expired' ? (
+          {isClosedStatus(booking.status) ? (
             <View style={styles.similarBox}>
               <Typography variant="body1" weight="BOLD">
                 Phòng tương tự đang còn trống
@@ -199,12 +192,25 @@ export const BookingDetailScreen = () => {
                 onPress={handleCancel}
                 style={styles.actionButton}
               />
-              {booking.status === 'pending' ? (
-                <Button
-                  title="Giữ chỗ phòng này"
-                  onPress={() => navigation.navigate('BookingHold', { id: booking.id })}
-                  fullWidth
-                />
+              <Button
+                title="Nhắn tin với Chủ trọ"
+                variant="outline"
+                leftIcon={<MessageCircle size={17} color={THEME_COLORS.TEXT_PRIMARY} />}
+                onPress={() => void openChat(booking.listing.id)}
+                fullWidth
+              />
+              {booking.status === 'confirmed' ? (
+                getHoursUntil(booking.startTime) <= 0 ? (
+                  <Button
+                    title="Giữ chỗ phòng này"
+                    onPress={() => navigation.navigate('BookingHold', { id: booking.id })}
+                    fullWidth
+                  />
+                ) : (
+                  <Typography variant="caption" colorKey="TEXT_MUTED" align="center">
+                    Bạn có thể giữ chỗ sau khi đã đến xem phòng.
+                  </Typography>
+                )
               ) : null}
             </View>
           )}
@@ -213,6 +219,20 @@ export const BookingDetailScreen = () => {
     </ScreenContainer>
   );
 };
+
+const BANNER_LABELS: Record<BookingStatus, string> = {
+  pending: 'Đang chờ Chủ trọ xác nhận',
+  confirmed: 'Cả 2 bên đã xác nhận',
+  holding: 'Bạn đang giữ chỗ phòng này',
+  expired: 'Yêu cầu đã hết hạn',
+  cancelled: 'Đã hủy',
+  rejected: 'Chủ trọ đã từ chối',
+};
+
+const isPositiveStatus = (status: BookingStatus) => status === 'confirmed' || status === 'holding';
+
+const isClosedStatus = (status: BookingStatus) =>
+  status === 'cancelled' || status === 'expired' || status === 'rejected';
 
 const TimelineStep = ({
   label,
@@ -243,7 +263,14 @@ const TimelineStep = ({
 );
 
 const styles = StyleSheet.create({
-  content: { padding: SPACING_TOKENS.MD, gap: SPACING_TOKENS.MD, paddingBottom: SPACING_TOKENS.XL },
+  content: {
+    width: '100%',
+    maxWidth: 720,
+    alignSelf: 'center',
+    padding: SPACING_TOKENS.MD,
+    gap: SPACING_TOKENS.MD,
+    paddingBottom: SPACING_TOKENS.XL,
+  },
   banner: {
     flexDirection: 'row',
     gap: SPACING_TOKENS.SM,

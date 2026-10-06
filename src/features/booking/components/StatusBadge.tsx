@@ -24,6 +24,11 @@ const STATUS_CONFIG: Record<BookingStatus, { label: string; color: string; backg
     color: THEME_COLORS.TEXT_MUTED,
     background: THEME_COLORS.SURFACE_MUTED,
   },
+  rejected: {
+    label: 'Bị từ chối',
+    color: THEME_COLORS.ERROR,
+    background: THEME_COLORS.ERROR_LIGHT,
+  },
   cancelled: {
     label: 'Đã hủy',
     color: THEME_COLORS.TEXT_MUTED,

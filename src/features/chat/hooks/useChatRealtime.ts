@@ -58,7 +58,6 @@ export const useChatRealtime = (userId: string | null): void => {
     socket.on('disconnect', handleDisconnect);
     socket.on(CHAT_SOCKET_EVENTS.NEW_MESSAGE, handleMessageChanged);
     socket.on(CHAT_SOCKET_EVENTS.MESSAGE_RECALLED, handleMessageChanged);
-    socket.on(CHAT_SOCKET_EVENTS.MESSAGE_UPDATED, handleMessageChanged);
     socket.on(CHAT_SOCKET_EVENTS.CONVERSATION_DELETED, handleConversationDeleted);
     socket.on(CHAT_SOCKET_EVENTS.MESSAGES_READ, handleMessagesRead);
 
@@ -79,7 +78,6 @@ export const useChatRealtime = (userId: string | null): void => {
       socket.off('disconnect', handleDisconnect);
       socket.off(CHAT_SOCKET_EVENTS.NEW_MESSAGE, handleMessageChanged);
       socket.off(CHAT_SOCKET_EVENTS.MESSAGE_RECALLED, handleMessageChanged);
-      socket.off(CHAT_SOCKET_EVENTS.MESSAGE_UPDATED, handleMessageChanged);
       socket.off(CHAT_SOCKET_EVENTS.CONVERSATION_DELETED, handleConversationDeleted);
       socket.off(CHAT_SOCKET_EVENTS.MESSAGES_READ, handleMessagesRead);
       chatSocket.disconnect();

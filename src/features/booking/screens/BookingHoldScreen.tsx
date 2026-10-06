@@ -12,8 +12,8 @@ import { useBookingDetail, useHoldBooking } from '../hooks';
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 type ScreenRouteProp = RouteProp<RootStackParamList, 'BookingHold'>;
 
-const HOLD_RULES = [
-  'Khoản cọc dự kiến là 2.500.000 ₫ hoặc theo mức cọc của phòng.',
+const getHoldRules = (deposit: number) => [
+  `Khoản cọc dự kiến là ${deposit.toLocaleString('vi-VN')} ₫ theo mức cọc của phòng.`,
   'Yêu cầu giữ chỗ có hiệu lực trong 7 ngày kể từ lúc xác nhận.',
   'Bạn được hoàn 100% nếu hủy trong 24 giờ đầu và chưa nhận phòng.',
   'Chỉ thanh toán qua cổng sandbox của UniNest, không chuyển khoản bên ngoài.',
@@ -49,7 +49,7 @@ export const BookingHoldScreen = () => {
           </Typography>
         </View>
         <View style={styles.rules}>
-          {HOLD_RULES.map((rule, index) => (
+          {getHoldRules(deposit).map((rule, index) => (
             <View key={rule} style={styles.ruleRow}>
               <View style={styles.number}>
                 <Typography variant="body2" weight="BOLD" color={THEME_COLORS.WHITE}>
@@ -79,7 +79,7 @@ export const BookingHoldScreen = () => {
           title="Tiếp tục đặt cọc"
           fullWidth
           isLoading={holdBooking.isPending}
-          disabled={!bookingQuery.data || bookingQuery.data.status !== 'pending'}
+          disabled={!bookingQuery.data || bookingQuery.data.status !== 'confirmed'}
           onPress={handleHold}
         />
       </View>
@@ -88,7 +88,14 @@ export const BookingHoldScreen = () => {
 };
 
 const styles = StyleSheet.create({
-  content: { padding: SPACING_TOKENS.MD, gap: SPACING_TOKENS.LG, paddingBottom: SPACING_TOKENS.XL },
+  content: {
+    width: '100%',
+    maxWidth: 720,
+    alignSelf: 'center',
+    padding: SPACING_TOKENS.MD,
+    gap: SPACING_TOKENS.LG,
+    paddingBottom: SPACING_TOKENS.XL,
+  },
   titleRow: { flexDirection: 'row', alignItems: 'center', gap: SPACING_TOKENS.MD },
   flex: { flex: 1 },
   rules: { gap: SPACING_TOKENS.MD },

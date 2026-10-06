@@ -20,30 +20,33 @@
   - Quản lý phiên & Token: Lưu `accessToken`, `refreshToken`, `user`, `role` an toàn trong `expo-secure-store`.
   - Đăng xuất (`logout`): Gửi refresh token và deviceId lên server để thu hồi (`is_revoked = true`), dọn sạch SecureStore và reset stack về màn hình Login.
   - Xác thực OTP (`OtpVerification`): Nhập mã 6 chữ số, thời hạn 5 phút, bộ đếm ngược 60 giây cho phép gửi lại mã hoặc đổi số điện thoại.
+  - Chủ trọ mới ở trạng thái "Chờ xác minh": luồng đăng tin hiển thị màn xác minh (CCCD/CMND) thay cho form; mục "Xác minh tài khoản Chủ trọ" ở Cá nhân.
   - Quên mật khẩu & Đặt lại mật khẩu (`ForgotPassword`, `ResetPassword`): Nhập SĐT -> Nhập OTP -> Đặt mật khẩu mới (tối thiểu 8 ký tự, có chữ số và chữ hoa). Schema Zod tiếng Việt đồng bộ.
 - **Listing Management (`FR-LISTING`, `FR-MANAGE`)**:
   - Landlord creates listing -> status defaults to `pending` -> Admin approves -> `active`.
   - Chủ trọ thiết lập lịch xem phòng theo buổi cho từng ngày trong tuần; lịch được giữ nguyên khi mở lại luồng chỉnh sửa.
-  - Media: Upload to Cloudflare R2 via presigned URL; database stores object keys while backend resolves public URLs for clients. Soft delete: 90 days retention.
+  - Media: chỉ ảnh jpg/png ≤5MB (kiểm tra ngay trên giao diện), upload lên Cloudflare R2 qua presigned URL (hiệu lực 5 phút); database stores object keys while backend resolves public URLs for clients. Soft delete: 90 days retention.
 - **Search & Compare (`FR-SEARCH`, `FR-COMPARE`)**:
-  - Tab Tìm trọ tải toàn bộ phòng từ `GET /api/v1/rooms`, hiển thị ảnh, tên, địa chỉ, giá và diện tích; nút đặt lịch truyền `resourceId` sang màn booking và màn này tải chi tiết từ `GET /api/v1/rooms/:id`.
+  - Tab Tìm trọ gọi `GET /listings/search` (không còn dữ liệu giả): danh sách / lưới / bản đồ, lọc giá-diện tích-loại phòng-tiện ích-trường-bán kính, sắp xếp mặc định theo mức độ phù hợp, cuộn vô hạn, màn rỗng kèm gợi ý mở rộng bán kính. Bộ lọc được giữ khi quay lại từ trang chi tiết.
+  - Phòng đã lưu đồng bộ với server (`/listings/favorites`), màn "Phòng đã lưu" ở mục Cá nhân; danh mục nổi bật ở Trang chủ áp bộ lọc tương ứng.
+  - Trang chi tiết (`ListingDetail`): thanh hành động Nhắn tin / Đặt lịch xem / Giữ chỗ, trạng thái "Đang giữ chỗ" kèm ngày hết hạn, lưu, chia sẻ, báo cáo tin, xem toàn bộ tiện ích và ảnh toàn màn hình; mọi tin hiển thị theo `availability` từ server.
   - Spatial radius via PostGIS (`ST_DWithin`) around university.
   - Multi-filter: Price range, room type, amenities, distance. Sort: price, newest, nearest.
-  - Compare matrix: Up to 5 listings simultaneously (client-side state only).
+  - Compare matrix: tối đa 4 phòng đồng thời (chỉ lưu phía client); khoảng cách tính theo trường/vị trí đã chọn ở bộ lọc.
 - **Booking / Holding (`FR-BOOKING`)**:
-  - 2 Types: `viewing` (visit appointment) and `held` (room hold request).
-  - Statuses: `pending` -> `confirmed` / `holding` / `expired` / `cancelled`.
-  - Auto-expire: `pending` hết hạn sau 15 phút; `holding` hết hạn sau 7 ngày bằng cron backend chạy mỗi phút.
-  - Client hiển thị countdown theo `expiresAt` và polling API mỗi 30 giây.
+  - Statuses: `pending` -> `confirmed` / `rejected` / `expired` / `cancelled`; `confirmed` -> `holding` / `cancelled`; `holding` -> `expired` / `cancelled`.
+  - Luồng Sinh viên: chi tiết phòng -> Đặt lịch xem -> Lịch hẹn của tôi (4 tab: Chờ, Đã xác nhận, Hết hạn, Đã hủy; thẻ có Nhắn tin / Hủy yêu cầu và đếm ngược) -> Giữ chỗ chỉ khả dụng khi lịch đã được xác nhận và đã đến giờ xem.
+  - Luồng Chủ trọ: tab Lịch hẹn liệt kê yêu cầu của các tin mình đăng; Xác nhận, Từ chối (bắt buộc lý do), Hủy giữ chỗ (bắt buộc lý do).
+  - Auto-expire bằng cron backend: yêu cầu `pending` hết hạn sau 24 giờ; `holding` theo `HOLDING_DAYS` (mặc định 7 ngày). Client polling 15-30 giây.
   - Hủy trước giờ xem dưới 24 giờ bắt buộc nhập lý do.
 - **Realtime Chat (`FR-CHAT`)**:
   - 1-1 conversation bound to a listing. WebSocket connection.
   - Media attachment via R2 presigned URLs (folder `chat/`, tối đa 10 ảnh/tin; tin nhiều ảnh hiển thị dạng lưới như Messenger, không có nền bong bóng, từ ảnh thứ 6 trở đi gộp thành ô "+N"). Push notification when recipient is offline.
   - Màn hình: `Messages` (danh sách hội thoại, lọc Tất cả/Chưa đọc, trạng thái rỗng), `ChatRoom` (khung chat ghim tin đăng, trạng thái đã đọc, thu hồi/sao chép tin qua long press), `ChatImagePreview` (xem trước ảnh + chú thích trước khi gửi).
   - Danh sách hội thoại tải từng trang 20 mục khi cuộn; tìm kiếm gọi API (`keyword`, debounce 400ms), không lọc phía client. Mở đoạn chat mới tải 30 tin đầu, kéo lên để tải tiếp.
-  - Nhấn giữ tin của mình: Sao chép, Chỉnh sửa (tin có chữ, trong 24 giờ, hiển thị "đã chỉnh sửa"), Thu hồi. Xoá đoạn chat bằng nhấn giữ trong danh sách hoặc menu ⋮ ở đầu khung chat (chỉ xoá phía mình).
+  - Nhấn giữ tin: Sao chép; tin của mình có thêm Thu hồi (không có chỉnh sửa theo SRS). Xoá đoạn chat bằng nhấn giữ trong danh sách hoặc menu ⋮ ở đầu khung chat (chỉ xoá phía mình).
   - Offline: tin nhắn soạn dở và tin chờ gửi được lưu bằng AsyncStorage (`chatStore`), gửi lại tự động khi có mạng, chống trùng nhờ `clientMessageId`. Tin gửi lỗi hiển thị nút "Thử lại".
-  - Điểm vào từ trang chi tiết phòng: gọi `useStartConversation().mutateAsync(listingId)` rồi `navigation.navigate('ChatRoom', { conversationId })`.
+  - Điểm vào từ trang chi tiết phòng và thẻ lịch hẹn: `useOpenListingChat().openChat(listingId)` (tạo hoặc mở lại hội thoại rồi vào `ChatRoom`).
 - **Community Forum (`FR-FORUM`)**:
   - Categories (roommate search, neighborhood tips, Q&A).
   - Client & backend profanity filter before publish. Auto-hide when report threshold reached.

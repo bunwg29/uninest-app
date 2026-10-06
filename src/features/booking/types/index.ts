@@ -1,8 +1,10 @@
 export {};
-export type BookingStatus = 'pending' | 'confirmed' | 'holding' | 'expired' | 'cancelled';
+export type BookingStatus =
+  'pending' | 'confirmed' | 'holding' | 'expired' | 'cancelled' | 'rejected';
 
 export interface BookingResource {
   id: string;
+  ownerId?: string;
   title: string;
   price: number;
   address: string;
@@ -24,6 +26,13 @@ export interface BookingEvent {
   createdAt: string;
 }
 
+export interface BookingStudent {
+  id: string;
+  fullName: string;
+  phone: string;
+  avatarUrl: string | null;
+}
+
 export interface Booking {
   id: string;
   code: string;
@@ -38,7 +47,9 @@ export interface Booking {
   confirmedAt: string | null;
   expiredAt: string | null;
   cancelledAt: string | null;
+  rejectedAt: string | null;
   createdAt: string;
+  student: BookingStudent | null;
   listing: BookingResource;
   events: BookingEvent[];
 }

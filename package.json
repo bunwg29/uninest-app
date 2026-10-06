@@ -17,7 +17,7 @@
     "test": "jest --runInBand",
     "test:cov": "jest --coverage --runInBand",
     "test:e2e": "playwright test",
-    "test:search": "node --experimental-strip-types --test tests/searchRepository.test.mjs"
+    "test:search": "node --experimental-strip-types --test tests/searchParams.test.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^4.1.0",

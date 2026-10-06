@@ -11,7 +11,6 @@ interface SearchState {
   draftFilters: SearchFilters;
   viewMode: SearchViewMode;
   selectedListingId: string | null;
-  savedListingIds: string[];
   isFilterVisible: boolean;
   isSortVisible: boolean;
   setKeyword: (keyword: string) => void;
@@ -27,7 +26,8 @@ interface SearchState {
   setViewMode: (viewMode: SearchViewMode) => void;
   setSelectedListingId: (listingId: string | null) => void;
   setLocation: (latitude: number, longitude: number) => void;
-  toggleSavedListing: (listingId: string) => void;
+  setRadius: (radius: number) => void;
+  applyPreset: (filters: Partial<SearchFilters>) => void;
 }
 
 const createDefaultFilters = (): SearchFilters => ({
@@ -41,7 +41,6 @@ export const useSearchStore = create<SearchState>((set) => ({
   draftFilters: createDefaultFilters(),
   viewMode: 'list',
   selectedListingId: null,
-  savedListingIds: [],
   isFilterVisible: false,
   isSortVisible: false,
   setKeyword: (keyword) =>
@@ -68,6 +67,7 @@ export const useSearchStore = create<SearchState>((set) => ({
         keyword: state.appliedFilters.keyword,
         latitude: state.appliedFilters.latitude,
         longitude: state.appliedFilters.longitude,
+        schoolId: state.appliedFilters.schoolId,
       },
     })),
   applyDraftFilters: () =>
@@ -104,10 +104,14 @@ export const useSearchStore = create<SearchState>((set) => ({
     set((state) => ({
       appliedFilters: { ...state.appliedFilters, latitude, longitude, page: 1 },
     })),
-  toggleSavedListing: (listingId) =>
+  setRadius: (radius) =>
     set((state) => ({
-      savedListingIds: state.savedListingIds.includes(listingId)
-        ? state.savedListingIds.filter((id) => id !== listingId)
-        : [...state.savedListingIds, listingId],
+      appliedFilters: { ...state.appliedFilters, radius, page: 1 },
     })),
+  applyPreset: (filters) =>
+    set(() => {
+      const next = { ...createDefaultFilters(), ...filters, page: 1 };
+
+      return { appliedFilters: next, draftFilters: next, selectedListingId: null };
+    }),
 }));

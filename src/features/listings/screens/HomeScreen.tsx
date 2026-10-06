@@ -16,6 +16,7 @@ import {
 import { THEME_COLORS, SPACING_TOKENS, BORDER_RADIUS_TOKENS } from '@theme';
 import { Avatar, Button, ScreenContainer, Typography } from '@ui';
 import { useAuth, useRoleGuard } from '@features/auth';
+import { SEARCH_SCHOOLS, useSearchStore } from '@features/search';
 import { useComparisonStore } from '@features/comparison';
 import type { MainTabParamList, RootStackParamList } from '@navigation';
 import { useListingPostStore } from '../store/listingPostStore';
@@ -60,6 +61,7 @@ export const HomeScreen = () => {
   const { width } = useWindowDimensions();
   const isCompact = width < 375;
   const comparisonCount = useComparisonStore((state) => state.items.length);
+  const applySearchPreset = useSearchStore((state) => state.applyPreset);
 
   const handleGoToProfile = () => {
     navigation.navigate('Profile' as never);
@@ -67,6 +69,32 @@ export const HomeScreen = () => {
 
   const handleGoToSearch = () => {
     navigation.navigate('Search' as never);
+  };
+
+  const handleCategoryPress = (categoryId: string) => {
+    if (categoryId === 'roommate') {
+      handleGoToRoommateCommunity();
+
+      return;
+    }
+
+    const school = SEARCH_SCHOOLS[0];
+
+    if (categoryId === 'near-university') {
+      applySearchPreset({
+        schoolId: school.id,
+        latitude: school.latitude,
+        longitude: school.longitude,
+        radius: 3,
+        sortBy: 'distance',
+      });
+    } else if (categoryId === 'studio') {
+      applySearchPreset({ roomTypes: ['chung_cu_mini', 'studio'] });
+    } else if (categoryId === 'budget') {
+      applySearchPreset({ maxPrice: 2_000_000, sortBy: 'price_asc' });
+    }
+
+    handleGoToSearch();
   };
 
   const handleGoToRoommateCommunity = () => {
@@ -199,7 +227,7 @@ export const HomeScreen = () => {
               <TouchableOpacity
                 key={cat.id}
                 style={[styles.categoryItem, isCompact && styles.categoryItemCompact]}
-                onPress={cat.id === 'roommate' ? handleGoToRoommateCommunity : handleGoToSearch}
+                onPress={() => handleCategoryPress(cat.id)}
                 activeOpacity={0.7}
               >
                 <View style={[styles.categoryIconCircle, { backgroundColor: cat.bgColor }]}>

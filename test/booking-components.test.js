@@ -1,6 +1,6 @@
 import React from 'react';
 import { act, cleanup, fireEvent, render } from '@testing-library/react-native';
-import { CountdownTimer } from '../src/features/booking/components/CountdownTimer';
+import { CountdownTimer, formatRemaining } from '../src/features/booking/components/CountdownTimer';
 import { SlotGrid } from '../src/features/booking/components/SlotGrid';
 import { useBookingStore } from '../src/features/booking/store/bookingStore';
 
@@ -16,15 +16,21 @@ describe('Thành phần đặt lịch', () => {
     jest.setSystemTime(new Date('2026-10-02T08:00:00.000Z'));
     const onExpire = jest.fn();
     const screen = await render(
-      <CountdownTimer expiresAt="2026-10-02T08:00:02.000Z" onExpire={onExpire} />
+      <CountdownTimer expiresAt="2026-10-02T08:01:30.000Z" onExpire={onExpire} />
     );
 
-    expect(screen.getByText('Còn 00:00:02')).toBeTruthy();
+    expect(screen.getByText('Còn 2 phút')).toBeTruthy();
 
-    await act(() => jest.advanceTimersByTime(2000));
+    await act(() => jest.advanceTimersByTime(90_000));
 
-    expect(screen.getByText('Còn 00:00:00')).toBeTruthy();
+    expect(screen.getByText('Còn 0 phút')).toBeTruthy();
     expect(onExpire).toHaveBeenCalledTimes(1);
+  });
+
+  it('định dạng thời gian còn lại theo ngày, giờ và phút', () => {
+    expect(formatRemaining(3 * 24 * 3_600_000)).toBe('Còn 3 ngày');
+    expect(formatRemaining(21 * 3_600_000)).toBe('Còn 21 giờ');
+    expect(formatRemaining(10 * 60_000)).toBe('Còn 10 phút');
   });
 
   it('chỉ cho phép chọn khung giờ còn trống', async () => {

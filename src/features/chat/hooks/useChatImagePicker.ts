@@ -1,10 +1,19 @@
 import { useCallback } from 'react';
 import { Alert } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
+import { filterValidUploadImages } from '@core';
 import { CHAT_LIMITS } from '../types';
 
 const showPermissionAlert = (message: string) => {
   Alert.alert('Cần quyền truy cập', message, [{ text: 'Đóng' }]);
+};
+
+const toValidUris = (assets: ImagePicker.ImagePickerAsset[]): string[] => {
+  const { valid, firstError } = filterValidUploadImages(assets);
+
+  if (firstError) showPermissionAlert(firstError);
+
+  return valid.map((asset) => asset.uri);
 };
 
 export const useChatImagePicker = () => {
@@ -24,7 +33,7 @@ export const useChatImagePicker = () => {
       selectionLimit: Math.max(1, Math.min(limit, CHAT_LIMITS.MAX_IMAGES_PER_MESSAGE)),
     });
 
-    return result.canceled ? [] : result.assets.map((asset) => asset.uri);
+    return result.canceled ? [] : toValidUris(result.assets);
   }, []);
 
   const takePhoto = useCallback(async (): Promise<string[]> => {
@@ -41,7 +50,7 @@ export const useChatImagePicker = () => {
       quality: 0.8,
     });
 
-    return result.canceled ? [] : result.assets.map((asset) => asset.uri);
+    return result.canceled ? [] : toValidUris(result.assets);
   }, []);
 
   return { pickFromLibrary, takePhoto };

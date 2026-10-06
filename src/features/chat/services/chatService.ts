@@ -33,12 +33,6 @@ const resolveImageContentType = (uri: string): string => {
 
   if (extension === 'png') return 'image/png';
 
-  if (extension === 'webp') return 'image/webp';
-
-  if (extension === 'gif') return 'image/gif';
-
-  if (extension === 'heic') return 'image/heic';
-
   return 'image/jpeg';
 };
 
@@ -102,19 +96,6 @@ export const chatService = {
   async recallMessage(conversationId: string, messageId: string): Promise<ChatMessage> {
     const response = await apiClient.delete(
       `/conversations/${conversationId}/messages/${messageId}`
-    );
-
-    return unwrapData<ChatMessage>(response.data);
-  },
-
-  async editMessage(
-    conversationId: string,
-    messageId: string,
-    content: string
-  ): Promise<ChatMessage> {
-    const response = await apiClient.patch(
-      `/conversations/${conversationId}/messages/${messageId}`,
-      { content }
     );
 
     return unwrapData<ChatMessage>(response.data);

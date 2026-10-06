@@ -47,6 +47,32 @@ export const bookingService = {
     return unwrapData<Booking>(response.data);
   },
 
+  async getLandlordList(status?: BookingStatus): Promise<BookingListResponse> {
+    const response = await apiClient.get('/bookings/landlord', {
+      params: { status, page: 1, limit: 50 },
+    });
+
+    return unwrapData<BookingListResponse>(response.data);
+  },
+
+  async confirm(id: string): Promise<Booking> {
+    const response = await apiClient.patch(`/bookings/${id}/confirm`);
+
+    return unwrapData<Booking>(response.data);
+  },
+
+  async reject(id: string, reason: string): Promise<Booking> {
+    const response = await apiClient.patch(`/bookings/${id}/reject`, { reason });
+
+    return unwrapData<Booking>(response.data);
+  },
+
+  async release(id: string, reason: string): Promise<Booking> {
+    const response = await apiClient.patch(`/bookings/${id}/release`, { reason });
+
+    return unwrapData<Booking>(response.data);
+  },
+
   async hold(id: string): Promise<Booking> {
     const response = await apiClient.patch(`/bookings/${id}/hold`);
 

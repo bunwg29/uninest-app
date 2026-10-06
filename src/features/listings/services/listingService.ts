@@ -36,11 +36,16 @@ export const listingService = {
     return unwrapData<RecordListingViewResponse>(response.data);
   },
 
+  async reportListing(id: string, reason: string, note?: string): Promise<void> {
+    await apiClient.post(`/listings/${id}/reports`, { reason, note: note || undefined });
+  },
+
   async getPresignedUploadUrl(req: PresignedUploadRequest): Promise<PresignedUploadResponse> {
     const response = await apiClient.post('/storage/presigned-upload-url', {
       fileName: req.fileName,
       contentType: req.contentType,
       folder: req.folder ?? 'listings',
+      fileSize: req.fileSize,
     });
 
     return unwrapData<PresignedUploadResponse>(response.data);

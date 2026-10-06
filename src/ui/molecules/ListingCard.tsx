@@ -16,7 +16,7 @@ export interface ListingCardProps {
   address?: string;
   rating?: number;
   reviewCount?: number;
-  status?: 'available' | 'holding' | 'featured';
+  status?: 'available' | 'holding' | 'featured' | 'rented' | 'paused';
   matchPercentage?: number;
   isSaved?: boolean;
   onPress: () => void;
@@ -25,6 +25,22 @@ export interface ListingCardProps {
   variant?: 'vertical' | 'horizontal';
   compact?: boolean;
 }
+
+const STATUS_BADGE_VARIANTS: Record<NonNullable<ListingCardProps['status']>, BadgeVariant> = {
+  available: 'available',
+  holding: 'holding',
+  featured: 'featured',
+  rented: 'neutral',
+  paused: 'neutral',
+};
+
+const STATUS_LABELS: Record<NonNullable<ListingCardProps['status']>, string> = {
+  available: 'Còn trống',
+  holding: 'Đang giữ chỗ',
+  featured: 'Nổi bật',
+  rented: 'Đã cho thuê',
+  paused: 'Ngừng nhận yêu cầu',
+};
 
 export const ListingCard = ({
   title,
@@ -50,11 +66,8 @@ export const ListingCard = ({
   const formattedDistance = formatDistance(distanceMeters, targetCampusName);
   const isHorizontal = variant === 'horizontal';
 
-  const statusBadgeVariant: BadgeVariant =
-    status === 'holding' ? 'holding' : status === 'featured' ? 'featured' : 'available';
-
-  const statusLabel =
-    status === 'holding' ? 'Đang giữ chỗ' : status === 'featured' ? 'Nổi bật' : 'Còn trống';
+  const statusBadgeVariant: BadgeVariant = STATUS_BADGE_VARIANTS[status];
+  const statusLabel = STATUS_LABELS[status];
 
   return (
     <TouchableOpacity

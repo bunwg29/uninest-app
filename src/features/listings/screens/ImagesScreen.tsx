@@ -6,6 +6,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { Plus, X, Star } from 'lucide-react-native';
 import { THEME_COLORS, SPACING_TOKENS, BORDER_RADIUS_TOKENS } from '@theme';
 import { Button, Typography, HeaderBar, ScreenContainer } from '@ui';
+import { filterValidUploadImages, resolveImageContentType } from '@core';
 import { useResponsiveLayout, useToast } from '@hooks';
 import type { ListingPostStackParamList } from '@navigation';
 import { useListingPostStore } from '../store/listingPostStore';
@@ -57,12 +58,19 @@ export const ImagesScreen = () => {
 
     if (result.canceled || !result.assets.length) return;
 
-    const newImages: LocalImageItem[] = result.assets.map((asset, idx) => ({
+    const { valid, firstError } = filterValidUploadImages(result.assets);
+
+    if (firstError) toast.warning(firstError);
+
+    if (valid.length === 0) return;
+
+    const newImages: LocalImageItem[] = valid.map((asset, idx) => ({
       uri: asset.uri,
       isCover: localImages.length === 0 && idx === 0,
       sortOrder: localImages.length + idx,
       fileName: asset.fileName ?? `photo_${Date.now()}_${idx}.jpg`,
-      contentType: asset.mimeType ?? 'image/jpeg',
+      contentType: resolveImageContentType(asset),
+      fileSize: asset.fileSize ?? undefined,
     }));
 
     const combined = [...localImages, ...newImages].slice(0, MAX_LISTING_IMAGES);

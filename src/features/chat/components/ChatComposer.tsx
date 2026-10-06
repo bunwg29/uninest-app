@@ -1,5 +1,5 @@
 import { View, TextInput, TouchableOpacity, ScrollView, StyleSheet } from 'react-native';
-import { Camera, Check, Pencil, Plus, Send, X } from 'lucide-react-native';
+import { Camera, Plus, Send } from 'lucide-react-native';
 import { THEME_COLORS, SPACING_TOKENS, BORDER_RADIUS_TOKENS, TYPOGRAPHY_TOKENS } from '@theme';
 import { Typography } from '@ui';
 import { CHAT_LIMITS } from '../types';
@@ -12,8 +12,6 @@ export interface ChatComposerProps {
   onTakePhoto: () => void;
   quickReplies?: readonly string[];
   onPressQuickReply?: (text: string) => void;
-  isEditing?: boolean;
-  onCancelEdit?: () => void;
 }
 
 export const ChatComposer = ({
@@ -24,33 +22,12 @@ export const ChatComposer = ({
   onTakePhoto,
   quickReplies = [],
   onPressQuickReply,
-  isEditing = false,
-  onCancelEdit,
 }: ChatComposerProps) => {
   const canSend = value.trim().length > 0;
-  const shouldShowQuickReplies = quickReplies.length > 0 && !canSend && !isEditing;
+  const shouldShowQuickReplies = quickReplies.length > 0 && !canSend;
 
   return (
     <View style={styles.container}>
-      {isEditing ? (
-        <View style={styles.editBanner}>
-          <Pencil size={14} color={THEME_COLORS.PRIMARY} />
-
-          <Typography
-            variant="caption"
-            weight="SEMIBOLD"
-            colorKey="PRIMARY_DARK"
-            style={styles.editLabel}
-          >
-            Đang chỉnh sửa tin nhắn
-          </Typography>
-
-          <TouchableOpacity onPress={onCancelEdit} hitSlop={8} accessibilityLabel="Huỷ chỉnh sửa">
-            <X size={16} color={THEME_COLORS.TEXT_MUTED} />
-          </TouchableOpacity>
-        </View>
-      ) : null}
-
       {shouldShowQuickReplies ? (
         <ScrollView
           horizontal
@@ -74,15 +51,13 @@ export const ChatComposer = ({
       ) : null}
 
       <View style={styles.row}>
-        {isEditing ? null : (
-          <TouchableOpacity
-            style={styles.iconButton}
-            onPress={onPickImages}
-            accessibilityLabel="Chọn ảnh từ thư viện"
-          >
-            <Plus size={22} color={THEME_COLORS.TEXT_PRIMARY} />
-          </TouchableOpacity>
-        )}
+        <TouchableOpacity
+          style={styles.iconButton}
+          onPress={onPickImages}
+          accessibilityLabel="Chọn ảnh từ thư viện"
+        >
+          <Plus size={22} color={THEME_COLORS.TEXT_PRIMARY} />
+        </TouchableOpacity>
 
         <View style={styles.inputWrapper}>
           <TextInput
@@ -96,27 +71,21 @@ export const ChatComposer = ({
           />
         </View>
 
-        {isEditing ? null : (
-          <TouchableOpacity
-            style={styles.iconButton}
-            onPress={onTakePhoto}
-            accessibilityLabel="Chụp ảnh"
-          >
-            <Camera size={22} color={THEME_COLORS.TEXT_PRIMARY} />
-          </TouchableOpacity>
-        )}
+        <TouchableOpacity
+          style={styles.iconButton}
+          onPress={onTakePhoto}
+          accessibilityLabel="Chụp ảnh"
+        >
+          <Camera size={22} color={THEME_COLORS.TEXT_PRIMARY} />
+        </TouchableOpacity>
 
         <TouchableOpacity
           style={[styles.sendButton, canSend && styles.sendButtonActive]}
           onPress={onSend}
           disabled={!canSend}
-          accessibilityLabel={isEditing ? 'Lưu chỉnh sửa' : 'Gửi tin nhắn'}
+          accessibilityLabel="Gửi tin nhắn"
         >
-          {isEditing ? (
-            <Check size={20} color={canSend ? THEME_COLORS.WHITE : THEME_COLORS.TEXT_PLACEHOLDER} />
-          ) : (
-            <Send size={20} color={canSend ? THEME_COLORS.WHITE : THEME_COLORS.TEXT_PLACEHOLDER} />
-          )}
+          <Send size={20} color={canSend ? THEME_COLORS.WHITE : THEME_COLORS.TEXT_PLACEHOLDER} />
         </TouchableOpacity>
       </View>
     </View>
@@ -129,17 +98,6 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: THEME_COLORS.BORDER,
     paddingBottom: SPACING_TOKENS.SM,
-  },
-  editBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: SPACING_TOKENS.SM,
-    paddingHorizontal: SPACING_TOKENS.MD,
-    paddingVertical: SPACING_TOKENS.SM,
-    backgroundColor: THEME_COLORS.PRIMARY_LIGHT,
-  },
-  editLabel: {
-    flex: 1,
   },
   quickReplies: {
     paddingHorizontal: SPACING_TOKENS.MD - 4,
