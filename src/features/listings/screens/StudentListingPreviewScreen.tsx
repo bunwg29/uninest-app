@@ -223,8 +223,11 @@ export const StudentListingPreviewScreen = () => {
         />
         <Button
           title="Đặt lịch xem phòng"
-          onPress={() => undefined}
-          disabled
+          onPress={() =>
+            navigation.navigate('BookingNew', {
+              resourceId: listing.id,
+            })
+          }
           style={styles.primaryButton}
         />
       </View>

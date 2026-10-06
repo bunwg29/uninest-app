@@ -8,6 +8,7 @@ import {
   MapPin,
   MessageSquare,
   PlusCircle,
+  Scale,
   Search,
   Tag,
   Users2,
@@ -15,6 +16,7 @@ import {
 import { THEME_COLORS, SPACING_TOKENS, BORDER_RADIUS_TOKENS } from '@theme';
 import { Avatar, Button, ScreenContainer, Typography } from '@ui';
 import { useAuth, useRoleGuard } from '@features/auth';
+import { useComparisonStore } from '@features/comparison';
 import type { MainTabParamList, RootStackParamList } from '@navigation';
 import { useListingPostStore } from '../store/listingPostStore';
 
@@ -57,6 +59,7 @@ export const HomeScreen = () => {
   const { isLandlord } = useRoleGuard();
   const { width } = useWindowDimensions();
   const isCompact = width < 375;
+  const comparisonCount = useComparisonStore((state) => state.items.length);
 
   const handleGoToProfile = () => {
     navigation.navigate('Profile' as never);
@@ -72,6 +75,10 @@ export const HomeScreen = () => {
 
   const handleGoToMessages = () => {
     navigation.navigate('Messages' as never);
+  };
+
+  const handleGoToComparison = () => {
+    navigation.navigate('Comparison');
   };
 
   const handleGoToListingPost = () => {
@@ -130,6 +137,22 @@ export const HomeScreen = () => {
         </TouchableOpacity>
 
         <View style={styles.headerActions}>
+          <TouchableOpacity
+            style={styles.iconButton}
+            onPress={handleGoToComparison}
+            activeOpacity={0.7}
+            accessibilityLabel="Mở danh sách so sánh"
+          >
+            <Scale size={20} color={THEME_COLORS.TEXT_PRIMARY} />
+            {comparisonCount > 0 ? (
+              <View style={styles.comparisonBadge}>
+                <Typography variant="tiny" weight="BOLD" color={THEME_COLORS.WHITE}>
+                  {comparisonCount}
+                </Typography>
+              </View>
+            ) : null}
+          </TouchableOpacity>
+
           <TouchableOpacity
             style={styles.iconButton}
             onPress={handleGoToMessages}
@@ -296,6 +319,18 @@ const styles = StyleSheet.create({
     height: 8,
     borderRadius: 4,
     backgroundColor: THEME_COLORS.ERROR,
+  },
+  comparisonBadge: {
+    position: 'absolute',
+    top: 3,
+    right: 3,
+    minWidth: 16,
+    height: 16,
+    paddingHorizontal: 3,
+    borderRadius: BORDER_RADIUS_TOKENS.FULL,
+    backgroundColor: THEME_COLORS.ERROR,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   searchBar: {
     flexDirection: 'row',
