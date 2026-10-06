@@ -14,8 +14,10 @@ import {
 import {
   AlertCircle,
   ChevronRight,
+  Clock3,
   EllipsisVertical,
   ImageOff,
+  Info,
   Search,
   X,
 } from 'lucide-react-native';
@@ -23,7 +25,7 @@ import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '@navigation';
 import { formatVND } from '@core';
-import { THEME_COLORS, BORDER_RADIUS_TOKENS, SPACING_TOKENS } from '@theme';
+import { THEME_COLORS, BORDER_RADIUS_TOKENS, OVERLAY_COLORS, SPACING_TOKENS } from '@theme';
 import {
   useLandlordListingDetailMutation,
   useLandlordListingMutation,
@@ -31,9 +33,9 @@ import {
 } from '../hooks';
 import type { LandlordListing, LandlordListingStatus } from '../types';
 import {
-  Badge,
   Button,
   EmptyState,
+  GradientView,
   LoadingOverlay,
   Modal,
   ScreenContainer,
@@ -42,6 +44,7 @@ import {
 } from '@ui';
 import { useResponsiveLayout, useToast } from '@hooks';
 import { useListingPostStore } from '../store/listingPostStore';
+import { LANDLORD_STATUS_LABELS, LANDLORD_STATUS_TONES, LandlordStatusPill } from '../components';
 
 type StatusTab = {
   key: LandlordListingStatus;
@@ -56,24 +59,6 @@ const STATUS_TABS: StatusTab[] = [
   { key: 'expired', label: 'Đã cho thuê' },
   { key: 'paused', label: 'Ngừng nhận yêu cầu' },
 ];
-
-const STATUS_LABELS: Record<LandlordListingStatus, string> = {
-  published: 'ĐANG HIỂN THỊ',
-  pending: 'CHỜ DUYỆT',
-  rejected: 'BỊ TỪ CHỐI',
-  hidden: 'ĐÃ ẨN',
-  expired: 'ĐÃ CHO THUÊ',
-  paused: 'NGỪNG NHẬN YÊU CẦU',
-};
-
-const STATUS_VARIANTS: Record<LandlordListingStatus, 'available' | 'holding' | 'neutral'> = {
-  published: 'available',
-  pending: 'holding',
-  rejected: 'holding',
-  hidden: 'neutral',
-  expired: 'neutral',
-  paused: 'neutral',
-};
 
 type ListingAction = {
   key: 'viewDetail' | 'edit' | 'hide' | 'delete' | 'republish' | 'cancel';
@@ -207,7 +192,7 @@ export const LandlordListingsScreen = () => {
   return (
     <ScreenContainer style={styles.container} applyBottomInset={false} keyboardAvoiding={false}>
       <View style={[styles.header, isSearchVisible && styles.headerWithSearch]}>
-        <Typography variant="h1" weight="BOLD">
+        <Typography variant="h1" weight="BOLD" style={styles.headerTitle}>
           Tin đăng
         </Typography>
 
@@ -217,7 +202,7 @@ export const LandlordListingsScreen = () => {
           onPress={handleToggleSearch}
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
-          <Search size={22} color={THEME_COLORS.TEXT_PRIMARY} />
+          <Search size={20} color={THEME_COLORS.TEXT_PRIMARY} />
         </TouchableOpacity>
       </View>
 
@@ -426,11 +411,12 @@ const StatusTabs = ({
             accessibilityState={{ selected: isActive }}
           >
             <Typography
-              variant="caption"
-              weight={isActive ? 'SEMIBOLD' : 'REGULAR'}
-              color={isActive ? THEME_COLORS.PRIMARY : THEME_COLORS.TEXT_PRIMARY}
+              variant="body2"
+              weight={isActive ? 'BOLD' : 'MEDIUM'}
+              color={isActive ? THEME_COLORS.PRIMARY_DARK : THEME_COLORS.TEXT_SECONDARY}
+              style={styles.tabLabel}
             >
-              {count === undefined ? item.label : `${item.label} ${count}`}
+              {count ? `${item.label} ${count}` : item.label}
             </Typography>
           </TouchableOpacity>
         );
@@ -450,6 +436,8 @@ const LandlordListingCard = ({
 }) => {
   const [hasImageError, setHasImageError] = useState(false);
   const { isCompact } = useResponsiveLayout();
+  const isHolding = listing.holdingStatus && listing.status === 'published';
+  const imageTip = getImageTip(listing);
 
   return (
     <TouchableOpacity
@@ -467,30 +455,36 @@ const LandlordListingCard = ({
               onError={() => setHasImageError(true)}
             />
           ) : (
-            <View style={styles.thumbnailPlaceholder}>
+            <GradientView
+              colors={[OVERLAY_COLORS.FIELD_BORDER, THEME_COLORS.SURFACE_MUTED]}
+              style={styles.thumbnailPlaceholder}
+            >
               <ImageOff size={22} color={THEME_COLORS.TEXT_PLACEHOLDER} />
-            </View>
+            </GradientView>
           )}
         </View>
 
         <View style={styles.cardDetails}>
           <View style={styles.badgesRow}>
-            <Badge
-              label={STATUS_LABELS[listing.status]}
-              variant={listing.status === 'rejected' ? 'danger' : STATUS_VARIANTS[listing.status]}
-              size="sm"
-            />
-            {listing.isFeatured ? <Badge label="NỔI BẬT" variant="featured" size="sm" /> : null}
+            {isHolding ? (
+              <LandlordStatusPill label="Đang giữ chỗ" tone="warning" />
+            ) : (
+              <LandlordStatusPill
+                label={LANDLORD_STATUS_LABELS[listing.status]}
+                tone={LANDLORD_STATUS_TONES[listing.status]}
+              />
+            )}
+            {listing.isFeatured ? <LandlordStatusPill label="Nổi bật" tone="featured" /> : null}
           </View>
-          <Typography variant="body1" weight="SEMIBOLD" numberOfLines={2} style={styles.cardTitle}>
+          <Typography variant="body2" weight="BOLD" numberOfLines={2} style={styles.cardTitle}>
             {listing.title}
           </Typography>
           <View style={styles.priceRow}>
-            <Typography variant="body2" weight="BOLD" colorKey="PRIMARY">
+            <Typography variant="body1" weight="BOLD" colorKey="PRIMARY_DARK">
               {formatListingPrice(listing.price)}
             </Typography>
-            <Typography variant="caption" colorKey="TEXT_MUTED">
-              {`/ tháng${Number.isFinite(listing.area) ? ` · ${listing.area} m²` : ''}`}
+            <Typography variant="caption" weight="MEDIUM" colorKey="TEXT_PLACEHOLDER">
+              {`/tháng${Number.isFinite(listing.area) ? ` · ${listing.area} m²` : ''}`}
             </Typography>
           </View>
         </View>
@@ -501,13 +495,35 @@ const LandlordListingCard = ({
           accessibilityLabel={`Thao tác với tin ${listing.title}`}
           hitSlop={SPACING_TOKENS.XS}
         >
-          <EllipsisVertical size={21} color={THEME_COLORS.TEXT_MUTED} />
+          <EllipsisVertical size={20} color={THEME_COLORS.TEXT_MUTED} />
         </TouchableOpacity>
       </View>
 
       {listing.status === 'published' && Number.isFinite(listing.viewCount) ? (
         <View style={styles.statsRow}>
           <Stat label="Lượt xem" value={listing.viewCount} />
+          <View style={styles.statDivider} />
+          <Stat label="Liên hệ" value={listing.contactCount ?? 0} />
+          <View style={styles.statDivider} />
+          <Stat label="Đã lưu" value={listing.saveCount ?? 0} />
+        </View>
+      ) : null}
+
+      {isHolding && listing.holderName ? (
+        <View style={[styles.note, styles.noteWarning]}>
+          <Clock3 size={16} color={THEME_COLORS.WARNING} style={styles.noteIcon} />
+          <Typography variant="body2" colorKey="WARNING" style={styles.noteText}>
+            {getHoldingNote(listing)}
+          </Typography>
+        </View>
+      ) : null}
+
+      {imageTip ? (
+        <View style={[styles.note, styles.noteInfo]}>
+          <Info size={16} color={THEME_COLORS.PRIMARY_DARK} style={styles.noteIcon} />
+          <Typography variant="body2" colorKey="PRIMARY_DARK" style={styles.noteText}>
+            {imageTip}
+          </Typography>
         </View>
       ) : null}
     </TouchableOpacity>
@@ -516,10 +532,10 @@ const LandlordListingCard = ({
 
 const Stat = ({ label, value }: { label: string; value: number }) => (
   <View style={styles.stat}>
-    <Typography variant="body2" weight="SEMIBOLD">
+    <Typography variant="body1" weight="BOLD">
       {value.toLocaleString('vi-VN')}
     </Typography>
-    <Typography variant="caption" colorKey="TEXT_MUTED">
+    <Typography variant="caption" weight="MEDIUM" colorKey="TEXT_PLACEHOLDER">
       {label}
     </Typography>
   </View>
@@ -634,6 +650,31 @@ const ListingsSkeleton = () => (
   </View>
 );
 
+const MIN_RECOMMENDED_IMAGES = 6;
+
+function getHoldingNote(listing: LandlordListing): string {
+  const expireDate = listing.holdExpireDate ? new Date(listing.holdExpireDate) : null;
+  const expireText =
+    expireDate && !Number.isNaN(expireDate.getTime())
+      ? ` giữ chỗ tới ${String(expireDate.getDate()).padStart(2, '0')}/${String(expireDate.getMonth() + 1).padStart(2, '0')}`
+      : ' đang giữ chỗ';
+  const depositText = listing.depositAmount
+    ? ` · đã cọc ${formatListingPrice(listing.depositAmount)}`
+    : '';
+
+  return `Bạn ${listing.holderName}${expireText}${depositText}`;
+}
+
+function getImageTip(listing: LandlordListing): string | null {
+  const imageCount = listing.imageUrls?.length;
+
+  if (listing.status !== 'published' || imageCount === undefined) return null;
+
+  return imageCount < MIN_RECOMMENDED_IMAGES
+    ? `Tin này chỉ có ${imageCount} ảnh. Thêm ảnh WC và lối vào để tăng lượt liên hệ.`
+    : null;
+}
+
 function formatListingPrice(value: number): string {
   return Number.isFinite(value) ? formatVND(value).replace(' ₫', 'đ') : 'Chưa cập nhật giá';
 }
@@ -652,10 +693,10 @@ function getEmptyDescription(status: LandlordListingStatus): string {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: THEME_COLORS.BACKGROUND },
+  headerTitle: { letterSpacing: -0.5 },
   header: {
+    height: 56,
     paddingHorizontal: SPACING_TOKENS.MD,
-    paddingTop: SPACING_TOKENS.SM,
-    paddingBottom: SPACING_TOKENS.XS,
     backgroundColor: THEME_COLORS.SURFACE,
     flexDirection: 'row',
     alignItems: 'center',
@@ -665,51 +706,50 @@ const styles = StyleSheet.create({
     paddingBottom: 0,
   },
   searchButton: {
-    width: 36,
-    height: 36,
+    width: 40,
+    height: 40,
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: BORDER_RADIUS_TOKENS.MD,
     borderWidth: 1,
     borderColor: THEME_COLORS.BORDER,
+    backgroundColor: THEME_COLORS.SURFACE,
   },
   listContent: { paddingBottom: SPACING_TOKENS.LG },
   tabsContainer: {
     backgroundColor: THEME_COLORS.SURFACE,
     borderBottomWidth: 1,
-    borderBottomColor: THEME_COLORS.DIVIDER,
+    borderBottomColor: THEME_COLORS.BORDER,
   },
   tabsContent: {
-    paddingHorizontal: SPACING_TOKENS.SM,
-    paddingVertical: SPACING_TOKENS.SM,
-    gap: SPACING_TOKENS.XS,
+    paddingHorizontal: SPACING_TOKENS.MD,
+    paddingBottom: 13,
+    gap: SPACING_TOKENS.SM,
   },
   tab: {
-    minHeight: 30,
+    height: 34,
     justifyContent: 'center',
-    paddingHorizontal: SPACING_TOKENS.SM + SPACING_TOKENS.XS,
-    paddingVertical: SPACING_TOKENS.XS,
+    paddingHorizontal: 14,
     borderRadius: BORDER_RADIUS_TOKENS.FULL,
     borderWidth: 1,
-    borderColor: THEME_COLORS.BORDER,
+    borderColor: OVERLAY_COLORS.FIELD_BORDER,
     backgroundColor: THEME_COLORS.SURFACE,
   },
+  tabLabel: { fontSize: 13, lineHeight: 20 },
   activeTab: {
     borderColor: THEME_COLORS.PRIMARY,
     backgroundColor: THEME_COLORS.PRIMARY_LIGHT,
   },
   card: {
-    marginHorizontal: SPACING_TOKENS.SM + SPACING_TOKENS.XS,
-    marginTop: SPACING_TOKENS.SM + SPACING_TOKENS.XS,
-    padding: SPACING_TOKENS.SM + SPACING_TOKENS.XS,
+    marginHorizontal: SPACING_TOKENS.MD,
+    marginTop: SPACING_TOKENS.MD,
+    padding: 14,
     backgroundColor: THEME_COLORS.SURFACE,
     borderRadius: BORDER_RADIUS_TOKENS.LG,
-    borderWidth: 1,
-    borderColor: THEME_COLORS.DIVIDER,
   },
   cardCompact: {
     marginHorizontal: SPACING_TOKENS.SM,
-    padding: SPACING_TOKENS.SM,
+    padding: SPACING_TOKENS.SM + SPACING_TOKENS.XS,
   },
   cardTopRow: { flexDirection: 'row', alignItems: 'center' },
   thumbnail: {
@@ -728,19 +768,18 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: THEME_COLORS.SURFACE_MUTED,
   },
-  cardDetails: { flex: 1, minWidth: 0, marginLeft: SPACING_TOKENS.SM },
-  badgesRow: { flexDirection: 'row', flexWrap: 'wrap', gap: SPACING_TOKENS.XS, marginBottom: 4 },
-  cardTitle: { marginBottom: SPACING_TOKENS.XS },
+  cardDetails: { flex: 1, minWidth: 0, marginLeft: 12 },
+  badgesRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 4 },
+  cardTitle: { marginBottom: 4 },
   priceRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     alignItems: 'baseline',
-    gap: SPACING_TOKENS.XS,
+    gap: 6,
   },
   menuButton: {
-    width: 32,
+    width: 28,
     height: 44,
     alignItems: 'center',
     justifyContent: 'center',
@@ -748,14 +787,32 @@ const styles = StyleSheet.create({
   },
   statsRow: {
     flexDirection: 'row',
-    marginTop: SPACING_TOKENS.SM + SPACING_TOKENS.XS,
+    marginTop: 14,
     alignItems: 'center',
-    paddingHorizontal: SPACING_TOKENS.SM,
-    paddingVertical: SPACING_TOKENS.SM,
-    borderRadius: BORDER_RADIUS_TOKENS.SM,
+    paddingVertical: 10,
+    borderRadius: 10,
     backgroundColor: THEME_COLORS.BACKGROUND,
   },
-  stat: { alignItems: 'center', minWidth: 72 },
+  statDivider: { width: 1, height: 39, backgroundColor: THEME_COLORS.BORDER },
+  note: {
+    flexDirection: 'row',
+    marginTop: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderRadius: BORDER_RADIUS_TOKENS.MD,
+    borderWidth: 1,
+  },
+  noteWarning: {
+    borderColor: OVERLAY_COLORS.WARNING_BORDER,
+    backgroundColor: THEME_COLORS.WARNING_LIGHT,
+  },
+  noteInfo: {
+    borderColor: OVERLAY_COLORS.INFO_BORDER,
+    backgroundColor: THEME_COLORS.PRIMARY_LIGHT,
+  },
+  noteIcon: { marginTop: 2 },
+  noteText: { flex: 1, marginLeft: 10, fontSize: 13 },
+  stat: { flex: 1, alignItems: 'center' },
   emptyState: { flex: 1, minHeight: 420 },
   errorState: {
     flex: 1,

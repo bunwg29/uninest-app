@@ -10,7 +10,13 @@ export type ListingPostStackParamList = {
   ListingPostAmenities: undefined;
   ListingPostSchedule: undefined;
   ListingPostPreview: undefined;
-  ListingPostSuccess: { listingId: string };
+  ListingPostSuccess: {
+    listingId: string;
+    title?: string;
+    price?: number;
+    area?: number;
+    imageUri?: string;
+  };
 };
 
 export type AuthStackParamList = {

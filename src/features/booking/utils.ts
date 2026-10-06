@@ -64,3 +64,14 @@ export const formatDayLabel = (dateKey: string) => {
 
 export const formatViewingLong = (value: string) =>
   `${formatTime(value)} — ${formatParts(value, { weekday: 'long' })}, ${formatFullDate(value)}`;
+
+export const EXPIRING_SOON_HOURS = 12;
+
+export const formatViewingDayMonth = (value: string) =>
+  `${formatTime(value)} · ${formatParts(value, { weekday: 'long' })} ${formatParts(value, {
+    day: '2-digit',
+    month: '2-digit',
+  })}`;
+
+export const formatDayMonth = (value: string) =>
+  formatParts(value, { day: '2-digit', month: '2-digit' });

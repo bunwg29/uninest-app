@@ -7,6 +7,7 @@ import { LandlordAppointmentsScreen, useLandlordBookings } from '@features/booki
 import { LandlordListingsScreen, LandlordOverviewScreen } from '@features/listings';
 import { useListingPostStore } from '@features/listings/store/listingPostStore';
 import { MessagesScreen, useChatSummary } from '@features/chat';
+import { Text } from 'react-native';
 import { THEME_COLORS } from '@theme';
 import type { LandlordTabParamList, RootStackParamList } from '../types';
 import { BOTTOM_TAB_STYLES, PrimaryTabButton } from '../components/PrimaryTabButton';
@@ -30,9 +31,13 @@ export const LandlordTabNavigator = () => {
       initialRouteName="Overview"
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: THEME_COLORS.PRIMARY,
+        tabBarActiveTintColor: THEME_COLORS.PRIMARY_DARK,
         tabBarInactiveTintColor: THEME_COLORS.TEXT_PLACEHOLDER,
-        tabBarLabelStyle: BOTTOM_TAB_STYLES.label,
+        tabBarLabel: ({ focused, color, children }) => (
+          <Text style={[BOTTOM_TAB_STYLES.label, { color, fontWeight: focused ? '700' : '500' }]}>
+            {children}
+          </Text>
+        ),
         tabBarStyle: [
           BOTTOM_TAB_STYLES.bar,
           { height: 64 + bottomPadding, paddingBottom: bottomPadding },

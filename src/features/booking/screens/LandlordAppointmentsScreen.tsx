@@ -1,13 +1,19 @@
 import { useState } from 'react';
 import { RefreshControl, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
-import { CalendarX2 } from 'lucide-react-native';
+import { CalendarX2, Clock3 } from 'lucide-react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '@navigation';
 import { useToast } from '@hooks';
-import { SPACING_TOKENS, THEME_COLORS } from '@theme';
+import { BORDER_RADIUS_TOKENS, SPACING_TOKENS, THEME_COLORS } from '@theme';
 import { Button, EmptyState, ListingCardSkeleton, ScreenContainer, Typography } from '@ui';
-import { BookingCard, ReasonModal } from '../components';
+import {
+  LandlordBookingCard,
+  NoticeBanner,
+  REJECT_REASONS,
+  RELEASE_REASONS,
+  ReasonModal,
+} from '../components';
 import {
   useConfirmBooking,
   useLandlordBookings,
@@ -16,14 +22,15 @@ import {
 } from '../hooks';
 import type { Booking, BookingStatus } from '../types';
 
-type TabKey = 'pending' | 'confirmed' | 'closed';
+type TabKey = 'pending' | 'confirmed' | 'rejected' | 'expired';
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 type ReasonAction = { type: 'reject' | 'release'; booking: Booking };
 
 const TABS: Array<{ key: TabKey; label: string }> = [
-  { key: 'pending', label: 'Chờ xác nhận' },
-  { key: 'confirmed', label: 'Đã xác nhận' },
-  { key: 'closed', label: 'Đã đóng' },
+  { key: 'pending', label: 'Chờ' },
+  { key: 'confirmed', label: 'Đã nhận' },
+  { key: 'rejected', label: 'Từ chối' },
+  { key: 'expired', label: 'Hết hạn' },
 ];
 
 const isInTab = (status: BookingStatus, tab: TabKey) => {
@@ -31,7 +38,9 @@ const isInTab = (status: BookingStatus, tab: TabKey) => {
 
   if (tab === 'confirmed') return status === 'confirmed' || status === 'holding';
 
-  return status === 'expired' || status === 'cancelled' || status === 'rejected';
+  if (tab === 'rejected') return status === 'rejected';
+
+  return status === 'expired' || status === 'cancelled';
 };
 
 export const LandlordAppointmentsScreen = () => {
@@ -87,10 +96,10 @@ export const LandlordAppointmentsScreen = () => {
             textStyle={styles.dangerText}
           />
           <Button
-            title="Xác nhận"
+            title="Xác nhận lịch"
             isLoading={confirmBooking.isPending && confirmBooking.variables === booking.id}
             onPress={() => void handleConfirm(booking)}
-            style={styles.action}
+            style={[styles.confirmAction, styles.successButton]}
           />
         </>
       );
@@ -114,31 +123,36 @@ export const LandlordAppointmentsScreen = () => {
   return (
     <ScreenContainer style={styles.safeArea} applyBottomInset={false} keyboardAvoiding={false}>
       <View style={styles.header}>
-        <Typography variant="h1" weight="BOLD">
+        <Typography variant="h1" weight="BOLD" style={styles.headerTitle}>
           Lịch hẹn
-        </Typography>
-        <Typography variant="body2" colorKey="TEXT_MUTED">
-          Yêu cầu xem phòng từ sinh viên. Chưa phản hồi sau 24 giờ sẽ tự động hết hạn.
         </Typography>
       </View>
 
       <View style={styles.tabs}>
-        {TABS.map((tab) => (
-          <TouchableOpacity
-            key={tab.key}
-            onPress={() => setActiveTab(tab.key)}
-            style={[styles.tab, activeTab === tab.key && styles.activeTab]}
-          >
-            <Typography
-              variant="caption"
-              weight="BOLD"
-              color={activeTab === tab.key ? THEME_COLORS.PRIMARY : THEME_COLORS.TEXT_MUTED}
+        {TABS.map((tab) => {
+          const isActive = activeTab === tab.key;
+          const count = allBookings.filter((booking) => isInTab(booking.status, tab.key)).length;
+
+          return (
+            <TouchableOpacity
+              key={tab.key}
+              onPress={() => setActiveTab(tab.key)}
+              style={styles.tab}
+              accessibilityRole="tab"
+              accessibilityState={{ selected: isActive }}
             >
-              {tab.label} (
-              {allBookings.filter((booking) => isInTab(booking.status, tab.key)).length})
-            </Typography>
-          </TouchableOpacity>
-        ))}
+              <Typography
+                variant="caption"
+                weight={isActive ? 'BOLD' : 'MEDIUM'}
+                color={isActive ? THEME_COLORS.PRIMARY_DARK : THEME_COLORS.TEXT_PLACEHOLDER}
+                style={styles.tabLabel}
+              >
+                {count > 0 ? `${tab.label} (${count})` : tab.label}
+              </Typography>
+              <View style={[styles.tabIndicator, isActive && styles.tabIndicatorActive]} />
+            </TouchableOpacity>
+          );
+        })}
       </View>
 
       {bookingsQuery.isLoading ? (
@@ -168,18 +182,18 @@ export const LandlordAppointmentsScreen = () => {
             />
           }
         >
+          {activeTab === 'pending' ? (
+            <NoticeBanner tone="warning" icon={Clock3}>
+              Yêu cầu không phản hồi trong 24 giờ sẽ tự huỷ. Tỉ lệ phản hồi ảnh hưởng tới thứ hạng
+              tin của bạn.
+            </NoticeBanner>
+          ) : null}
           {items.map((booking) => (
-            <BookingCard
+            <LandlordBookingCard
               key={booking.id}
               booking={booking}
-              subtitle={
-                booking.student
-                  ? `${booking.student.fullName} · ${booking.student.phone}`
-                  : undefined
-              }
               actions={renderActions(booking)}
               onPress={() => navigation.navigate('BookingDetail', { id: booking.id })}
-              onExpire={() => void bookingsQuery.refetch()}
             />
           ))}
         </ScrollView>
@@ -187,13 +201,15 @@ export const LandlordAppointmentsScreen = () => {
 
       <ReasonModal
         isVisible={reasonAction !== null}
-        title={reasonAction?.type === 'reject' ? 'Từ chối yêu cầu xem phòng' : 'Hủy giữ chỗ'}
+        title={reasonAction?.type === 'reject' ? 'Vì sao bạn từ chối?' : 'Vì sao bạn huỷ giữ chỗ?'}
         description={
           reasonAction?.type === 'reject'
-            ? 'Lý do sẽ được gửi tới sinh viên.'
+            ? 'Sinh viên nhận được lý do này. Chọn lý do đúng giúp bạn giữ điểm uy tín.'
             : 'Phòng sẽ trở về trạng thái còn trống và sinh viên được thông báo.'
         }
-        confirmTitle={reasonAction?.type === 'reject' ? 'Từ chối' : 'Hủy giữ chỗ'}
+        reasons={reasonAction?.type === 'reject' ? REJECT_REASONS : RELEASE_REASONS}
+        confirmTone={reasonAction?.type === 'reject' ? 'primary' : 'danger'}
+        confirmTitle={reasonAction?.type === 'reject' ? 'Gửi phản hồi' : 'Hủy giữ chỗ'}
         isLoading={rejectBooking.isPending || releaseBooking.isPending}
         onClose={() => setReasonAction(null)}
         onConfirm={(reason) => void handleSubmitReason(reason)}
@@ -205,24 +221,28 @@ export const LandlordAppointmentsScreen = () => {
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: THEME_COLORS.BACKGROUND },
   header: {
-    padding: SPACING_TOKENS.MD,
-    gap: SPACING_TOKENS.XXS,
+    height: 56,
+    justifyContent: 'center',
+    paddingHorizontal: SPACING_TOKENS.MD,
     backgroundColor: THEME_COLORS.SURFACE,
   },
+  headerTitle: { letterSpacing: -0.5 },
   tabs: {
     flexDirection: 'row',
+    paddingHorizontal: SPACING_TOKENS.MD,
     backgroundColor: THEME_COLORS.SURFACE,
     borderBottomWidth: 1,
-    borderBottomColor: THEME_COLORS.DIVIDER,
+    borderBottomColor: THEME_COLORS.BORDER,
   },
-  tab: {
-    flex: 1,
-    alignItems: 'center',
-    paddingVertical: SPACING_TOKENS.MD,
-    borderBottomWidth: 2,
-    borderBottomColor: THEME_COLORS.TRANSPARENT,
+  tab: { flex: 1, alignItems: 'center', gap: 8, paddingTop: 6 },
+  tabLabel: { fontSize: 12.5, lineHeight: 20 },
+  tabIndicator: {
+    alignSelf: 'stretch',
+    height: 3,
+    borderRadius: BORDER_RADIUS_TOKENS.FULL,
+    backgroundColor: THEME_COLORS.TRANSPARENT,
   },
-  activeTab: { borderBottomColor: THEME_COLORS.PRIMARY },
+  tabIndicatorActive: { backgroundColor: THEME_COLORS.PRIMARY },
   list: {
     width: '100%',
     maxWidth: 720,
@@ -233,7 +253,9 @@ const styles = StyleSheet.create({
   },
   loading: { padding: SPACING_TOKENS.MD },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: SPACING_TOKENS.MD },
-  action: { flex: 1 },
+  action: { flex: 1, height: 44 },
+  confirmAction: { flex: 2, height: 44 },
   dangerButton: { borderColor: THEME_COLORS.ERROR },
   dangerText: { color: THEME_COLORS.ERROR },
+  successButton: { backgroundColor: THEME_COLORS.SUCCESS },
 });

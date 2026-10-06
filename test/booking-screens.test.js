@@ -66,6 +66,13 @@ jest.mock('../src/features/listings/hooks/useOpenListing', () => ({
 jest.mock('@features/listings', () => ({
   useListingDetail: () => mockRoomQuery,
 }));
+jest.mock('@features/listings/hooks/useLandlordListings', () => ({
+  useLandlordListingMutation: () => ({ mutateAsync: jest.fn(), isPending: false }),
+}));
+jest.mock('@tanstack/react-query', () => ({
+  ...jest.requireActual('@tanstack/react-query'),
+  useQueryClient: () => ({ invalidateQueries: jest.fn() }),
+}));
 jest.mock('@features/chat', () => ({
   useOpenListingChat: () => ({ openChat: mockOpenChat, isOpening: false }),
 }));
@@ -323,7 +330,7 @@ describe('Các màn hình Booking', () => {
 
     expect(screen.queryByText('Nhắn tin với Chủ trọ')).toBeNull();
     expect(screen.queryByText('Huỷ lịch hẹn')).toBeNull();
-    await fireEvent.press(screen.getByText('Nhắn tin với sinh viên'));
+    await fireEvent.press(screen.getByLabelText('Nhắn tin với sinh viên'));
 
     expect(mockOpenChat).toHaveBeenCalledWith(resource.id, 'student-1');
   });

@@ -3,7 +3,7 @@ import { StyleProp, StyleSheet, TextStyle, View, ViewStyle } from 'react-native'
 import { BORDER_RADIUS_TOKENS, OVERLAY_COLORS, THEME_COLORS } from '@theme';
 import { Button } from '@ui';
 
-type FooterButtonTone = 'primary' | 'outline' | 'danger';
+type FooterButtonTone = 'primary' | 'outline' | 'danger' | 'success';
 
 interface FooterButtonProps {
   title: string;
@@ -47,6 +47,7 @@ export const FooterButton = ({
         styles.button,
         isOutlined ? styles.outlined : null,
         tone === 'danger' ? styles.dangerBorder : null,
+        tone === 'success' ? styles.successButton : null,
         isDisabledPrimary ? styles.disabledPrimary : null,
         style,
       ]}
@@ -74,6 +75,7 @@ const styles = StyleSheet.create({
   buttonText: { fontSize: 16, lineHeight: 24 },
   outlined: { backgroundColor: THEME_COLORS.SURFACE, opacity: 1 },
   outlineText: { color: THEME_COLORS.TEXT_SECONDARY },
+  successButton: { backgroundColor: THEME_COLORS.SUCCESS },
   dangerBorder: { borderColor: THEME_COLORS.ERROR },
   dangerText: { color: THEME_COLORS.ERROR },
   disabledPrimary: { backgroundColor: THEME_COLORS.BORDER, opacity: 1 },
