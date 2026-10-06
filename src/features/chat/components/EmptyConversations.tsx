@@ -1,6 +1,6 @@
 import { View, StyleSheet } from 'react-native';
 import { MessageSquare } from 'lucide-react-native';
-import { THEME_COLORS, SPACING_TOKENS, BORDER_RADIUS_TOKENS } from '@theme';
+import { THEME_COLORS, SPACING_TOKENS, BORDER_RADIUS_TOKENS, TYPOGRAPHY_TOKENS } from '@theme';
 import { Button, Typography } from '@ui';
 import { CHAT_TIPS } from '../types';
 
@@ -12,10 +12,10 @@ export interface EmptyConversationsProps {
 export const EmptyConversations = ({ isStudent, onFindRoom }: EmptyConversationsProps) => (
   <View style={styles.container}>
     <View style={styles.iconCircle}>
-      <MessageSquare size={44} color={THEME_COLORS.TEXT_PLACEHOLDER} />
+      <MessageSquare size={72} color={THEME_COLORS.TEXT_PLACEHOLDER} />
     </View>
 
-    <Typography variant="h2" weight="BOLD" align="center" style={styles.title}>
+    <Typography variant="h2" weight="SEMIBOLD" align="center" style={styles.title}>
       Chưa có cuộc trò chuyện nào
     </Typography>
 
@@ -27,13 +27,19 @@ export const EmptyConversations = ({ isStudent, onFindRoom }: EmptyConversations
 
     {isStudent ? (
       <>
-        <Button title="Tìm phòng ngay" size="lg" fullWidth onPress={onFindRoom} />
+        <Button
+          title="Tìm phòng ngay"
+          size="lg"
+          fullWidth
+          textStyle={styles.buttonText}
+          onPress={onFindRoom}
+        />
 
         <View style={styles.tipsCard}>
           <Typography
             variant="tiny"
             weight="SEMIBOLD"
-            colorKey="TEXT_MUTED"
+            colorKey="TEXT_PLACEHOLDER"
             style={styles.tipsTitle}
           >
             MẸO NHẮN TIN HIỆU QUẢ
@@ -43,7 +49,7 @@ export const EmptyConversations = ({ isStudent, onFindRoom }: EmptyConversations
             <View key={tip} style={styles.tipRow}>
               <View style={styles.bullet} />
 
-              <Typography variant="body2" colorKey="TEXT_SECONDARY" style={styles.tipText}>
+              <Typography variant="body2" colorKey="TEXT_MUTED" style={styles.tipText}>
                 {tip}
               </Typography>
             </View>
@@ -59,8 +65,7 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     paddingHorizontal: SPACING_TOKENS.MD,
-    paddingTop: SPACING_TOKENS.XXL,
-    gap: SPACING_TOKENS.MD,
+    paddingTop: 64,
   },
   iconCircle: {
     width: 150,
@@ -71,39 +76,52 @@ const styles = StyleSheet.create({
     backgroundColor: THEME_COLORS.SURFACE_MUTED,
   },
   title: {
-    marginTop: SPACING_TOKENS.SM,
+    marginTop: SPACING_TOKENS.LG,
+    letterSpacing: -0.3,
   },
   description: {
-    marginBottom: SPACING_TOKENS.SM,
+    marginTop: 10,
+    marginBottom: SPACING_TOKENS.LG - 2,
+    lineHeight: 22,
+  },
+  buttonText: {
+    fontSize: TYPOGRAPHY_TOKENS.FONT_SIZES.BASE,
+    lineHeight: TYPOGRAPHY_TOKENS.LINE_HEIGHTS.BASE,
   },
   tipsCard: {
     width: '100%',
+    marginTop: SPACING_TOKENS.LG,
     padding: SPACING_TOKENS.MD,
     borderRadius: BORDER_RADIUS_TOKENS.LG,
     borderWidth: 1,
     borderColor: THEME_COLORS.BORDER,
     backgroundColor: THEME_COLORS.SURFACE,
-    gap: SPACING_TOKENS.SM + 4,
+    gap: SPACING_TOKENS.SM,
   },
   tipsTitle: {
+    fontSize: TYPOGRAPHY_TOKENS.FONT_SIZES.CAPTION_SM,
+    lineHeight: 15,
     letterSpacing: 0.6,
-    paddingBottom: SPACING_TOKENS.SM,
+    paddingBottom: 12,
+    marginBottom: SPACING_TOKENS.XS + 2,
     borderBottomWidth: 1,
     borderBottomColor: THEME_COLORS.DIVIDER,
   },
   tipRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    gap: SPACING_TOKENS.SM + 2,
+    gap: SPACING_TOKENS.SM,
   },
   bullet: {
-    width: 6,
-    height: 6,
-    marginTop: 7,
-    borderRadius: 3,
+    width: 5,
+    height: 5,
+    marginTop: 6,
+    borderRadius: BORDER_RADIUS_TOKENS.FULL,
     backgroundColor: THEME_COLORS.PRIMARY,
   },
   tipText: {
     flex: 1,
+    fontSize: TYPOGRAPHY_TOKENS.FONT_SIZES.SUB,
+    lineHeight: TYPOGRAPHY_TOKENS.LINE_HEIGHTS.SUB,
   },
 });

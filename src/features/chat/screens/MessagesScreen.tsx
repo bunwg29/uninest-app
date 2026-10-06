@@ -25,6 +25,8 @@ import {
 import type { Conversation, ConversationFilter } from '../types';
 import { CHAT_LIMITS } from '../types';
 
+const ItemSeparator = () => <View style={styles.separator} />;
+
 export const MessagesScreen = () => {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { isStudent } = useRoleGuard();
@@ -137,7 +139,7 @@ export const MessagesScreen = () => {
 
   return (
     <ScreenContainer style={styles.container} applyBottomInset={false} keyboardAvoiding={false}>
-      <View style={styles.header}>
+      <View style={[styles.header, isInboxEmpty && styles.headerBordered]}>
         <Typography variant="h1" weight="BOLD" style={styles.title}>
           Tin nhắn
         </Typography>
@@ -188,6 +190,7 @@ export const MessagesScreen = () => {
 
       <FlatList
         data={conversations}
+        ItemSeparatorComponent={ItemSeparator}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
           <ConversationListItem
@@ -241,8 +244,17 @@ const styles = StyleSheet.create({
     paddingHorizontal: SPACING_TOKENS.MD,
     backgroundColor: THEME_COLORS.SURFACE,
   },
+  headerBordered: {
+    borderBottomWidth: 1,
+    borderBottomColor: THEME_COLORS.BORDER,
+  },
   title: {
     letterSpacing: -0.5,
+    lineHeight: 26,
+  },
+  separator: {
+    height: 1,
+    backgroundColor: THEME_COLORS.DIVIDER,
   },
   searchBar: {
     paddingHorizontal: SPACING_TOKENS.MD,
@@ -261,10 +273,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: SPACING_TOKENS.SM,
     paddingHorizontal: SPACING_TOKENS.MD,
-    paddingVertical: SPACING_TOKENS.SM + 2,
+    paddingBottom: SPACING_TOKENS.SM + 4,
     backgroundColor: THEME_COLORS.SURFACE,
-    borderBottomWidth: 1,
-    borderBottomColor: THEME_COLORS.DIVIDER,
   },
   emptyContent: {
     flexGrow: 1,

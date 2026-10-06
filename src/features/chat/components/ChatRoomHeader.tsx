@@ -1,7 +1,7 @@
 import { View, TouchableOpacity, StyleSheet } from 'react-native';
 import { ChevronLeft, MoreVertical } from 'lucide-react-native';
 import { THEME_COLORS, SPACING_TOKENS } from '@theme';
-import { Avatar, Typography } from '@ui';
+import { GradientAvatar, Typography } from '@ui';
 import { formatPresence } from '../services/chatFormatters';
 import type { ChatCounterpart } from '../types';
 
@@ -19,18 +19,19 @@ export const ChatRoomHeader = ({ counterpart, onBack, onPressMenu }: ChatRoomHea
       accessibilityLabel="Quay lại"
       hitSlop={8}
     >
-      <ChevronLeft size={24} color={THEME_COLORS.TEXT_PRIMARY} />
+      <ChevronLeft size={20} color={THEME_COLORS.TEXT_PRIMARY} />
     </TouchableOpacity>
 
-    <Avatar
+    <GradientAvatar
       uri={counterpart?.avatarUrl}
       name={counterpart?.fullName}
-      size="md"
+      seed={counterpart?.id}
+      size={40}
       isOnline={counterpart?.isOnline}
     />
 
     <View style={styles.info}>
-      <Typography variant="body2" weight="SEMIBOLD" numberOfLines={1}>
+      <Typography variant="body2" weight="SEMIBOLD" numberOfLines={1} style={styles.name}>
         {counterpart?.fullName ?? 'Đang tải…'}
       </Typography>
 
@@ -39,6 +40,7 @@ export const ChatRoomHeader = ({ counterpart, onBack, onPressMenu }: ChatRoomHea
           variant="caption"
           weight="MEDIUM"
           color={counterpart.isOnline ? THEME_COLORS.SUCCESS : THEME_COLORS.TEXT_PLACEHOLDER}
+          style={styles.presence}
         >
           {formatPresence(counterpart.isOnline, counterpart.lastSeenAt)}
         </Typography>
@@ -58,24 +60,33 @@ export const ChatRoomHeader = ({ counterpart, onBack, onPressMenu }: ChatRoomHea
 
 const styles = StyleSheet.create({
   container: {
-    minHeight: 56,
+    height: 56,
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: SPACING_TOKENS.SM + 4,
+    paddingLeft: SPACING_TOKENS.SM + 4,
+    paddingRight: SPACING_TOKENS.MD,
     backgroundColor: THEME_COLORS.SURFACE,
     gap: SPACING_TOKENS.SM + 2,
   },
   backButton: {
-    width: 32,
+    width: 40,
     height: 40,
+    marginRight: -SPACING_TOKENS.XS,
     alignItems: 'center',
     justifyContent: 'center',
   },
   info: {
     flex: 1,
+    gap: SPACING_TOKENS.XXS,
+  },
+  name: {
+    lineHeight: 22,
+  },
+  presence: {
+    letterSpacing: 0.2,
   },
   menuButton: {
-    width: 36,
+    width: 40,
     height: 40,
     alignItems: 'center',
     justifyContent: 'center',

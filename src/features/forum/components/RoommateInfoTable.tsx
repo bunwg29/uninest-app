@@ -65,7 +65,7 @@ export const RoommateInfoTable = ({ roommate, mode = 'feed' }: RoommateInfoTable
     <View style={styles.container}>
       {rows.map((row) => (
         <View key={row.label} style={styles.row}>
-          <Typography variant="tiny" colorKey="TEXT_MUTED" style={styles.label}>
+          <Typography variant="tiny" colorKey="TEXT_PLACEHOLDER" style={styles.label}>
             {row.label}
           </Typography>
 
@@ -87,7 +87,8 @@ const styles = StyleSheet.create({
   container: {
     backgroundColor: THEME_COLORS.BACKGROUND,
     borderRadius: BORDER_RADIUS_TOKENS.MD,
-    padding: SPACING_TOKENS.MD,
+    paddingVertical: SPACING_TOKENS.SM + 4,
+    paddingHorizontal: 14,
     gap: SPACING_TOKENS.SM,
   },
   row: {
@@ -95,11 +96,15 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
   },
   label: {
-    width: 92,
-    paddingTop: 3,
-    letterSpacing: 0.5,
+    width: 96,
+    paddingTop: 2,
+    fontSize: 11,
+    lineHeight: 16,
+    letterSpacing: 0.4,
   },
   value: {
     flex: 1,
+    fontSize: 13,
+    lineHeight: 20,
   },
 });

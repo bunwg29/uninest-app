@@ -1,6 +1,12 @@
 import { View, TextInput, TouchableOpacity, ScrollView, StyleSheet } from 'react-native';
 import { Camera, Plus, Send } from 'lucide-react-native';
-import { THEME_COLORS, SPACING_TOKENS, BORDER_RADIUS_TOKENS, TYPOGRAPHY_TOKENS } from '@theme';
+import {
+  THEME_COLORS,
+  SPACING_TOKENS,
+  BORDER_RADIUS_TOKENS,
+  OVERLAY_COLORS,
+  TYPOGRAPHY_TOKENS,
+} from '@theme';
 import { Typography } from '@ui';
 import { CHAT_LIMITS } from '../types';
 
@@ -42,7 +48,12 @@ export const ChatComposer = ({
               onPress={() => onPressQuickReply?.(reply)}
               activeOpacity={0.8}
             >
-              <Typography variant="caption" weight="MEDIUM" colorKey="TEXT_SECONDARY">
+              <Typography
+                variant="caption"
+                weight="MEDIUM"
+                colorKey="TEXT_SECONDARY"
+                style={styles.quickReplyText}
+              >
                 {reply}
               </Typography>
             </TouchableOpacity>
@@ -50,7 +61,7 @@ export const ChatComposer = ({
         </ScrollView>
       ) : null}
 
-      <View style={styles.row}>
+      <View style={[styles.row, shouldShowQuickReplies && styles.rowWithReplies]}>
         <TouchableOpacity
           style={styles.iconButton}
           onPress={onPickImages}
@@ -95,13 +106,9 @@ export const ChatComposer = ({
 const styles = StyleSheet.create({
   container: {
     backgroundColor: THEME_COLORS.SURFACE,
-    borderTopWidth: 1,
-    borderTopColor: THEME_COLORS.BORDER,
-    paddingBottom: SPACING_TOKENS.SM,
   },
   quickReplies: {
-    paddingHorizontal: SPACING_TOKENS.MD - 4,
-    paddingVertical: SPACING_TOKENS.SM,
+    paddingHorizontal: SPACING_TOKENS.SM + 4,
     gap: SPACING_TOKENS.SM,
   },
   quickReplyChip: {
@@ -110,16 +117,22 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: THEME_COLORS.BORDER,
+    borderColor: OVERLAY_COLORS.FIELD_BORDER,
     borderRadius: BORDER_RADIUS_TOKENS.FULL,
     backgroundColor: THEME_COLORS.SURFACE,
+  },
+  quickReplyText: {
+    lineHeight: TYPOGRAPHY_TOKENS.LINE_HEIGHTS.SUB,
   },
   row: {
     flexDirection: 'row',
     alignItems: 'flex-end',
     paddingHorizontal: SPACING_TOKENS.SM + 4,
-    paddingTop: SPACING_TOKENS.XS,
-    gap: SPACING_TOKENS.SM,
+    paddingTop: SPACING_TOKENS.SM + 2,
+    gap: SPACING_TOKENS.SM + 2,
+  },
+  rowWithReplies: {
+    paddingTop: 20,
   },
   iconButton: {
     width: 36,
@@ -138,6 +151,7 @@ const styles = StyleSheet.create({
   },
   input: {
     fontSize: TYPOGRAPHY_TOKENS.FONT_SIZES.SM,
+    lineHeight: 21,
     color: THEME_COLORS.TEXT_PRIMARY,
     paddingVertical: SPACING_TOKENS.SM,
   },

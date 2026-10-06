@@ -1,7 +1,7 @@
 import { memo } from 'react';
 import { View, TouchableOpacity, StyleSheet } from 'react-native';
-import { AlertCircle, Check, CheckCheck, Clock } from 'lucide-react-native';
-import { THEME_COLORS, SPACING_TOKENS, BORDER_RADIUS_TOKENS } from '@theme';
+import { AlertCircle, CheckCheck, Clock } from 'lucide-react-native';
+import { THEME_COLORS, SPACING_TOKENS, BORDER_RADIUS_TOKENS, OVERLAY_COLORS } from '@theme';
 import { Typography } from '@ui';
 import { ImageCollage } from './ImageCollage';
 import { formatClockTime } from '../services/chatFormatters';
@@ -74,14 +74,24 @@ const MessageBubbleComponent = ({
 
       {isFailed ? (
         <View style={styles.footer}>
-          <AlertCircle size={12} color={THEME_COLORS.ERROR} />
+          <AlertCircle size={14} color={THEME_COLORS.ERROR} />
 
-          <Typography variant="tiny" weight="MEDIUM" colorKey="ERROR" style={styles.footerText}>
+          <Typography
+            variant="tiny"
+            weight="REGULAR"
+            colorKey="ERROR"
+            style={[styles.footerLabel, styles.footerText]}
+          >
             Gửi không thành công
           </Typography>
 
           <TouchableOpacity onPress={() => onRetry(message.clientMessageId)} hitSlop={8}>
-            <Typography variant="tiny" weight="BOLD" colorKey="PRIMARY_DARK">
+            <Typography
+              variant="tiny"
+              weight="SEMIBOLD"
+              colorKey="PRIMARY_DARK"
+              style={styles.footerLabel}
+            >
               Thử lại
             </Typography>
           </TouchableOpacity>
@@ -91,30 +101,49 @@ const MessageBubbleComponent = ({
             hitSlop={8}
             style={styles.discardButton}
           >
-            <Typography variant="tiny" weight="BOLD" colorKey="TEXT_MUTED">
+            <Typography
+              variant="tiny"
+              weight="SEMIBOLD"
+              colorKey="TEXT_MUTED"
+              style={styles.footerLabel}
+            >
               Xoá
             </Typography>
           </TouchableOpacity>
         </View>
       ) : isPending ? (
         <View style={styles.footer}>
-          <Typography variant="tiny" weight="MEDIUM" colorKey="TEXT_PLACEHOLDER">
+          <Typography
+            variant="tiny"
+            weight="REGULAR"
+            color={OVERLAY_COLORS.STEP_PENDING_TEXT}
+            style={styles.footerLabel}
+          >
             Đang chờ gửi
           </Typography>
 
-          <Clock size={12} color={THEME_COLORS.TEXT_PLACEHOLDER} style={styles.footerIcon} />
+          <Clock size={14} color={OVERLAY_COLORS.STEP_PENDING_TEXT} style={styles.footerIcon} />
         </View>
       ) : shouldShowTime ? (
         <View style={styles.footer}>
-          <Typography variant="tiny" colorKey="TEXT_PLACEHOLDER">
+          <Typography
+            variant="tiny"
+            weight="REGULAR"
+            color={OVERLAY_COLORS.STEP_PENDING_TEXT}
+            style={styles.footerLabel}
+          >
             {formatClockTime(message.createdAt)}
           </Typography>
 
           {isMine && !isRecalled ? (
             message.readAt ? (
-              <CheckCheck size={14} color={THEME_COLORS.PRIMARY} style={styles.footerIcon} />
+              <CheckCheck size={15} color={THEME_COLORS.PRIMARY} style={styles.footerIcon} />
             ) : (
-              <Check size={14} color={THEME_COLORS.TEXT_PLACEHOLDER} style={styles.footerIcon} />
+              <CheckCheck
+                size={15}
+                color={OVERLAY_COLORS.STEP_PENDING_TEXT}
+                style={styles.footerIcon}
+              />
             )
           ) : null}
         </View>
@@ -125,8 +154,8 @@ const MessageBubbleComponent = ({
 
 const styles = StyleSheet.create({
   wrapper: {
-    maxWidth: '78%',
-    marginBottom: SPACING_TOKENS.XS,
+    maxWidth: '76.5%',
+    marginBottom: SPACING_TOKENS.SM + 2,
   },
   mineWrapper: {
     alignSelf: 'flex-end',
@@ -169,7 +198,7 @@ const styles = StyleSheet.create({
   failedBubble: {
     backgroundColor: THEME_COLORS.ERROR_LIGHT,
     borderWidth: 1,
-    borderColor: THEME_COLORS.ERROR,
+    borderColor: OVERLAY_COLORS.NOTICE_ERROR_BORDER,
   },
   captionBubble: {
     marginTop: SPACING_TOKENS.XS,
@@ -190,11 +219,14 @@ const styles = StyleSheet.create({
   footer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: SPACING_TOKENS.XS,
-    marginBottom: SPACING_TOKENS.SM,
+    marginTop: SPACING_TOKENS.SM + 2,
+  },
+  footerLabel: {
+    fontSize: 11,
+    lineHeight: 15,
   },
   footerText: {
-    marginHorizontal: SPACING_TOKENS.XS,
+    marginHorizontal: SPACING_TOKENS.XS + 2,
   },
   footerIcon: {
     marginLeft: SPACING_TOKENS.XS,

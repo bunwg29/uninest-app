@@ -12,7 +12,13 @@ import {
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { AlertCircle, Image as ImageIcon, Plus, Send, X } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { THEME_COLORS, SPACING_TOKENS, BORDER_RADIUS_TOKENS, TYPOGRAPHY_TOKENS } from '@theme';
+import {
+  THEME_COLORS,
+  SPACING_TOKENS,
+  BORDER_RADIUS_TOKENS,
+  OVERLAY_COLORS,
+  TYPOGRAPHY_TOKENS,
+} from '@theme';
 import { Typography } from '@ui';
 import { useToast } from '@hooks';
 import { useAuth } from '@features/auth';
@@ -23,7 +29,6 @@ import { CHAT_LIMITS } from '../types';
 type ChatImagePreviewScreenProps = NativeStackScreenProps<RootStackParamList, 'ChatImagePreview'>;
 
 const THUMBNAIL_SIZE = 52;
-const OVERLAY_BACKGROUND = 'rgba(255, 255, 255, 0.12)';
 
 export const ChatImagePreviewScreen = ({ navigation, route }: ChatImagePreviewScreenProps) => {
   const { conversationId, counterpartName, imageUris: initialImageUris } = route.params;
@@ -88,7 +93,7 @@ export const ChatImagePreviewScreen = ({ navigation, route }: ChatImagePreviewSc
           onPress={() => navigation.goBack()}
           accessibilityLabel="Đóng"
         >
-          <X size={22} color={THEME_COLORS.WHITE} />
+          <X size={21} color={THEME_COLORS.WHITE} />
         </TouchableOpacity>
 
         <Typography variant="body1" weight="SEMIBOLD" colorKey="WHITE" numberOfLines={1}>
@@ -100,7 +105,7 @@ export const ChatImagePreviewScreen = ({ navigation, route }: ChatImagePreviewSc
           onPress={() => void handleAddImages()}
           accessibilityLabel="Thêm ảnh từ thư viện"
         >
-          <ImageIcon size={22} color={THEME_COLORS.WHITE} />
+          <ImageIcon size={21} color={THEME_COLORS.WHITE} />
         </TouchableOpacity>
       </View>
 
@@ -110,11 +115,12 @@ export const ChatImagePreviewScreen = ({ navigation, route }: ChatImagePreviewSc
         ) : null}
       </View>
 
-      <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, SPACING_TOKENS.MD) }]}>
+      <View style={[styles.footer, { paddingBottom: insets.bottom + 14 }]}>
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.thumbnails}
+          style={styles.thumbnailScroll}
           keyboardShouldPersistTaps="handled"
         >
           {imageUris.map((uri, index) => (
@@ -172,9 +178,13 @@ export const ChatImagePreviewScreen = ({ navigation, route }: ChatImagePreviewSc
         </View>
 
         <View style={styles.warning}>
-          <AlertCircle size={16} color={THEME_COLORS.SECONDARY} />
+          <AlertCircle size={18} color={OVERLAY_COLORS.AMBER_GRADIENT_START} />
 
-          <Typography variant="body2" color={THEME_COLORS.SECONDARY} style={styles.warningText}>
+          <Typography
+            variant="body2"
+            color={OVERLAY_COLORS.AMBER_GRADIENT_START}
+            style={styles.warningText}
+          >
             Cân nhắc trước khi gửi giấy tờ tuỳ thân. Chủ trọ chỉ cần xem trực tiếp khi ký hợp đồng.
           </Typography>
         </View>
@@ -186,14 +196,14 @@ export const ChatImagePreviewScreen = ({ navigation, route }: ChatImagePreviewSc
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: THEME_COLORS.BLACK,
+    backgroundColor: OVERLAY_COLORS.GALLERY_BACKGROUND,
   },
   header: {
-    minHeight: 56,
+    height: 56,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: SPACING_TOKENS.SM + 4,
+    paddingHorizontal: SPACING_TOKENS.SM + 6,
   },
   headerButton: {
     width: 44,
@@ -208,19 +218,22 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   footer: {
-    paddingHorizontal: SPACING_TOKENS.MD,
-    paddingTop: SPACING_TOKENS.MD,
-    gap: SPACING_TOKENS.SM + 4,
+    paddingHorizontal: SPACING_TOKENS.SM + 4,
+    paddingTop: 0,
+    gap: SPACING_TOKENS.SM + 6,
+  },
+  thumbnailScroll: {
+    flexGrow: 0,
   },
   thumbnails: {
     gap: SPACING_TOKENS.SM,
-    paddingVertical: SPACING_TOKENS.XS,
+    paddingHorizontal: SPACING_TOKENS.XS,
   },
   thumbnail: {
     width: THUMBNAIL_SIZE,
     height: THUMBNAIL_SIZE,
     borderRadius: BORDER_RADIUS_TOKENS.SM,
-    opacity: 0.6,
+    opacity: 0.55,
   },
   thumbnailSelected: {
     opacity: 1,
@@ -246,25 +259,25 @@ const styles = StyleSheet.create({
     borderRadius: BORDER_RADIUS_TOKENS.SM,
     borderWidth: 1,
     borderStyle: 'dashed',
-    borderColor: THEME_COLORS.TEXT_PLACEHOLDER,
+    borderColor: OVERLAY_COLORS.DARK_DASHED_BORDER,
   },
   captionRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: SPACING_TOKENS.SM,
+    gap: SPACING_TOKENS.SM + 2,
   },
   captionInput: {
     flex: 1,
-    height: 44,
-    paddingHorizontal: SPACING_TOKENS.MD,
+    height: 42,
+    paddingHorizontal: SPACING_TOKENS.MD - 2,
     borderRadius: BORDER_RADIUS_TOKENS.FULL,
-    backgroundColor: OVERLAY_BACKGROUND,
+    backgroundColor: OVERLAY_COLORS.DARK_FIELD,
     fontSize: TYPOGRAPHY_TOKENS.FONT_SIZES.SM,
     color: THEME_COLORS.WHITE,
   },
   sendButton: {
-    width: 44,
-    height: 44,
+    width: 42,
+    height: 42,
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: BORDER_RADIUS_TOKENS.FULL,
@@ -274,13 +287,17 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'flex-start',
     gap: SPACING_TOKENS.SM + 2,
-    padding: SPACING_TOKENS.SM + 4,
+    marginHorizontal: SPACING_TOKENS.XS,
+    marginTop: SPACING_TOKENS.SM + 2,
+    paddingVertical: 12,
+    paddingHorizontal: 13,
     borderRadius: BORDER_RADIUS_TOKENS.MD,
     borderWidth: 1,
-    borderColor: THEME_COLORS.SECONDARY,
-    backgroundColor: 'rgba(245, 166, 35, 0.12)',
+    borderColor: OVERLAY_COLORS.AMBER_NOTICE_BORDER,
+    backgroundColor: OVERLAY_COLORS.AMBER_NOTICE_BACKGROUND,
   },
   warningText: {
     flex: 1,
+    fontSize: TYPOGRAPHY_TOKENS.FONT_SIZES.SUB,
   },
 });

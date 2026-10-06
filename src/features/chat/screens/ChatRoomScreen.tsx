@@ -282,11 +282,14 @@ export const ChatRoomScreen = ({ navigation, route }: ChatRoomScreenProps) => {
           keyboardDismissMode="interactive"
         />
 
-        {room.waitingCount > 0 ? <PendingNotice count={room.waitingCount} /> : null}
-
         <View
-          style={[styles.composerWrapper, { paddingBottom: isKeyboardVisible ? 0 : insets.bottom }]}
+          style={[
+            styles.composerWrapper,
+            { paddingBottom: Math.max(isKeyboardVisible ? 0 : insets.bottom, SPACING_TOKENS.SM) },
+          ]}
         >
+          {room.waitingCount > 0 ? <PendingNotice count={room.waitingCount} /> : null}
+
           <ChatComposer
             value={draft}
             onChangeText={handleChangeText}
@@ -338,7 +341,7 @@ const styles = StyleSheet.create({
   },
   listContent: {
     paddingHorizontal: SPACING_TOKENS.MD,
-    paddingVertical: SPACING_TOKENS.SM,
+    paddingVertical: SPACING_TOKENS.SM + 2,
   },
   centered: {
     flex: 1,
@@ -354,5 +357,7 @@ const styles = StyleSheet.create({
   },
   composerWrapper: {
     backgroundColor: THEME_COLORS.SURFACE,
+    borderTopWidth: 1,
+    borderTopColor: THEME_COLORS.BORDER,
   },
 });

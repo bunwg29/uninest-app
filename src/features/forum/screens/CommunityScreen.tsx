@@ -12,30 +12,45 @@ import {
 } from 'react-native';
 import { useNavigation, useRoute, type RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { MessageSquareText, Plus, Search, X } from 'lucide-react-native';
+import { Plus, Search, X } from 'lucide-react-native';
 import { BORDER_RADIUS_TOKENS, SPACING_TOKENS, THEME_COLORS } from '@theme';
-import { EmptyState, FilterChip, HeaderBar, ScreenContainer, Typography } from '@ui';
+import { EmptyState, FilterChip, ScreenContainer, SkeletonBox, Typography } from '@ui';
 import { useToast } from '@hooks';
 import type { RootStackParamList } from '@navigation';
-import { ForumPostCard, ForumPostSkeleton } from '../components';
+import {
+  ForumEmptyFeed,
+  ForumHeader,
+  ForumPostCard,
+  ForumPostSkeleton,
+  type ForumPostSkeletonVariant,
+} from '../components';
 import { useForumFeed, useToggleForumLike } from '../hooks';
 import type { ForumCategory, ForumFeedFilters, ForumPost, RoommateGender } from '../types';
-import { FORUM_BUDGET_FILTER, FORUM_CATEGORY_OPTIONS, ROOMMATE_GENDER_OPTIONS } from '../types';
+import {
+  FORUM_AREA_FILTER,
+  FORUM_BUDGET_FILTER,
+  FORUM_CATEGORY_OPTIONS,
+  FORUM_COMPOSER_CATEGORY_LABELS,
+  ROOMMATE_GENDER_OPTIONS,
+} from '../types';
 import { formatCompactMillion } from '../utils';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 type CommunityRouteProp = RouteProp<RootStackParamList, 'Community'>;
 
 const SEARCH_DEBOUNCE_MS = 400;
-const SKELETON_ITEMS = [0, 1, 2];
+const SKELETON_VARIANTS: ForumPostSkeletonVariant[] = ['table', 'images', 'compact'];
+const CHIP_SKELETON_WIDTHS = [78, 126, 144];
+const FAB_BOTTOM_OFFSET = 104;
 
 export const CommunityScreen = () => {
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<CommunityRouteProp>();
   const toast = useToast();
-  const [category, setCategory] = useState<ForumCategory | undefined>(route.params?.category);
+  const category: ForumCategory | undefined = route.params?.category;
   const [gender, setGender] = useState<RoommateGender | undefined>();
   const [isBudgetOnly, setIsBudgetOnly] = useState(false);
+  const [isAreaOnly, setIsAreaOnly] = useState(false);
   const [isOpenOnly, setIsOpenOnly] = useState(false);
   const [isSearchVisible, setIsSearchVisible] = useState(false);
   const [searchText, setSearchText] = useState('');
@@ -57,11 +72,12 @@ export const CommunityScreen = () => {
         ? {
             gender,
             maxCost: isBudgetOnly ? FORUM_BUDGET_FILTER : undefined,
+            area: isAreaOnly ? FORUM_AREA_FILTER : undefined,
             roommateStatus: isOpenOnly ? 'open' : undefined,
           }
         : {}),
     }),
-    [category, keyword, isRoommateFeed, gender, isBudgetOnly, isOpenOnly]
+    [category, keyword, isRoommateFeed, gender, isBudgetOnly, isAreaOnly, isOpenOnly]
   );
 
   const feedQuery = useForumFeed(filters);
@@ -73,6 +89,13 @@ export const CommunityScreen = () => {
   );
   const total = feedQuery.data?.pages[0]?.total ?? 0;
   const genderLabel = ROOMMATE_GENDER_OPTIONS.find((option) => option.value === gender)?.label;
+  const title =
+    FORUM_CATEGORY_OPTIONS.find((option) => option.value === category)?.label ?? 'Cộng đồng';
+
+  const hasActiveFilters = Boolean(gender || isBudgetOnly || isAreaOnly || isOpenOnly);
+  const isInitialLoading = feedQuery.isLoading && !category && !keyword;
+  const isFeedEmpty = feedQuery.isSuccess && !posts.length && !keyword && !hasActiveFilters;
+  const shouldShowSearch = isSearchVisible || !(isInitialLoading || isFeedEmpty);
 
   const handleOpenPost = useCallback(
     (post: ForumPost) => navigation.navigate('ForumPostDetail', { postId: post.id }),
@@ -90,6 +113,18 @@ export const CommunityScreen = () => {
 
   const handleCreatePost = () => navigation.navigate('ForumPostComposer', { category });
 
+  const handleOpenCategory = (nextCategory?: ForumCategory) => {
+    if (category) {
+      navigation.replace('Community', nextCategory ? { category: nextCategory } : undefined);
+
+      return;
+    }
+
+    if (nextCategory) {
+      navigation.push('Community', { category: nextCategory });
+    }
+  };
+
   const handleLoadMore = () => {
     if (feedQuery.hasNextPage && !feedQuery.isFetchingNextPage) {
       void feedQuery.fetchNextPage();
@@ -104,12 +139,76 @@ export const CommunityScreen = () => {
     setIsSearchVisible((isVisible) => !isVisible);
   };
 
+  const renderChips = () => {
+    if (isInitialLoading) {
+      return CHIP_SKELETON_WIDTHS.map((width) => (
+        <SkeletonBox
+          key={width}
+          width={width}
+          height={36}
+          borderRadius={BORDER_RADIUS_TOKENS.FULL}
+        />
+      ));
+    }
+
+    if (isRoommateFeed) {
+      return (
+        <>
+          {ROOMMATE_GENDER_OPTIONS.filter((option) => option.value !== 'any').map((option) => (
+            <FilterChip
+              key={option.value}
+              label={option.label}
+              isSelected={gender === option.value}
+              onPress={() => setGender(gender === option.value ? undefined : option.value)}
+            />
+          ))}
+
+          <FilterChip
+            label={`Dưới ${formatCompactMillion(FORUM_BUDGET_FILTER)}`}
+            isSelected={isBudgetOnly}
+            onPress={() => setIsBudgetOnly((isSelected) => !isSelected)}
+          />
+
+          <FilterChip
+            label={FORUM_AREA_FILTER}
+            isSelected={isAreaOnly}
+            onPress={() => setIsAreaOnly((isSelected) => !isSelected)}
+          />
+
+          <FilterChip
+            label="Còn chỗ"
+            isSelected={isOpenOnly}
+            onPress={() => setIsOpenOnly((isSelected) => !isSelected)}
+          />
+        </>
+      );
+    }
+
+    return (
+      <>
+        <FilterChip
+          label="Tất cả"
+          isSelected={!category}
+          onPress={() => handleOpenCategory(undefined)}
+        />
+
+        {FORUM_CATEGORY_OPTIONS.filter((option) => option.value !== category).map((option) => (
+          <FilterChip
+            key={option.value}
+            label={category ? FORUM_COMPOSER_CATEGORY_LABELS[option.value] : option.label}
+            onPress={() => handleOpenCategory(option.value)}
+          />
+        ))}
+      </>
+    );
+  };
+
   const renderEmpty = () => {
     if (feedQuery.isLoading) {
       return (
         <View>
-          {SKELETON_ITEMS.map((item) => (
-            <ForumPostSkeleton key={item} />
+          {SKELETON_VARIANTS.map((variant) => (
+            <ForumPostSkeleton key={variant} variant={variant} />
           ))}
         </View>
       );
@@ -127,39 +226,34 @@ export const CommunityScreen = () => {
     }
 
     return (
-      <EmptyState
-        icon={<MessageSquareText size={32} color={THEME_COLORS.TEXT_PLACEHOLDER} />}
-        title={keyword ? 'Không tìm thấy bài viết phù hợp' : 'Chưa có bài viết nào'}
-        description={
-          keyword
-            ? 'Thử đổi từ khoá hoặc bỏ bớt bộ lọc nhé.'
-            : 'Hãy là người đầu tiên chia sẻ kinh nghiệm hoặc tìm bạn ở ghép.'
-        }
-        actionTitle="Viết bài đầu tiên"
-        onAction={handleCreatePost}
+      <ForumEmptyFeed
+        category={category}
+        isSearching={Boolean(keyword)}
+        onCreatePost={handleCreatePost}
+        onViewOtherCategories={() => handleOpenCategory(undefined)}
       />
     );
   };
 
   return (
     <ScreenContainer style={styles.container} applyBottomInset={false} keyboardAvoiding={false}>
-      <HeaderBar
-        title={isRoommateFeed ? 'Tìm bạn ở ghép' : 'Cộng đồng'}
-        alignTitle="left"
+      <ForumHeader
+        title={title}
         onBack={navigation.canGoBack() ? navigation.goBack : undefined}
-        hasBottomBorder={false}
         rightAction={
-          <TouchableOpacity
-            onPress={handleToggleSearch}
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            accessibilityLabel={isSearchVisible ? 'Đóng tìm kiếm' : 'Tìm kiếm bài viết'}
-          >
-            {isSearchVisible ? (
-              <X size={22} color={THEME_COLORS.TEXT_PRIMARY} />
-            ) : (
-              <Search size={22} color={THEME_COLORS.TEXT_PRIMARY} />
-            )}
-          </TouchableOpacity>
+          shouldShowSearch ? (
+            <TouchableOpacity
+              onPress={handleToggleSearch}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              accessibilityLabel={isSearchVisible ? 'Đóng tìm kiếm' : 'Tìm kiếm bài viết'}
+            >
+              {isSearchVisible ? (
+                <X size={21} color={THEME_COLORS.TEXT_PRIMARY} />
+              ) : (
+                <Search size={21} color={THEME_COLORS.TEXT_PRIMARY} />
+              )}
+            </TouchableOpacity>
+          ) : null
         }
       />
 
@@ -184,56 +278,19 @@ export const CommunityScreen = () => {
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.chipRow}
         >
-          <FilterChip
-            label="Tất cả"
-            isSelected={!category}
-            onPress={() => setCategory(undefined)}
-          />
-
-          {FORUM_CATEGORY_OPTIONS.map((option) => (
-            <FilterChip
-              key={option.value}
-              label={option.label}
-              isSelected={category === option.value}
-              onPress={() => setCategory(option.value)}
-            />
-          ))}
+          {renderChips()}
         </ScrollView>
-
-        {isRoommateFeed ? (
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.chipRow}
-          >
-            {ROOMMATE_GENDER_OPTIONS.filter((option) => option.value !== 'any').map((option) => (
-              <FilterChip
-                key={option.value}
-                label={option.label}
-                isSelected={gender === option.value}
-                onPress={() => setGender(gender === option.value ? undefined : option.value)}
-              />
-            ))}
-
-            <FilterChip
-              label={`Dưới ${formatCompactMillion(FORUM_BUDGET_FILTER)}`}
-              isSelected={isBudgetOnly}
-              onPress={() => setIsBudgetOnly((isSelected) => !isSelected)}
-            />
-
-            <FilterChip
-              label="Còn chỗ"
-              isSelected={isOpenOnly}
-              onPress={() => setIsOpenOnly((isSelected) => !isSelected)}
-            />
-          </ScrollView>
-        ) : null}
       </View>
 
       {isRoommateFeed && feedQuery.isSuccess ? (
         <View style={styles.summaryBar}>
-          <Typography variant="caption" colorKey="TEXT_MUTED">
-            <Typography variant="caption" weight="BOLD" colorKey="TEXT_PRIMARY">
+          <Typography variant="body2" colorKey="TEXT_MUTED" style={styles.summaryText}>
+            <Typography
+              variant="body2"
+              weight="BOLD"
+              colorKey="TEXT_PRIMARY"
+              style={styles.summaryText}
+            >
               {total} bài
             </Typography>
             {` đang tìm bạn ở ghép${genderLabel ? ` ${genderLabel.toLowerCase()}` : ''}`}
@@ -274,12 +331,14 @@ export const CommunityScreen = () => {
         removeClippedSubviews={Platform.OS === 'android'}
       />
 
-      <TouchableOpacity style={styles.fab} onPress={handleCreatePost} activeOpacity={0.85}>
-        <Plus size={20} color={THEME_COLORS.WHITE} />
-        <Typography variant="body2" weight="BOLD" colorKey="WHITE">
-          Đăng bài
-        </Typography>
-      </TouchableOpacity>
+      {isInitialLoading ? null : (
+        <TouchableOpacity style={styles.fab} onPress={handleCreatePost} activeOpacity={0.85}>
+          <Plus size={20} color={THEME_COLORS.WHITE} />
+          <Typography variant="body1" weight="SEMIBOLD" colorKey="WHITE" style={styles.fabLabel}>
+            Đăng bài
+          </Typography>
+        </TouchableOpacity>
+      )}
     </ScreenContainer>
   );
 };
@@ -293,38 +352,38 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: SPACING_TOKENS.SM,
-    marginHorizontal: SPACING_TOKENS.MD,
-    marginBottom: SPACING_TOKENS.SM,
-    paddingHorizontal: SPACING_TOKENS.SM + 4,
-    height: 44,
-    borderRadius: BORDER_RADIUS_TOKENS.MD,
-    borderWidth: 1,
-    borderColor: THEME_COLORS.BORDER,
+    paddingHorizontal: SPACING_TOKENS.MD,
+    paddingBottom: SPACING_TOKENS.SM,
     backgroundColor: THEME_COLORS.SURFACE,
   },
   searchInput: {
     flex: 1,
+    height: 44,
     color: THEME_COLORS.TEXT_PRIMARY,
     fontSize: 15,
   },
   filterArea: {
     backgroundColor: THEME_COLORS.SURFACE,
-    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomWidth: 1,
     borderBottomColor: THEME_COLORS.BORDER,
-    paddingBottom: SPACING_TOKENS.SM,
+    paddingBottom: SPACING_TOKENS.SM + 4,
   },
   chipRow: {
     gap: SPACING_TOKENS.SM,
     paddingHorizontal: SPACING_TOKENS.MD,
-    paddingTop: SPACING_TOKENS.SM,
   },
   summaryBar: {
+    height: 36,
+    justifyContent: 'center',
     paddingHorizontal: SPACING_TOKENS.MD,
-    paddingVertical: SPACING_TOKENS.SM + 2,
+    backgroundColor: THEME_COLORS.BACKGROUND,
+  },
+  summaryText: {
+    fontSize: 13,
+    lineHeight: 20,
   },
   listContent: {
-    paddingTop: SPACING_TOKENS.SM,
-    paddingBottom: 96,
+    paddingBottom: FAB_BOTTOM_OFFSET + 72,
   },
   emptyContent: {
     flexGrow: 1,
@@ -335,18 +394,21 @@ const styles = StyleSheet.create({
   fab: {
     position: 'absolute',
     right: SPACING_TOKENS.MD,
-    bottom: SPACING_TOKENS.LG,
+    bottom: FAB_BOTTOM_OFFSET,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: SPACING_TOKENS.XS + 2,
+    gap: SPACING_TOKENS.SM,
     height: 52,
     paddingHorizontal: SPACING_TOKENS.LG - 4,
     borderRadius: BORDER_RADIUS_TOKENS.FULL,
     backgroundColor: THEME_COLORS.PRIMARY,
     shadowColor: THEME_COLORS.PRIMARY,
-    shadowOpacity: 0.3,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.4,
+    shadowRadius: 5,
+    shadowOffset: { width: 0, height: 8 },
     elevation: 6,
+  },
+  fabLabel: {
+    lineHeight: 22,
   },
 });

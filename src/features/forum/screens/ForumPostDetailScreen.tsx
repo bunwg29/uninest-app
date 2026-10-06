@@ -25,7 +25,7 @@ import {
   Trash2,
 } from 'lucide-react-native';
 import { BORDER_RADIUS_TOKENS, SPACING_TOKENS, THEME_COLORS } from '@theme';
-import { EmptyState, HeaderBar, ScreenContainer, Typography } from '@ui';
+import { EmptyState, ScreenContainer, Typography } from '@ui';
 import { useToast } from '@hooks';
 import { HTTP_STATUS_CODES, USER_ROLES, type AppError } from '@core';
 import { useAuth } from '@features/auth';
@@ -34,6 +34,7 @@ import {
   ForumActionSheet,
   ForumAvatar,
   ForumCommentItem,
+  ForumHeader,
   ForumPostHeaderBadge,
   ForumPostSkeleton,
   ForumReportSheet,
@@ -410,9 +411,9 @@ export const ForumPostDetailScreen = () => {
 
   return (
     <ScreenContainer style={styles.container} applyBottomInset={false} keyboardAvoiding={false}>
-      <HeaderBar
+      <ForumHeader
         title="Bài viết"
-        alignTitle="left"
+        hasBottomBorder
         onBack={navigation.goBack}
         rightAction={
           post ? (

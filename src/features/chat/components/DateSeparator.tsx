@@ -9,7 +9,7 @@ export interface DateSeparatorProps {
 export const DateSeparator = ({ label }: DateSeparatorProps) => (
   <View style={styles.container}>
     <View style={styles.pill}>
-      <Typography variant="tiny" weight="SEMIBOLD" colorKey="TEXT_PLACEHOLDER">
+      <Typography variant="tiny" weight="SEMIBOLD" colorKey="TEXT_PLACEHOLDER" style={styles.label}>
         {label}
       </Typography>
     </View>
@@ -19,12 +19,17 @@ export const DateSeparator = ({ label }: DateSeparatorProps) => (
 const styles = StyleSheet.create({
   container: {
     alignItems: 'center',
-    marginVertical: SPACING_TOKENS.MD,
+    marginTop: SPACING_TOKENS.SM + 2,
+    marginBottom: SPACING_TOKENS.MD - 2,
   },
   pill: {
     backgroundColor: THEME_COLORS.BORDER,
     paddingHorizontal: SPACING_TOKENS.SM + 4,
-    paddingVertical: 4,
+    paddingVertical: SPACING_TOKENS.XS,
     borderRadius: BORDER_RADIUS_TOKENS.FULL,
+  },
+  label: {
+    fontSize: 11,
+    lineHeight: 15,
   },
 });

@@ -1,5 +1,5 @@
 import { Image, StyleSheet, View } from 'react-native';
-import { BORDER_RADIUS_TOKENS, SPACING_TOKENS, THEME_COLORS } from '@theme';
+import { BORDER_RADIUS_TOKENS, OVERLAY_COLORS, SPACING_TOKENS, THEME_COLORS } from '@theme';
 import { Typography } from '@ui';
 
 export interface ForumImageStripProps {
@@ -11,7 +11,7 @@ export interface ForumImageStripProps {
 export const ForumImageStrip = ({
   imageUrls,
   maxVisible = 3,
-  height = 96,
+  height = 80,
 }: ForumImageStripProps) => {
   if (!imageUrls.length) return null;
 
@@ -29,7 +29,7 @@ export const ForumImageStrip = ({
 
             {isLastVisible ? (
               <View style={styles.overlay}>
-                <Typography variant="h3" weight="BOLD" colorKey="WHITE">
+                <Typography variant="body1" weight="BOLD" colorKey="WHITE">
                   +{hiddenCount}
                 </Typography>
               </View>
@@ -48,7 +48,8 @@ const styles = StyleSheet.create({
   },
   imageWrapper: {
     flex: 1,
-    borderRadius: BORDER_RADIUS_TOKENS.MD,
+    maxWidth: 106,
+    borderRadius: BORDER_RADIUS_TOKENS.SM + 2,
     overflow: 'hidden',
     backgroundColor: THEME_COLORS.SURFACE_MUTED,
   },
@@ -58,7 +59,7 @@ const styles = StyleSheet.create({
   },
   overlay: {
     ...StyleSheet.absoluteFill,
-    backgroundColor: 'rgba(23, 27, 34, 0.55)',
+    backgroundColor: OVERLAY_COLORS.IMAGE_MORE_SCRIM,
     alignItems: 'center',
     justifyContent: 'center',
   },

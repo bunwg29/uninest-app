@@ -1,5 +1,4 @@
 import { formatNumberWithDots } from '@core';
-import { FORUM_AVATAR_TONES } from '../types';
 
 const MINUTE_MS = 60_000;
 const HOUR_MS = 60 * MINUTE_MS;
@@ -45,19 +44,3 @@ export const formatCostPerPerson = (cost: number): string => `${formatNumberWith
 
 export const formatCompactMillion = (value: number): string =>
   `${(value / 1_000_000).toLocaleString('vi-VN', { maximumFractionDigits: 1 })}tr`;
-
-export const getAvatarTone = (seed: string) => {
-  const hash = [...seed].reduce((total, char) => total + char.charCodeAt(0), 0);
-
-  return FORUM_AVATAR_TONES[hash % FORUM_AVATAR_TONES.length];
-};
-
-export const getInitials = (fullName: string): string => {
-  const parts = fullName.trim().split(/\s+/).filter(Boolean);
-
-  if (!parts.length) return '?';
-
-  if (parts.length === 1) return parts[0].charAt(0).toUpperCase();
-
-  return (parts[parts.length - 2].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
-};

@@ -19,11 +19,11 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { ImagePlus, X } from 'lucide-react-native';
 import { filterValidUploadImages, resolveImageContentType } from '@core';
 import { BORDER_RADIUS_TOKENS, SPACING_TOKENS, THEME_COLORS } from '@theme';
-import { Badge, Button, FilterChip, HeaderBar, Input, ScreenContainer, Typography } from '@ui';
+import { Badge, Button, FilterChip, Input, ScreenContainer, Typography } from '@ui';
 import { useToast } from '@hooks';
 import { formatNumberWithDots, parseRawNumberString } from '@core';
 import type { RootStackParamList } from '@navigation';
-import { ModerationWarningModal } from '../components';
+import { ForumHeader, ModerationWarningModal } from '../components';
 import { useCheckForumContent, useForumPost, useSaveForumPost } from '../hooks';
 import type {
   ForumCategory,
@@ -283,14 +283,11 @@ export const ForumPostComposerScreen = () => {
 
   return (
     <ScreenContainer style={styles.container} applyBottomInset={false} keyboardAvoiding={false}>
-      <HeaderBar
+      <ForumHeader
         title={isEditing ? 'Sửa bài viết' : 'Đăng bài'}
-        alignTitle="left"
-        rightAction={
-          <TouchableOpacity onPress={handleClose} accessibilityLabel="Đóng">
-            <X size={22} color={THEME_COLORS.TEXT_PRIMARY} />
-          </TouchableOpacity>
-        }
+        leftIcon="close"
+        onBack={handleClose}
+        hasBottomBorder
       />
 
       <KeyboardAvoidingView

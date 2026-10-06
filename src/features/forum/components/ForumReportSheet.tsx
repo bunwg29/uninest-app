@@ -1,7 +1,13 @@
 import { useEffect, useState } from 'react';
 import { StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
 import { Info } from 'lucide-react-native';
-import { BORDER_RADIUS_TOKENS, SPACING_TOKENS, THEME_COLORS } from '@theme';
+import {
+  BORDER_RADIUS_TOKENS,
+  OVERLAY_COLORS,
+  SPACING_TOKENS,
+  THEME_COLORS,
+  TYPOGRAPHY_TOKENS,
+} from '@theme';
 import { Button, Typography } from '@ui';
 import { useToast } from '@hooks';
 import { useReportForumContent } from '../hooks';
@@ -66,24 +72,30 @@ export const ForumReportSheet = ({ target, onClose }: ForumReportSheetProps) => 
       description="Báo cáo được gửi tới quản trị viên, người đăng không biết ai đã báo cáo."
     >
       <View style={styles.options}>
-        {FORUM_REPORT_REASON_OPTIONS.map((option) => {
+        {FORUM_REPORT_REASON_OPTIONS.map((option, index) => {
           const isSelected = option.value === reason;
 
           return (
             <TouchableOpacity
               key={option.value}
-              style={[styles.option, isSelected && styles.optionSelected]}
+              style={[
+                styles.option,
+                index < FORUM_REPORT_REASON_OPTIONS.length - 1 && styles.optionDivider,
+                isSelected && styles.optionSelected,
+              ]}
               onPress={() => setReason(option.value)}
               accessibilityRole="radio"
               accessibilityState={{ selected: isSelected }}
             >
-              <Typography variant="body1" style={styles.optionLabel}>
+              <Typography
+                variant="body1"
+                weight={isSelected ? 'SEMIBOLD' : 'REGULAR'}
+                style={styles.optionLabel}
+              >
                 {option.label}
               </Typography>
 
-              <View style={[styles.radio, isSelected && styles.radioSelected]}>
-                {isSelected ? <View style={styles.radioDot} /> : null}
-              </View>
+              <View style={[styles.radio, isSelected && styles.radioSelected]} />
             </TouchableOpacity>
           );
         })}
@@ -102,8 +114,8 @@ export const ForumReportSheet = ({ target, onClose }: ForumReportSheetProps) => 
       ) : null}
 
       <View style={styles.infoBox}>
-        <Info size={16} color={THEME_COLORS.PRIMARY} />
-        <Typography variant="caption" colorKey="PRIMARY" style={styles.infoText}>
+        <Info size={18} color={THEME_COLORS.PRIMARY_DARK} />
+        <Typography variant="body2" colorKey="PRIMARY_DARK" style={styles.infoText}>
           Bài bị nhiều người báo cáo sẽ tự động ẩn và chuyển quản trị viên xem xét.
         </Typography>
       </View>
@@ -112,7 +124,8 @@ export const ForumReportSheet = ({ target, onClose }: ForumReportSheetProps) => 
         title="Gửi báo cáo"
         variant="danger"
         size="lg"
-        fullWidth
+        style={styles.submitButton}
+        textStyle={styles.submitText}
         isLoading={reportMutation.isPending}
         disabled={!canSubmit}
         onPress={handleSubmit}
@@ -122,15 +135,15 @@ export const ForumReportSheet = ({ target, onClose }: ForumReportSheetProps) => 
 };
 
 const styles = StyleSheet.create({
-  options: {
-    marginHorizontal: -SPACING_TOKENS.MD,
-  },
+  options: {},
   option: {
+    height: 56,
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: SPACING_TOKENS.MD,
-    paddingVertical: SPACING_TOKENS.MD,
-    borderBottomWidth: StyleSheet.hairlineWidth,
+    paddingHorizontal: SPACING_TOKENS.MD + 4,
+  },
+  optionDivider: {
+    borderBottomWidth: 1,
     borderBottomColor: THEME_COLORS.DIVIDER,
   },
   optionSelected: {
@@ -138,46 +151,55 @@ const styles = StyleSheet.create({
   },
   optionLabel: {
     flex: 1,
+    fontSize: TYPOGRAPHY_TOKENS.FONT_SIZES.BASE,
+    lineHeight: TYPOGRAPHY_TOKENS.LINE_HEIGHTS.BASE,
   },
   radio: {
     width: 22,
     height: 22,
     borderRadius: BORDER_RADIUS_TOKENS.FULL,
-    borderWidth: 1.5,
-    borderColor: THEME_COLORS.BORDER,
-    alignItems: 'center',
-    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: OVERLAY_COLORS.FIELD_BORDER,
+    backgroundColor: THEME_COLORS.SURFACE,
   },
   radioSelected: {
+    borderWidth: 6,
     borderColor: THEME_COLORS.PRIMARY,
-  },
-  radioDot: {
-    width: 12,
-    height: 12,
-    borderRadius: BORDER_RADIUS_TOKENS.FULL,
-    backgroundColor: THEME_COLORS.PRIMARY,
   },
   noteInput: {
     minHeight: 72,
+    marginHorizontal: SPACING_TOKENS.MD,
     marginTop: SPACING_TOKENS.MD,
     padding: SPACING_TOKENS.SM + 4,
     borderWidth: 1,
-    borderColor: THEME_COLORS.BORDER,
+    borderColor: OVERLAY_COLORS.FIELD_BORDER,
     borderRadius: BORDER_RADIUS_TOKENS.MD,
     color: THEME_COLORS.TEXT_PRIMARY,
     textAlignVertical: 'top',
   },
   infoBox: {
     flexDirection: 'row',
-    gap: SPACING_TOKENS.SM,
+    gap: SPACING_TOKENS.SM + 2,
+    marginHorizontal: SPACING_TOKENS.MD,
     marginVertical: SPACING_TOKENS.MD,
-    padding: SPACING_TOKENS.SM + 4,
+    paddingTop: 11,
+    paddingBottom: 13,
+    paddingHorizontal: 13,
     borderRadius: BORDER_RADIUS_TOKENS.MD,
     borderWidth: 1,
-    borderColor: '#C7D7FB',
+    borderColor: OVERLAY_COLORS.INFO_BORDER,
     backgroundColor: THEME_COLORS.PRIMARY_LIGHT,
   },
   infoText: {
     flex: 1,
+    fontSize: TYPOGRAPHY_TOKENS.FONT_SIZES.SUB,
+  },
+  submitButton: {
+    alignSelf: 'stretch',
+    marginHorizontal: SPACING_TOKENS.MD,
+  },
+  submitText: {
+    fontSize: TYPOGRAPHY_TOKENS.FONT_SIZES.BASE,
+    lineHeight: TYPOGRAPHY_TOKENS.LINE_HEIGHTS.BASE,
   },
 });

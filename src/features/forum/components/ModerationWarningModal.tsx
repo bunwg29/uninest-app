@@ -1,6 +1,12 @@
 import { Modal, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { AlertTriangle, CreditCard, Phone, ShieldAlert } from 'lucide-react-native';
-import { BORDER_RADIUS_TOKENS, SPACING_TOKENS, THEME_COLORS } from '@theme';
+import {
+  BORDER_RADIUS_TOKENS,
+  OVERLAY_COLORS,
+  SPACING_TOKENS,
+  THEME_COLORS,
+  TYPOGRAPHY_TOKENS,
+} from '@theme';
 import { Button, Typography } from '@ui';
 import type { ModerationResult, ModerationViolationType } from '../types';
 
@@ -33,10 +39,10 @@ export const ModerationWarningModal = ({
       <View style={styles.backdrop}>
         <View style={styles.dialog}>
           <View style={styles.iconCircle}>
-            <AlertTriangle size={26} color={THEME_COLORS.ERROR} />
+            <AlertTriangle size={28} color={THEME_COLORS.ERROR} />
           </View>
 
-          <Typography variant="h3" weight="BOLD" align="center">
+          <Typography variant="h3" weight="SEMIBOLD" align="center">
             Bài viết có nội dung cần sửa
           </Typography>
 
@@ -54,20 +60,31 @@ export const ModerationWarningModal = ({
                   key={`${violation.field}-${violation.type}-${index}`}
                   style={styles.violation}
                 >
-                  <Icon size={16} color={THEME_COLORS.ERROR} style={styles.violationIcon} />
+                  <Icon size={17} color={THEME_COLORS.ERROR} />
 
                   <Typography variant="body2" colorKey="ERROR" style={styles.violationText}>
-                    <Typography variant="body2" weight="BOLD" colorKey="ERROR">
+                    <Typography
+                      variant="body2"
+                      weight="SEMIBOLD"
+                      colorKey="ERROR"
+                      style={styles.violationLabel}
+                    >
                       {violation.label}
                     </Typography>
-                    {` "${violation.matches.join('", "')}" — ${violation.message}`}
+                    {` — ${violation.message}`}
                   </Typography>
                 </View>
               );
             })}
           </ScrollView>
 
-          <Button title="Quay lại sửa bài" size="lg" fullWidth onPress={onEdit} />
+          <Button
+            title="Quay lại sửa bài"
+            size="lg"
+            fullWidth
+            textStyle={styles.primaryText}
+            onPress={onEdit}
+          />
 
           <Button
             title={`Tự động xoá ${violations.length} phần này`}
@@ -76,6 +93,7 @@ export const ModerationWarningModal = ({
             fullWidth
             onPress={onAutoRemove}
             style={styles.secondaryButton}
+            textStyle={styles.secondaryText}
           />
 
           {canPublishAnyway ? (
@@ -98,14 +116,15 @@ export const ModerationWarningModal = ({
 const styles = StyleSheet.create({
   backdrop: {
     flex: 1,
-    backgroundColor: 'rgba(23, 27, 34, 0.45)',
+    backgroundColor: OVERLAY_COLORS.MODAL_BACKDROP,
     justifyContent: 'center',
     padding: SPACING_TOKENS.LG,
   },
   dialog: {
     backgroundColor: THEME_COLORS.SURFACE,
     borderRadius: BORDER_RADIUS_TOKENS.XL,
-    padding: SPACING_TOKENS.LG,
+    padding: SPACING_TOKENS.LG - 4,
+    paddingTop: SPACING_TOKENS.LG,
     maxHeight: '85%',
     width: '100%',
     maxWidth: 420,
@@ -122,7 +141,8 @@ const styles = StyleSheet.create({
     marginBottom: SPACING_TOKENS.MD,
   },
   subtitle: {
-    marginTop: SPACING_TOKENS.XS,
+    marginTop: SPACING_TOKENS.SM,
+    fontSize: TYPOGRAPHY_TOKENS.FONT_SIZES.SUB,
   },
   violationList: {
     marginVertical: SPACING_TOKENS.MD,
@@ -132,21 +152,34 @@ const styles = StyleSheet.create({
   },
   violation: {
     flexDirection: 'row',
-    padding: SPACING_TOKENS.SM + 4,
+    alignItems: 'center',
+    gap: SPACING_TOKENS.SM + 2,
+    paddingVertical: 12,
+    paddingHorizontal: 13,
     borderRadius: BORDER_RADIUS_TOKENS.MD,
     borderWidth: 1,
-    borderColor: '#F5C2C2',
+    borderColor: OVERLAY_COLORS.NOTICE_ERROR_BORDER,
     backgroundColor: THEME_COLORS.ERROR_LIGHT,
-  },
-  violationIcon: {
-    marginTop: 2,
-    marginRight: SPACING_TOKENS.SM,
   },
   violationText: {
     flex: 1,
+    fontSize: TYPOGRAPHY_TOKENS.FONT_SIZES.SUB,
+  },
+  violationLabel: {
+    fontSize: TYPOGRAPHY_TOKENS.FONT_SIZES.SUB,
+  },
+  primaryText: {
+    fontSize: TYPOGRAPHY_TOKENS.FONT_SIZES.BASE,
+    lineHeight: TYPOGRAPHY_TOKENS.LINE_HEIGHTS.BASE,
   },
   secondaryButton: {
+    height: 48,
     marginTop: SPACING_TOKENS.SM,
+  },
+  secondaryText: {
+    fontSize: TYPOGRAPHY_TOKENS.FONT_SIZES.SM,
+    lineHeight: TYPOGRAPHY_TOKENS.LINE_HEIGHTS.SUB,
+    color: THEME_COLORS.TEXT_SECONDARY,
   },
   publishAnyway: {
     marginTop: SPACING_TOKENS.SM + 4,

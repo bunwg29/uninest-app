@@ -2,11 +2,12 @@ import { memo } from 'react';
 import { StyleSheet, TouchableOpacity, View } from 'react-native';
 import { Eye, Heart, MessageSquare } from 'lucide-react-native';
 import { SPACING_TOKENS, THEME_COLORS } from '@theme';
-import { Badge, Typography } from '@ui';
+import { Typography } from '@ui';
 import type { ForumPost } from '../types';
 import { FORUM_CATEGORY_OPTIONS } from '../types';
 import { formatRelativeTime } from '../utils';
 import { ForumAvatar } from './ForumAvatar';
+import { ForumBadge } from './ForumBadge';
 import { ForumImageStrip } from './ForumImageStrip';
 import { RoommateInfoTable } from './RoommateInfoTable';
 
@@ -17,8 +18,6 @@ export interface ForumPostCardProps {
   onToggleLike: (post: ForumPost) => void;
 }
 
-const ICON_SIZE = 18;
-
 export const ForumPostHeaderBadge = ({
   post,
   isRoommateFeed,
@@ -28,17 +27,16 @@ export const ForumPostHeaderBadge = ({
 }) => {
   if (isRoommateFeed && post.roommateStatus) {
     return (
-      <Badge
-        size="sm"
-        variant={post.roommateStatus === 'open' ? 'available' : 'neutral'}
-        label={(post.roommateStatusLabel ?? '').toUpperCase()}
+      <ForumBadge
+        tone={post.roommateStatus === 'open' ? 'success' : 'neutral'}
+        label={post.roommateStatusLabel ?? ''}
       />
     );
   }
 
   const categoryOption = FORUM_CATEGORY_OPTIONS.find((option) => option.value === post.category);
 
-  return <Badge size="sm" variant="primary" label={categoryOption?.shortLabel ?? ''} />;
+  return <ForumBadge tone="primary" label={categoryOption?.shortLabel ?? ''} />;
 };
 
 const ForumPostCardComponent = ({
@@ -50,6 +48,7 @@ const ForumPostCardComponent = ({
   const authorMeta = [post.author.school, formatRelativeTime(post.publishedAt ?? post.createdAt)]
     .filter(Boolean)
     .join(' · ');
+  const iconSize = isRoommateFeed ? 18 : 19;
 
   return (
     <TouchableOpacity style={styles.card} activeOpacity={0.85} onPress={() => onPress(post)}>
@@ -61,11 +60,17 @@ const ForumPostCardComponent = ({
         />
 
         <View style={styles.authorInfo}>
-          <Typography variant="body2" weight="SEMIBOLD" numberOfLines={1}>
+          <Typography variant="body2" weight="SEMIBOLD" numberOfLines={1} style={styles.authorName}>
             {post.author.fullName}
           </Typography>
 
-          <Typography variant="caption" colorKey="TEXT_MUTED" numberOfLines={2}>
+          <Typography
+            variant="caption"
+            weight="MEDIUM"
+            colorKey="TEXT_PLACEHOLDER"
+            numberOfLines={2}
+            style={styles.authorMeta}
+          >
             {authorMeta}
           </Typography>
         </View>
@@ -73,12 +78,17 @@ const ForumPostCardComponent = ({
         <ForumPostHeaderBadge post={post} isRoommateFeed={isRoommateFeed} />
       </View>
 
-      <Typography variant="h4" weight="BOLD" style={styles.title} numberOfLines={3}>
+      <Typography variant="h4" weight="SEMIBOLD" style={styles.title} numberOfLines={3}>
         {post.title}
       </Typography>
 
       {!isRoommateFeed ? (
-        <Typography variant="body2" colorKey="TEXT_SECONDARY" numberOfLines={3}>
+        <Typography
+          variant="body2"
+          colorKey="TEXT_SECONDARY"
+          numberOfLines={post.roommate ? 3 : 4}
+          style={styles.content}
+        >
           {post.content}
         </Typography>
       ) : null}
@@ -93,7 +103,7 @@ const ForumPostCardComponent = ({
       ) : null}
 
       {post.imageUrls.length && !post.roommate ? (
-        <View style={styles.section}>
+        <View style={styles.imageSection}>
           <ForumImageStrip imageUrls={post.imageUrls} />
         </View>
       ) : null}
@@ -106,28 +116,43 @@ const ForumPostCardComponent = ({
           accessibilityLabel={post.isLiked ? 'Bỏ thích bài viết' : 'Thích bài viết'}
         >
           <Heart
-            size={ICON_SIZE}
-            color={post.isLiked ? THEME_COLORS.ERROR : THEME_COLORS.TEXT_MUTED}
+            size={iconSize}
+            color={post.isLiked ? THEME_COLORS.ERROR : THEME_COLORS.TEXT_PLACEHOLDER}
             fill={post.isLiked ? THEME_COLORS.ERROR : THEME_COLORS.TRANSPARENT}
           />
-          <Typography variant="caption" colorKey="TEXT_MUTED">
+          <Typography
+            variant="body2"
+            weight="MEDIUM"
+            colorKey="TEXT_PLACEHOLDER"
+            style={styles.statText}
+          >
             {post.likeCount}
           </Typography>
         </TouchableOpacity>
 
         <View style={styles.stat}>
           {!isRoommateFeed ? (
-            <MessageSquare size={ICON_SIZE} color={THEME_COLORS.TEXT_MUTED} />
+            <MessageSquare size={iconSize} color={THEME_COLORS.TEXT_PLACEHOLDER} />
           ) : null}
-          <Typography variant="caption" colorKey="TEXT_MUTED">
+          <Typography
+            variant="body2"
+            weight="MEDIUM"
+            colorKey="TEXT_PLACEHOLDER"
+            style={styles.statText}
+          >
             {post.commentCount} bình luận
           </Typography>
         </View>
 
         {!isRoommateFeed ? (
           <View style={styles.stat}>
-            <Eye size={ICON_SIZE} color={THEME_COLORS.TEXT_MUTED} />
-            <Typography variant="caption" colorKey="TEXT_MUTED">
+            <Eye size={iconSize} color={THEME_COLORS.TEXT_PLACEHOLDER} />
+            <Typography
+              variant="body2"
+              weight="MEDIUM"
+              colorKey="TEXT_PLACEHOLDER"
+              style={styles.statText}
+            >
               {post.viewCount}
             </Typography>
           </View>
@@ -147,28 +172,46 @@ const styles = StyleSheet.create({
   },
   header: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: SPACING_TOKENS.SM + 4,
+    alignItems: 'center',
+    gap: SPACING_TOKENS.SM + 2,
   },
   authorInfo: {
     flex: 1,
   },
+  authorName: {
+    lineHeight: 22,
+  },
+  authorMeta: {
+    letterSpacing: 0.2,
+  },
   title: {
     marginTop: SPACING_TOKENS.SM + 4,
-    marginBottom: SPACING_TOKENS.XS + 2,
+    lineHeight: 23,
+  },
+  content: {
+    marginTop: SPACING_TOKENS.SM,
+    fontSize: 13,
+    lineHeight: 20,
   },
   section: {
     marginTop: SPACING_TOKENS.SM + 4,
   },
+  imageSection: {
+    marginTop: SPACING_TOKENS.SM + 2,
+  },
   footer: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: SPACING_TOKENS.LG,
-    marginTop: SPACING_TOKENS.MD,
+    gap: 20,
+    marginTop: SPACING_TOKENS.SM + 4,
   },
   stat: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: SPACING_TOKENS.XS + 2,
+    gap: 6,
+  },
+  statText: {
+    fontSize: 13,
+    lineHeight: 20,
   },
 });

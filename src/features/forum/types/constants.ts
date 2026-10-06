@@ -1,4 +1,3 @@
-import { THEME_COLORS } from '@theme';
 import type { ForumCategory, ForumReportReason, RoommateGender, RoommateStatus } from './index';
 
 export const FORUM_PAGE_SIZE = 10;
@@ -12,6 +11,8 @@ export const FORUM_IMAGE_FOLDER = 'forum';
 export const FORUM_FEED_STALE_TIME_MS = 30_000;
 
 export const FORUM_BUDGET_FILTER = 1_500_000;
+
+export const FORUM_AREA_FILTER = 'Liên Chiểu';
 
 export const FORUM_CATEGORY_OPTIONS: { value: ForumCategory; label: string; shortLabel: string }[] =
   [
@@ -47,13 +48,6 @@ export const FORUM_REPORT_REASON_OPTIONS: { value: ForumReportReason; label: str
   { value: 'spam', label: 'Spam, đăng trùng lặp nhiều lần' },
   { value: 'other', label: 'Lý do khác' },
 ];
-
-export const FORUM_AVATAR_TONES = [
-  { background: '#E6F6EF', text: THEME_COLORS.SUCCESS },
-  { background: THEME_COLORS.PRIMARY_LIGHT, text: THEME_COLORS.PRIMARY },
-  { background: '#FFF3DC', text: THEME_COLORS.WARNING },
-  { background: '#F3E8FF', text: '#7C3AED' },
-] as const;
 
 export const FORUM_QUERY_KEYS = {
   ALL: ['forum'] as const,
