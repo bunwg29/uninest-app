@@ -29,7 +29,7 @@
   - Tab Tìm trọ tải toàn bộ phòng từ `GET /api/v1/rooms`, hiển thị ảnh, tên, địa chỉ, giá và diện tích; nút đặt lịch truyền `resourceId` sang màn booking và màn này tải chi tiết từ `GET /api/v1/rooms/:id`.
   - Spatial radius via PostGIS (`ST_DWithin`) around university.
   - Multi-filter: Price range, room type, amenities, distance. Sort: price, newest, nearest.
-  - Compare matrix: Up to 4 listings simultaneously (client-side state only).
+  - Compare matrix: Up to 5 listings simultaneously (client-side state only).
 - **Booking / Holding (`FR-BOOKING`)**:
   - 2 Types: `viewing` (visit appointment) and `held` (room hold request).
   - Statuses: `pending` -> `confirmed` / `holding` / `expired` / `cancelled`.

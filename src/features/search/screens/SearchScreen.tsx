@@ -20,7 +20,6 @@ import {
   SearchX,
 } from 'lucide-react-native';
 import type { RootStackParamList } from '@navigation';
-import type { LandlordListing } from '@features/listings';
 import { useToast } from '@hooks';
 import { BORDER_RADIUS_TOKENS, SPACING_TOKENS, THEME_COLORS } from '@theme';
 import {
@@ -77,28 +76,6 @@ const getFilterValidationMessage = (filters: SearchFilters) => {
 
   return undefined;
 };
-
-const toDetailListing = (listing: SearchListingItem): LandlordListing => ({
-  id: listing.id,
-  title: listing.title,
-  price: listing.price,
-  area: listing.area,
-  address: listing.address,
-  imageUrl: listing.thumbnail ?? undefined,
-  imageUrls: listing.imageUrls,
-  status: 'published',
-  isFeatured: listing.isHighlighted,
-  viewCount: listing.stats?.views ?? 0,
-  contactCount: 0,
-  saveCount: listing.stats?.saved ?? 0,
-  holdingStatus: listing.isReserved,
-  roomType: listing.roomType,
-  maxOccupants: listing.capacity,
-  description: listing.description,
-  latitude: listing.location?.latitude,
-  longitude: listing.location?.longitude,
-  amenityIds: listing.amenityIds,
-});
 
 export const SearchScreen = () => {
   const navigation = useNavigation<NavigationProp>();
@@ -239,7 +216,7 @@ export const SearchScreen = () => {
   };
 
   const handleOpenListing = (listing: SearchListingItem) => {
-    navigation.navigate('StudentListingPreview', { listing: toDetailListing(listing) });
+    navigation.navigate('ListingDetail', { id: listing.id });
   };
 
   const handleSearchMapArea = () => {
