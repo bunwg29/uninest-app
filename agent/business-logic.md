@@ -26,7 +26,7 @@
 - **Search & Compare (`FR-SEARCH`, `FR-COMPARE`)**:
   - Spatial radius via PostGIS (`ST_DWithin`) around university.
   - Multi-filter: Price range, room type, amenities, distance. Sort: price, newest, nearest.
-  - Compare matrix: Up to 4 listings simultaneously (client-side state only).
+  - Compare matrix: Up to 5 listings simultaneously (client-side state only).
 - **Booking / Holding (`FR-BOOKING`)**:
   - 2 Types: `viewing` (visit appointment) and `held` (room hold request).
   - Statuses: `pending` -> `confirmed` / `rejected` / `cancelled`.

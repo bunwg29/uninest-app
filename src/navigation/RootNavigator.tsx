@@ -11,7 +11,12 @@ import {
   useAuth,
 } from '@features/auth';
 import { ChatImagePreviewScreen, ChatRoomScreen, useChatRealtime } from '@features/chat';
-import { LandlordListingDetailScreen, StudentListingPreviewScreen } from '@features/listings';
+import {
+  LandlordListingDetailScreen,
+  ListingDetailScreen,
+  StudentListingPreviewScreen,
+} from '@features/listings';
+import { ComparisonScreen } from '@features/comparison';
 import type { RootStackParamList } from './types';
 import { AuthNavigator, MainTabNavigator, ListingPostNavigator } from './navigators';
 
@@ -55,6 +60,8 @@ export const RootNavigator = () => {
             />
             <Stack.Screen name="LandlordListingDetail" component={LandlordListingDetailScreen} />
             <Stack.Screen name="StudentListingPreview" component={StudentListingPreviewScreen} />
+            <Stack.Screen name="ListingDetail" component={ListingDetailScreen} />
+            <Stack.Screen name="Comparison" component={ComparisonScreen} />
             <Stack.Screen name="OtpVerification" component={OtpScreen} />
             <Stack.Screen name="ResetPassword" component={ResetPasswordScreen} />
           </>

@@ -33,6 +33,70 @@ export interface ListingResponse {
   createdAt: string;
 }
 
+export interface ListingDetailImage {
+  id: string;
+  url: string;
+  isCover: boolean;
+  sortOrder: number;
+}
+
+export interface ListingDetailAmenity {
+  id: number;
+  name: string;
+  group: number;
+}
+
+export interface ListingDetailAddress {
+  streetAddress: string;
+  fullAddress: string;
+  provinceCode: string;
+  provinceName: string | null;
+  wardCode: string;
+  wardName: string | null;
+}
+
+export interface ListingDetailLandlord {
+  id: string;
+  fullName: string;
+  avatarUrl: string | null;
+  bio: string | null;
+  isVerified: boolean;
+}
+
+export interface ListingDetail {
+  id: string;
+  title: string;
+  description: string | null;
+  roomType: string;
+  price: number;
+  area: number;
+  maxOccupants: number;
+  electricPrice: number | null;
+  waterPrice: number | null;
+  deposit: number | null;
+  address: ListingDetailAddress;
+  location: {
+    latitude: number;
+    longitude: number;
+  };
+  images: ListingDetailImage[];
+  amenities: ListingDetailAmenity[];
+  landlord: ListingDetailLandlord;
+  status: string;
+  viewingSchedule: Record<string, unknown> | null;
+  averageRating: number | null;
+  viewCount: number;
+  isFavorite: boolean;
+  createdAt: string;
+  updatedAt: string;
+  distanceMeters?: number;
+}
+
+export interface RecordListingViewResponse {
+  viewCount: number;
+  incremented: boolean;
+}
+
 export interface PresignedUploadRequest {
   fileName: string;
   contentType: string;
@@ -72,6 +136,8 @@ export interface ViewingSlot {
 export type DayKey = 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun';
 
 export type ViewingSchedule = Record<DayKey, ViewingSlot>;
+
+export * from './landlord';
 
 export interface ListingStep1State {
   title: string;

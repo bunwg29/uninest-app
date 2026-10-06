@@ -74,4 +74,6 @@ export type RootStackParamList = {
     returnToChangePassword?: boolean;
   };
   ResetPassword: { target: string; otpCode: string };
+  ListingDetail: { id: string };
+  Comparison: undefined;
 };
