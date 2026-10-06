@@ -11,7 +11,12 @@ import {
   useAuth,
 } from '@features/auth';
 import { ChatImagePreviewScreen, ChatRoomScreen, useChatRealtime } from '@features/chat';
-import { LandlordListingDetailScreen, StudentListingPreviewScreen } from '@features/listings';
+import {
+  LandlordListingDetailScreen,
+  ListingDetailScreen,
+  StudentListingPreviewScreen,
+} from '@features/listings';
+import { ComparisonScreen } from '@features/comparison';
 import {
   BookingConfirmScreen,
   BookingDetailScreen,
@@ -64,6 +69,8 @@ export const RootNavigator = () => {
             />
             <Stack.Screen name="LandlordListingDetail" component={LandlordListingDetailScreen} />
             <Stack.Screen name="StudentListingPreview" component={StudentListingPreviewScreen} />
+            <Stack.Screen name="ListingDetail" component={ListingDetailScreen} />
+            <Stack.Screen name="Comparison" component={ComparisonScreen} />
             <Stack.Screen name="BookingNew" component={BookingNewScreen} />
             <Stack.Screen name="BookingConfirm" component={BookingConfirmScreen} />
             <Stack.Screen name="BookingSuccess" component={BookingSuccessScreen} />
