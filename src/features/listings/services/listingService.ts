@@ -3,9 +3,11 @@ import * as FileSystem from 'expo-file-system/legacy';
 import { apiClient } from '@core';
 import type {
   CreateListingPayload,
+  ListingDetail,
   ListingResponse,
   PresignedUploadRequest,
   PresignedUploadResponse,
+  RecordListingViewResponse,
 } from '../types';
 
 const unwrapData = <T>(payload: unknown): T => {
@@ -22,6 +24,18 @@ const unwrapData = <T>(payload: unknown): T => {
 };
 
 export const listingService = {
+  async getListingDetail(id: string): Promise<ListingDetail> {
+    const response = await apiClient.get(`/listings/${id}`);
+
+    return unwrapData<ListingDetail>(response.data);
+  },
+
+  async recordListingView(id: string): Promise<RecordListingViewResponse> {
+    const response = await apiClient.patch(`/listings/${id}/view`);
+
+    return unwrapData<RecordListingViewResponse>(response.data);
+  },
+
   async getPresignedUploadUrl(req: PresignedUploadRequest): Promise<PresignedUploadResponse> {
     const response = await apiClient.post('/storage/presigned-upload-url', {
       fileName: req.fileName,
