@@ -2,7 +2,7 @@ import { useState, type ReactNode } from 'react';
 import { Image, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { Check, MessageSquare, Minus, Star, X } from 'lucide-react-native';
 import { BORDER_RADIUS_TOKENS, OVERLAY_COLORS, SPACING_TOKENS, THEME_COLORS } from '@theme';
-import { Button, GradientView, Typography } from '@ui';
+import { GradientView, Typography } from '@ui';
 import { AvailabilityBadge } from '@features/listings/components/AvailabilityBadge';
 import { useOpenListingChat } from '@features/chat/hooks/useOpenListingChat';
 import {
@@ -117,7 +117,11 @@ export const ComparisonTable = ({
         >
           {items.map((item, index) => (
             <View key={item.id} style={styles.column}>
-              <ImageCell item={item} onRemove={() => onRemove(item.id)} />
+              <ImageCell
+                item={item}
+                onRemove={() => onRemove(item.id)}
+                onOpenDetail={() => onOpenDetail(item.id)}
+              />
 
               <View
                 style={isItemAvailable(item) ? undefined : styles.dimmedColumn}
@@ -125,10 +129,9 @@ export const ComparisonTable = ({
               >
                 <ValueCell rowKey="price" isBest={bestPrice.has(index)}>
                   <Typography
-                    variant="body1"
+                    variant="label"
                     weight="BOLD"
                     colorKey={bestPrice.has(index) ? 'SUCCESS' : 'PRIMARY_DARK'}
-                    style={styles.priceValue}
                   >
                     {formatPrice(item.price)}
                   </Typography>
@@ -148,7 +151,7 @@ export const ComparisonTable = ({
 
                 <ValueCell rowKey="area" isBest={bestArea.has(index)}>
                   <Typography
-                    variant="body1"
+                    variant="label"
                     weight="BOLD"
                     colorKey={bestArea.has(index) ? 'SUCCESS' : 'TEXT_PRIMARY'}
                   >
@@ -157,14 +160,14 @@ export const ComparisonTable = ({
                 </ValueCell>
 
                 <ValueCell rowKey="occupants">
-                  <Typography variant="body1" weight="BOLD">
+                  <Typography variant="label" weight="BOLD">
                     {formatMeasure(item.maxOccupants, 'người')}
                   </Typography>
                 </ValueCell>
 
                 <ValueCell rowKey="distance" isBest={bestDistance.has(index)}>
                   <Typography
-                    variant="body1"
+                    variant="label"
                     weight="BOLD"
                     colorKey={bestDistance.has(index) ? 'SUCCESS' : 'TEXT_PRIMARY'}
                   >
@@ -184,7 +187,7 @@ export const ComparisonTable = ({
                 </ValueCell>
 
                 <ValueCell rowKey="deposit">
-                  <Typography variant="body1" weight="BOLD">
+                  <Typography variant="label" weight="BOLD">
                     {typeof item.deposit === 'number' && Number.isFinite(item.deposit)
                       ? formatFullPrice(item.deposit)
                       : PLACEHOLDER_TEXT}
@@ -287,7 +290,15 @@ const ValueCell = ({
 
 const isItemAvailable = (item: ComparisonItem): boolean => item.isAvailable !== false;
 
-const ImageCell = ({ item, onRemove }: { item: ComparisonItem; onRemove: () => void }) => {
+const ImageCell = ({
+  item,
+  onRemove,
+  onOpenDetail,
+}: {
+  item: ComparisonItem;
+  onRemove: () => void;
+  onOpenDetail: () => void;
+}) => {
   const [hasError, setHasError] = useState(false);
   const isAvailable = isItemAvailable(item);
   const coverImage = item.images?.find((image) => image.isCover) ?? item.images?.[0];
@@ -298,7 +309,13 @@ const ImageCell = ({ item, onRemove }: { item: ComparisonItem; onRemove: () => v
 
   return (
     <View style={[styles.imageCell, { height: ROW_HEIGHTS.image }]}>
-      <View style={[styles.imageFrame, !isAvailable && styles.dimmed]}>
+      <TouchableOpacity
+        activeOpacity={0.85}
+        onPress={onOpenDetail}
+        style={[styles.imageFrame, !isAvailable && styles.dimmed]}
+        accessibilityRole="button"
+        accessibilityLabel={`Xem chi tiết ${item.title}`}
+      >
         {coverImage?.url && !hasError ? (
           <Image
             source={{ uri: coverImage.url }}
@@ -309,7 +326,7 @@ const ImageCell = ({ item, onRemove }: { item: ComparisonItem; onRemove: () => v
         ) : (
           <GradientView colors={gradientColors} style={styles.image} />
         )}
-      </View>
+      </TouchableOpacity>
 
       <TouchableOpacity
         onPress={onRemove}
@@ -320,15 +337,17 @@ const ImageCell = ({ item, onRemove }: { item: ComparisonItem; onRemove: () => v
         <X size={13} color={THEME_COLORS.TEXT_PRIMARY} />
       </TouchableOpacity>
 
-      <Typography
-        variant="label"
-        weight="SEMIBOLD"
-        numberOfLines={2}
-        ellipsizeMode="tail"
-        style={[styles.itemTitle, !isAvailable && styles.dimmed]}
-      >
-        {item.title}
-      </Typography>
+      <TouchableOpacity activeOpacity={0.7} onPress={onOpenDetail}>
+        <Typography
+          variant="label"
+          weight="SEMIBOLD"
+          numberOfLines={2}
+          ellipsizeMode="tail"
+          style={[styles.itemTitle, !isAvailable && styles.dimmed]}
+        >
+          {item.title}
+        </Typography>
+      </TouchableOpacity>
 
       {!isAvailable ? (
         <View accessibilityRole="alert" style={styles.unavailableNotice}>
@@ -360,7 +379,7 @@ const RatingValue = ({
 }) => {
   if (rating === null || rating === undefined || !Number.isFinite(rating)) {
     return (
-      <Typography variant="body2" colorKey="TEXT_MUTED" weight="SEMIBOLD">
+      <Typography variant="label" colorKey="TEXT_MUTED" weight="SEMIBOLD">
         {PLACEHOLDER_TEXT}
       </Typography>
     );
@@ -369,7 +388,7 @@ const RatingValue = ({
   return (
     <View style={styles.ratingRow}>
       <Star size={14} color={THEME_COLORS.SECONDARY} fill={THEME_COLORS.SECONDARY} />
-      <Typography variant="body1" weight="BOLD">
+      <Typography variant="label" weight="BOLD">
         {rating.toFixed(1).replace('.', ',')}
       </Typography>
       {typeof reviewCount === 'number' ? (
@@ -384,7 +403,7 @@ const RatingValue = ({
 const LandlordValue = ({ landlord }: { landlord: ComparisonItem['landlord'] }) => {
   if (!landlord) {
     return (
-      <Typography variant="body2" colorKey="TEXT_MUTED" weight="SEMIBOLD">
+      <Typography variant="label" colorKey="TEXT_MUTED" weight="SEMIBOLD">
         {PLACEHOLDER_TEXT}
       </Typography>
     );
@@ -427,13 +446,16 @@ const ColumnActions = ({
 
   return (
     <View style={styles.actionsRow}>
-      <Button
-        title="Xem chi tiết"
-        variant="outline"
+      <TouchableOpacity
         onPress={onOpenDetail}
+        activeOpacity={0.8}
         style={styles.detailButton}
-        textStyle={styles.detailButtonText}
-      />
+        accessibilityRole="button"
+      >
+        <Typography variant="label" weight="SEMIBOLD" style={styles.detailButtonText}>
+          Xem chi tiết
+        </Typography>
+      </TouchableOpacity>
       <TouchableOpacity
         onPress={() => void openChat(item.id)}
         disabled={isOpening}
@@ -471,7 +493,6 @@ const styles = StyleSheet.create({
   columns: { gap: COLUMN_GAP, paddingHorizontal: COLUMN_GAP },
   column: { width: COLUMN_WIDTH },
   valueCell: { justifyContent: 'center', paddingHorizontal: CELL_PADDING },
-  priceValue: { fontSize: 16, lineHeight: 24 },
   bestPill: {
     alignSelf: 'flex-start',
     height: 20,
@@ -526,8 +547,20 @@ const styles = StyleSheet.create({
   landlordInfo: { flex: 1 },
   actionsCell: { justifyContent: 'flex-start', paddingTop: 22, paddingHorizontal: CELL_PADDING },
   actionsRow: { flexDirection: 'row', alignItems: 'center', gap: SPACING_TOKENS.SM - 2 },
-  detailButton: { width: 114, height: 36, borderColor: THEME_COLORS.PRIMARY },
-  detailButtonText: { color: THEME_COLORS.PRIMARY_DARK, fontSize: 13, lineHeight: 20 },
+  detailButton: {
+    width: 114,
+    height: 36,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: THEME_COLORS.PRIMARY,
+    borderRadius: BORDER_RADIUS_TOKENS.MD,
+  },
+  detailButtonText: {
+    color: THEME_COLORS.PRIMARY_DARK,
+    textAlign: 'center',
+    includeFontPadding: false,
+  },
   chatButton: {
     width: 36,
     height: 36,
