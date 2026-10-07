@@ -11,7 +11,10 @@ interface SearchResultsMapProps {
   selectedListingId: string | null;
   userLocation?: SearchListingLocation;
   school?: SearchSchool;
+  myLocation?: SearchListingLocation;
+  recenterToken?: number;
   onSelectListing: (listingId: string) => void;
+  onOpenListing?: (listingId: string) => void;
   onPressMap?: () => void;
   onRegionChange: (location: SearchListingLocation) => void;
 }
@@ -21,6 +24,7 @@ const SearchResultsMapComponent = ({
   selectedListingId,
   school,
   onSelectListing,
+  onOpenListing,
   onPressMap,
 }: SearchResultsMapProps) => {
   const markers = useMemo(
@@ -51,7 +55,11 @@ const SearchResultsMapComponent = ({
           <Pressable
             key={listing.id}
             style={[styles.marker, { left, top }, isSelected && styles.selectedMarker]}
-            onPress={() => onSelectListing(listing.id)}
+            onPress={() =>
+              listing.id === selectedListingId && onOpenListing
+                ? onOpenListing(listing.id)
+                : onSelectListing(listing.id)
+            }
             accessibilityRole="button"
             accessibilityLabel={`${listing.title}, ${formatShortPrice(listing.price)}`}
           >

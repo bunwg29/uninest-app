@@ -12,7 +12,10 @@ interface SearchResultsMapProps {
   selectedListingId: string | null;
   userLocation?: SearchListingLocation;
   school?: SearchSchool;
+  myLocation?: SearchListingLocation;
+  recenterToken?: number;
   onSelectListing: (listingId: string) => void;
+  onOpenListing?: (listingId: string) => void;
   onPressMap?: () => void;
   onRegionChange: (location: SearchListingLocation) => void;
 }
@@ -24,12 +27,17 @@ const DEFAULT_REGION: Region = {
   longitudeDelta: 0.08,
 };
 
+const MY_LOCATION_DELTA = 0.02;
+
 const SearchResultsMapComponent = ({
   listings,
   selectedListingId,
   userLocation,
   school,
+  myLocation,
+  recenterToken = 0,
   onSelectListing,
+  onOpenListing,
   onPressMap,
   onRegionChange,
 }: SearchResultsMapProps) => {
@@ -64,6 +72,20 @@ const SearchResultsMapComponent = ({
     );
   }, [school, userLocation]);
 
+  useEffect(() => {
+    if (!myLocation || recenterToken === 0) return;
+
+    mapRef.current?.animateToRegion(
+      {
+        latitude: myLocation.latitude,
+        longitude: myLocation.longitude,
+        latitudeDelta: MY_LOCATION_DELTA,
+        longitudeDelta: MY_LOCATION_DELTA,
+      },
+      400
+    );
+  }, [recenterToken]);
+
   const handleClusterPress = (location: SearchListingLocation) => {
     mapRef.current?.animateToRegion(
       {
@@ -91,6 +113,20 @@ const SearchResultsMapComponent = ({
         onRegionChange({ latitude: nextRegion.latitude, longitude: nextRegion.longitude });
       }}
     >
+      {myLocation ? (
+        <Marker
+          coordinate={myLocation}
+          anchor={{ x: 0.5, y: 0.5 }}
+          tracksViewChanges={false}
+          zIndex={10}
+          accessibilityLabel="Vị trí hiện tại của bạn"
+        >
+          <View style={styles.myLocationHalo}>
+            <View style={styles.myLocationDot} />
+          </View>
+        </Marker>
+      ) : null}
+
       {school ? (
         <Marker
           coordinate={{ latitude: school.latitude, longitude: school.longitude }}
@@ -132,7 +168,11 @@ const SearchResultsMapComponent = ({
             key={item.key}
             coordinate={item.location}
             anchor={{ x: 0.5, y: 0.5 }}
-            onPress={() => onSelectListing(item.listing.id)}
+            onPress={() =>
+              isSelected && onOpenListing
+                ? onOpenListing(item.listing.id)
+                : onSelectListing(item.listing.id)
+            }
             tracksViewChanges={isSelected}
           >
             <View style={[styles.marker, isSelected && styles.selectedMarker]}>
@@ -186,6 +226,22 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   largeCluster: { width: 46, height: 46 },
+  myLocationHalo: {
+    width: 36,
+    height: 36,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: BORDER_RADIUS_TOKENS.FULL,
+    backgroundColor: 'rgba(29, 83, 204, 0.18)',
+  },
+  myLocationDot: {
+    width: 18,
+    height: 18,
+    borderWidth: 3,
+    borderColor: THEME_COLORS.WHITE,
+    borderRadius: BORDER_RADIUS_TOKENS.FULL,
+    backgroundColor: THEME_COLORS.PRIMARY,
+  },
   schoolMarker: {
     height: 28,
     flexDirection: 'row',

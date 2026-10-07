@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Modal, ScrollView, StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
-import { ChevronLeft, Search } from 'lucide-react-native';
+import { Search } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BORDER_RADIUS_TOKENS, THEME_COLORS } from '@theme';
-import { Button, Typography } from '@ui';
+import { Button, Typography, BackButton } from '@ui';
 import { SEARCH_SCHOOLS } from '../types';
 import { RadioMark } from './RadioMark';
 
@@ -12,8 +12,9 @@ const CURRENT_LOCATION_ID = 'current-location';
 interface SearchSchoolSheetProps {
   isVisible: boolean;
   selectedSchoolId?: string;
+  isCurrentLocationSelected?: boolean;
   onApplySchool: (schoolId: string | undefined) => void;
-  onUseCurrentLocation: () => void;
+  onUseCurrentLocation: () => Promise<boolean>;
   onClose: () => void;
 }
 
@@ -23,20 +24,24 @@ const removeDiacritics = (value: string) =>
 export const SearchSchoolSheet = ({
   isVisible,
   selectedSchoolId,
+  isCurrentLocationSelected = false,
   onApplySchool,
   onUseCurrentLocation,
   onClose,
 }: SearchSchoolSheetProps) => {
   const insets = useSafeAreaInsets();
   const [query, setQuery] = useState('');
+  const [isLocating, setIsLocating] = useState(false);
   const [pendingId, setPendingId] = useState<string | undefined>(selectedSchoolId);
 
   useEffect(() => {
     if (isVisible) {
-      setPendingId(selectedSchoolId);
+      setPendingId(
+        selectedSchoolId ?? (isCurrentLocationSelected ? CURRENT_LOCATION_ID : undefined)
+      );
       setQuery('');
     }
-  }, [isVisible, selectedSchoolId]);
+  }, [isVisible, selectedSchoolId, isCurrentLocationSelected]);
 
   const schools = useMemo(() => {
     const normalizedQuery = removeDiacritics(query.trim());
@@ -48,9 +53,15 @@ export const SearchSchoolSheet = ({
     );
   }, [query]);
 
-  const handleApply = () => {
+  const handleApply = async () => {
     if (pendingId === CURRENT_LOCATION_ID) {
-      onUseCurrentLocation();
+      setIsLocating(true);
+
+      const isSuccess = await onUseCurrentLocation();
+
+      setIsLocating(false);
+
+      if (!isSuccess) return;
     } else {
       onApplySchool(pendingId);
     }
@@ -62,14 +73,7 @@ export const SearchSchoolSheet = ({
     <Modal visible={isVisible} animationType="slide" onRequestClose={onClose}>
       <View style={[styles.container, { paddingTop: insets.top }]}>
         <View style={styles.header}>
-          <TouchableOpacity
-            style={styles.backButton}
-            onPress={onClose}
-            accessibilityRole="button"
-            accessibilityLabel="Quay lại bộ lọc"
-          >
-            <ChevronLeft size={22} color={THEME_COLORS.TEXT_PRIMARY} />
-          </TouchableOpacity>
+          <BackButton onPress={onClose} accessibilityLabel="Quay lại bộ lọc" />
           <Typography variant="h3" weight="SEMIBOLD" style={styles.headerTitle}>
             Chọn trường tham chiếu
           </Typography>
@@ -133,7 +137,12 @@ export const SearchSchoolSheet = ({
         </ScrollView>
 
         <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 14) }]}>
-          <Button title="Áp dụng" size="lg" onPress={handleApply} />
+          <Button
+            title={isLocating ? 'Đang lấy vị trí…' : 'Áp dụng'}
+            size="lg"
+            isLoading={isLocating}
+            onPress={() => void handleApply()}
+          />
         </View>
       </View>
     </Modal>

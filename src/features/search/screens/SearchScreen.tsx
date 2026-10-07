@@ -49,6 +49,7 @@ import {
   SEARCH_SORT_OPTIONS,
   type SearchFilters,
   type SearchListingItem,
+  type SearchListingLocation,
   type SearchSchool,
 } from '../types';
 import { formatMillions, getQuerySummary } from '../utils';
@@ -121,6 +122,9 @@ export const SearchScreen = () => {
   const [filterValidationMessage, setFilterValidationMessage] = useState<string>();
   const [isLocating, setIsLocating] = useState(false);
   const [mapCenter, setMapCenter] = useState<{ latitude: number; longitude: number }>();
+  const [myLocation, setMyLocation] = useState<SearchListingLocation>();
+  const [recenterToken, setRecenterToken] = useState(0);
+  const [isLocationDenied, setIsLocationDenied] = useState(false);
   const debouncedDraftFilters = useDebouncedValue(draftFilters, FILTER_COUNT_DEBOUNCE_MS);
 
   const searchQuery = useSearchListings(appliedFilters);
@@ -185,6 +189,45 @@ export const SearchScreen = () => {
     }
   }, [listings, searchQuery.isPending, selectedListingId, setSelectedListingId]);
 
+  useEffect(() => {
+    if (viewMode !== 'map' || myLocation) return;
+
+    let isCancelled = false;
+
+    const locateOnOpen = async () => {
+      try {
+        const permission = await Location.requestForegroundPermissionsAsync();
+
+        if (isCancelled) return;
+
+        if (permission.status !== Location.PermissionStatus.GRANTED) {
+          setIsLocationDenied(true);
+
+          return;
+        }
+
+        setIsLocationDenied(false);
+
+        const position =
+          (await Location.getLastKnownPositionAsync()) ??
+          (await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced }));
+
+        if (isCancelled || !position) return;
+
+        setMyLocation({ latitude: position.coords.latitude, longitude: position.coords.longitude });
+        setRecenterToken((token) => token + 1);
+      } catch {
+        setIsLocationDenied(false);
+      }
+    };
+
+    void locateOnOpen();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [viewMode, myLocation]);
+
   const openSearchFocus = () => {
     setKeywordInput(appliedFilters.keyword);
     setIsSearchFocused(true);
@@ -241,6 +284,38 @@ export const SearchScreen = () => {
     closeFilters();
   };
 
+  const fetchCurrentCoordinates = async (): Promise<SearchListingLocation | null> => {
+    setIsLocating(true);
+
+    try {
+      const permission = await Location.requestForegroundPermissionsAsync();
+
+      if (permission.status !== Location.PermissionStatus.GRANTED) {
+        setIsLocationDenied(true);
+        toast.warning('Hãy cho phép UniNest truy cập vị trí trong Cài đặt để dùng tính năng này.');
+
+        return null;
+      }
+
+      setIsLocationDenied(false);
+
+      const currentLocation = await Location.getCurrentPositionAsync({
+        accuracy: Location.Accuracy.Balanced,
+      });
+
+      return {
+        latitude: currentLocation.coords.latitude,
+        longitude: currentLocation.coords.longitude,
+      };
+    } catch {
+      toast.error('Chưa thể lấy vị trí hiện tại. Vui lòng thử lại sau.');
+
+      return null;
+    } finally {
+      setIsLocating(false);
+    }
+  };
+
   const handleEnableNearby = async () => {
     if (hasLocation) {
       setSortBy('distance');
@@ -248,29 +323,32 @@ export const SearchScreen = () => {
       return;
     }
 
-    setIsLocating(true);
+    const coordinates = await fetchCurrentCoordinates();
 
-    try {
-      const permission = await Location.requestForegroundPermissionsAsync();
+    if (!coordinates) return;
 
-      if (permission.status !== Location.PermissionStatus.GRANTED) {
-        toast.warning('Bạn vẫn có thể tìm theo từ khóa và bộ lọc khi không bật vị trí.');
+    setMyLocation(coordinates);
+    setLocation(coordinates.latitude, coordinates.longitude);
+    setSortBy('distance');
+    toast.success('Đã ưu tiên các phòng gần vị trí của bạn.');
+  };
 
-        return;
-      }
+  const handleLocateMe = async () => {
+    const coordinates = await fetchCurrentCoordinates();
 
-      const currentLocation = await Location.getCurrentPositionAsync({
-        accuracy: Location.Accuracy.Balanced,
-      });
+    if (!coordinates) return;
 
-      setLocation(currentLocation.coords.latitude, currentLocation.coords.longitude);
-      setSortBy('distance');
-      toast.success('Đã ưu tiên các phòng gần vị trí của bạn.');
-    } catch {
-      toast.error('Chưa thể lấy vị trí hiện tại. Vui lòng thử lại sau.');
-    } finally {
-      setIsLocating(false);
-    }
+    setMyLocation(coordinates);
+    setRecenterToken((token) => token + 1);
+    toast.success('Đã cập nhật vị trí hiện tại của bạn.');
+  };
+
+  const handleUseCurrentLocationFilter = async () => {
+    const coordinates = await fetchCurrentCoordinates();
+
+    if (coordinates) setMyLocation(coordinates);
+
+    return coordinates;
   };
 
   const handleOpenListing = (listing: SearchListingItem) => {
@@ -529,7 +607,10 @@ export const SearchScreen = () => {
             : undefined
         }
         school={selectedSchool}
+        myLocation={myLocation}
+        recenterToken={recenterToken}
         onSelectListing={setSelectedListingId}
+        onOpenListing={(listingId) => navigation.navigate('ListingDetail', { id: listingId })}
         onPressMap={() => setSelectedListingId(null)}
         onRegionChange={setMapCenter}
       />
@@ -547,6 +628,8 @@ export const SearchScreen = () => {
         quickPriceLabel="Dưới 2,5tr"
         canSearchArea={mapCenter !== undefined}
         isLocating={isLocating}
+        isLocationDenied={isLocationDenied}
+        onLocateMe={() => void handleLocateMe()}
         onBack={() => setViewMode('list')}
         onPressQuery={openSearchFocus}
         onOpenFilters={openFilters}
@@ -616,7 +699,7 @@ export const SearchScreen = () => {
         }}
         onApply={handleApplyFilters}
         onClose={handleCloseFilters}
-        onUseCurrentLocation={handleEnableNearby}
+        onUseCurrentLocation={handleUseCurrentLocationFilter}
       />
 
       <SearchSortSheet
@@ -669,10 +752,7 @@ const styles = StyleSheet.create({
   },
   mapContainer: { flex: 1, overflow: 'hidden' },
   mapLoading: {
-    top: 0,
-    right: 0,
-    bottom: 0,
-    left: 0,
+    ...StyleSheet.absoluteFill,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: OVERLAY_COLORS.FLOATING_BUTTON,

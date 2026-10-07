@@ -20,7 +20,13 @@
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
-      "expo-secure-store"
+      "expo-secure-store",
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "UniNest cần vị trí của bạn để hiển thị bản đồ và tìm phòng trọ gần bạn."
+        }
+      ]
     ]
   }
 }

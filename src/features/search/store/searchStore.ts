@@ -62,25 +62,28 @@ export const useSearchStore = create<SearchState>((set) => ({
     set((state) => ({ draftFilters: { ...state.draftFilters, ...filters, page: 1 } })),
   resetDraftFilters: () =>
     set((state) => ({
-      draftFilters: {
-        ...createDefaultFilters(),
-        keyword: state.appliedFilters.keyword,
-        latitude: state.appliedFilters.latitude,
-        longitude: state.appliedFilters.longitude,
-        schoolId: state.appliedFilters.schoolId,
-      },
+      draftFilters: { ...createDefaultFilters(), keyword: state.appliedFilters.keyword },
     })),
   applyDraftFilters: () =>
-    set((state) => ({
-      appliedFilters: {
-        ...state.draftFilters,
-        roomTypes: [...state.draftFilters.roomTypes],
-        amenities: [...state.draftFilters.amenities],
-        page: 1,
-      },
-      isFilterVisible: false,
-      selectedListingId: null,
-    })),
+    set((state) => {
+      const hasReference =
+        state.draftFilters.latitude !== undefined && state.draftFilters.longitude !== undefined;
+
+      return {
+        appliedFilters: {
+          ...state.draftFilters,
+          sortBy:
+            state.draftFilters.sortBy === 'distance' && !hasReference
+              ? 'relevance'
+              : state.draftFilters.sortBy,
+          roomTypes: [...state.draftFilters.roomTypes],
+          amenities: [...state.draftFilters.amenities],
+          page: 1,
+        },
+        isFilterVisible: false,
+        selectedListingId: null,
+      };
+    }),
   clearAppliedFilters: () =>
     set((state) => ({
       appliedFilters: {
@@ -102,7 +105,13 @@ export const useSearchStore = create<SearchState>((set) => ({
   setSelectedListingId: (selectedListingId) => set({ selectedListingId }),
   setLocation: (latitude, longitude) =>
     set((state) => ({
-      appliedFilters: { ...state.appliedFilters, latitude, longitude, page: 1 },
+      appliedFilters: {
+        ...state.appliedFilters,
+        latitude,
+        longitude,
+        schoolId: undefined,
+        page: 1,
+      },
     })),
   setRadius: (radius) =>
     set((state) => ({

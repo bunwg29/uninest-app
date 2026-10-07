@@ -1,10 +1,10 @@
 import { useState, type ReactNode } from 'react';
-import { Modal, ScrollView, StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
+import { Modal, StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
 import { GraduationCap, X } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AMENITY_DISPLAY_LIST, ROOM_TYPE_OPTIONS } from '@features/listings/types/constants';
 import { BORDER_RADIUS_TOKENS, OVERLAY_COLORS, THEME_COLORS } from '@theme';
-import { Button, Typography } from '@ui';
+import { Button, KeyboardAvoidingContainer, KeyboardAwareScrollView, Typography } from '@ui';
 import { SEARCH_SCHOOLS, type SearchFilters } from '../types';
 import { formatMillions } from '../utils';
 import { PriceRangeSlider } from './PriceRangeSlider';
@@ -19,7 +19,7 @@ interface SearchFilterSheetProps {
   onReset: () => void;
   onApply: () => void;
   onClose: () => void;
-  onUseCurrentLocation: () => void;
+  onUseCurrentLocation: () => Promise<{ latitude: number; longitude: number } | null>;
 }
 
 const RADIUS_OPTIONS = [
@@ -68,6 +68,8 @@ export const SearchFilterSheet = ({
   const insets = useSafeAreaInsets();
   const [isSchoolSheetVisible, setIsSchoolSheetVisible] = useState(false);
   const selectedSchool = SEARCH_SCHOOLS.find((school) => school.id === filters.schoolId);
+  const hasReference = filters.latitude !== undefined && filters.longitude !== undefined;
+  const isCurrentLocationSelected = hasReference && !selectedSchool;
 
   const toggleRoomType = (roomType: string) => {
     onChange({
@@ -95,9 +97,29 @@ export const SearchFilterSheet = ({
     );
   };
 
+  const handleUseCurrentLocation = async () => {
+    const coordinates = await onUseCurrentLocation();
+
+    if (!coordinates) return false;
+
+    onChange({
+      schoolId: undefined,
+      latitude: coordinates.latitude,
+      longitude: coordinates.longitude,
+    });
+
+    return true;
+  };
+
+  const handleSelectRadius = async (radius: number) => {
+    if (!hasReference && !(await handleUseCurrentLocation())) return;
+
+    onChange({ radius: filters.radius === radius ? undefined : radius });
+  };
+
   return (
     <Modal visible={isVisible} animationType="slide" onRequestClose={onClose}>
-      <View style={[styles.container, { paddingTop: insets.top }]}>
+      <KeyboardAvoidingContainer style={[styles.container, { paddingTop: insets.top }]}>
         <View style={styles.header}>
           <TouchableOpacity
             style={styles.closeButton}
@@ -117,8 +139,7 @@ export const SearchFilterSheet = ({
           </TouchableOpacity>
         </View>
 
-        <ScrollView
-          keyboardShouldPersistTaps="handled"
+        <KeyboardAwareScrollView
           contentContainerStyle={styles.content}
           showsVerticalScrollIndicator={false}
         >
@@ -161,7 +182,7 @@ export const SearchFilterSheet = ({
             </View>
           </FilterSection>
 
-          <FilterSection title="Khoảng cách tới trường">
+          <FilterSection title="Khoảng cách">
             <TouchableOpacity
               style={styles.schoolRow}
               onPress={() => setIsSchoolSheetVisible(true)}
@@ -172,14 +193,15 @@ export const SearchFilterSheet = ({
               <Typography
                 variant="body2"
                 weight="MEDIUM"
-                colorKey={selectedSchool ? 'TEXT_PRIMARY' : 'TEXT_PLACEHOLDER'}
+                colorKey={hasReference ? 'TEXT_PRIMARY' : 'TEXT_PLACEHOLDER'}
                 numberOfLines={1}
                 style={styles.schoolName}
               >
-                {selectedSchool?.name ?? 'Chưa chọn trường'}
+                {selectedSchool?.name ??
+                  (isCurrentLocationSelected ? 'Vị trí hiện tại của tôi' : 'Chưa chọn trường')}
               </Typography>
               <Typography variant="label" weight="SEMIBOLD" colorKey="PRIMARY_DARK">
-                {selectedSchool ? 'Đổi' : 'Chọn'}
+                {hasReference ? 'Đổi' : 'Chọn'}
               </Typography>
             </TouchableOpacity>
 
@@ -189,12 +211,16 @@ export const SearchFilterSheet = ({
                   key={option.value}
                   label={option.label}
                   isSelected={filters.radius === option.value}
-                  onPress={() =>
-                    onChange({ radius: filters.radius === option.value ? undefined : option.value })
-                  }
+                  onPress={() => void handleSelectRadius(option.value)}
                 />
               ))}
             </View>
+
+            {hasReference ? null : (
+              <Typography variant="caption" colorKey="TEXT_PLACEHOLDER">
+                Chọn trường hoặc dùng vị trí hiện tại để lọc theo khoảng cách.
+              </Typography>
+            )}
           </FilterSection>
 
           <FilterSection title="Tiện ích">
@@ -232,7 +258,7 @@ export const SearchFilterSheet = ({
               </Typography>
             </View>
           ) : null}
-        </ScrollView>
+        </KeyboardAwareScrollView>
 
         <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 14) }]}>
           <Button
@@ -254,11 +280,12 @@ export const SearchFilterSheet = ({
         <SearchSchoolSheet
           isVisible={isSchoolSheetVisible}
           selectedSchoolId={filters.schoolId}
+          isCurrentLocationSelected={isCurrentLocationSelected}
           onApplySchool={handleApplySchool}
-          onUseCurrentLocation={onUseCurrentLocation}
+          onUseCurrentLocation={handleUseCurrentLocation}
           onClose={() => setIsSchoolSheetVisible(false)}
         />
-      </View>
+      </KeyboardAvoidingContainer>
     </Modal>
   );
 };
