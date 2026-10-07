@@ -1,14 +1,5 @@
 import { useCallback, useState } from 'react';
-import {
-  Image,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-  StyleSheet,
-  TextInput,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+import { Image, ScrollView, StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { AlertCircle, Image as ImageIcon, Plus, Send, X } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -19,7 +10,7 @@ import {
   OVERLAY_COLORS,
   TYPOGRAPHY_TOKENS,
 } from '@theme';
-import { Typography } from '@ui';
+import { Typography, KeyboardAvoidingContainer } from '@ui';
 import { useToast } from '@hooks';
 import { useAuth } from '@features/auth';
 import type { RootStackParamList } from '@navigation/types';
@@ -83,10 +74,7 @@ export const ChatImagePreviewScreen = ({ navigation, route }: ChatImagePreviewSc
   }, [sendMessage, caption, imageUris, navigation]);
 
   return (
-    <KeyboardAvoidingView
-      style={[styles.container, { paddingTop: insets.top }]}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-    >
+    <KeyboardAvoidingContainer style={[styles.container, { paddingTop: insets.top }]}>
       <View style={styles.header}>
         <TouchableOpacity
           style={styles.headerButton}
@@ -189,7 +177,7 @@ export const ChatImagePreviewScreen = ({ navigation, route }: ChatImagePreviewSc
           </Typography>
         </View>
       </View>
-    </KeyboardAvoidingView>
+    </KeyboardAvoidingContainer>
   );
 };
 

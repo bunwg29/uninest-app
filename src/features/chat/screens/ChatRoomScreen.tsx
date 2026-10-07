@@ -3,7 +3,7 @@ import {
   ActivityIndicator,
   FlatList,
   Keyboard,
-  KeyboardAvoidingView,
+  LayoutAnimation,
   Platform,
   StyleSheet,
   View,
@@ -70,20 +70,27 @@ export const ChatRoomScreen = ({ navigation, route }: ChatRoomScreenProps) => {
 
   const [selectedMessage, setSelectedMessage] = useState<DisplayMessage | null>(null);
   const [viewer, setViewer] = useState<ViewerState | null>(null);
-  const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
   const [isDeleteVisible, setIsDeleteVisible] = useState(false);
 
   const conversation = conversationQuery.data;
 
   useEffect(() => {
-    const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
-    const hideEvent = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
+    if (Platform.OS !== 'ios') {
+      return undefined;
+    }
 
-    const showSubscription = Keyboard.addListener(showEvent, () => setIsKeyboardVisible(true));
-    const hideSubscription = Keyboard.addListener(hideEvent, () => setIsKeyboardVisible(false));
+    const changeSubscription = Keyboard.addListener('keyboardWillChangeFrame', (event) => {
+      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+      setKeyboardHeight(Math.max(event.endCoordinates.height, 0));
+    });
+    const hideSubscription = Keyboard.addListener('keyboardWillHide', () => {
+      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+      setKeyboardHeight(0);
+    });
 
     return () => {
-      showSubscription.remove();
+      changeSubscription.remove();
       hideSubscription.remove();
     };
   }, []);
@@ -255,10 +262,7 @@ export const ChatRoomScreen = ({ navigation, route }: ChatRoomScreenProps) => {
         />
       ) : null}
 
-      <KeyboardAvoidingView
-        style={styles.body}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      >
+      <View style={[styles.body, { paddingBottom: keyboardHeight }]}>
         <FlatList
           style={styles.list}
           data={room.messages}
@@ -285,7 +289,7 @@ export const ChatRoomScreen = ({ navigation, route }: ChatRoomScreenProps) => {
         <View
           style={[
             styles.composerWrapper,
-            { paddingBottom: Math.max(isKeyboardVisible ? 0 : insets.bottom, SPACING_TOKENS.SM) },
+            { paddingBottom: Math.max(keyboardHeight > 0 ? 0 : insets.bottom, SPACING_TOKENS.SM) },
           ]}
         >
           {room.waitingCount > 0 ? <PendingNotice count={room.waitingCount} /> : null}
@@ -300,7 +304,7 @@ export const ChatRoomScreen = ({ navigation, route }: ChatRoomScreenProps) => {
             onPressQuickReply={handlePressQuickReply}
           />
         </View>
-      </KeyboardAvoidingView>
+      </View>
 
       <MessageActionSheet
         isVisible={selectedMessage !== null}

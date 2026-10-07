@@ -109,6 +109,7 @@ const styles = StyleSheet.create({
   },
   quickReplies: {
     paddingHorizontal: SPACING_TOKENS.SM + 4,
+    paddingTop: SPACING_TOKENS.SM + 4,
     gap: SPACING_TOKENS.SM,
   },
   quickReplyChip: {
@@ -132,7 +133,7 @@ const styles = StyleSheet.create({
     gap: SPACING_TOKENS.SM + 2,
   },
   rowWithReplies: {
-    paddingTop: 20,
+    paddingTop: SPACING_TOKENS.SM + 4,
   },
   iconButton: {
     width: 36,
