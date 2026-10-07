@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { StyleSheet, TouchableOpacity, View } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { ChevronLeft } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -11,23 +11,31 @@ import { SEARCH_SCHOOLS, useSearchStore } from '@features/search';
 import { AddComparisonSheet } from '../components/AddComparisonSheet';
 import { ComparisonEmptyState } from '../components/ComparisonEmptyState';
 import { ComparisonTable } from '../components/ComparisonTable';
-import { MAX_COMPARISON_ITEMS, useComparisonStore } from '../store';
+import { useClearComparison, useComparison, useRemoveComparison } from '../hooks';
+import { MAX_COMPARISON_ITEMS } from '../store';
 
 type ComparisonNavigation = NativeStackNavigationProp<RootStackParamList>;
 
 export const ComparisonScreen = () => {
   const navigation = useNavigation<ComparisonNavigation>();
   const insets = useSafeAreaInsets();
-  const items = useComparisonStore((state) => state.items);
-  const remove = useComparisonStore((state) => state.remove);
-  const clear = useComparisonStore((state) => state.clear);
+  const { items, isFull, isLoading, isServerMode, refetch } = useComparison();
+  const remove = useRemoveComparison();
+  const clear = useClearComparison();
   const filters = useSearchStore((state) => state.appliedFilters);
   const [isAddSheetVisible, setIsAddSheetVisible] = useState(false);
   const isEmpty = items.length === 0;
-  const isFull = items.length >= MAX_COMPARISON_ITEMS;
   const school = SEARCH_SCHOOLS.find((item) => item.id === filters.schoolId);
   const hasReference = filters.latitude !== undefined && filters.longitude !== undefined;
   const referenceLabel = school ? school.shortName : hasReference ? 'bạn' : null;
+
+  useFocusEffect(
+    useCallback(() => {
+      if (isServerMode) {
+        void refetch();
+      }
+    }, [isServerMode, refetch])
+  );
 
   const handleBack = () => {
     if (navigation.canGoBack()) {
@@ -73,7 +81,9 @@ export const ComparisonScreen = () => {
 
       <View style={styles.body}>
         {isEmpty ? (
-          <ComparisonEmptyState />
+          isLoading ? null : (
+            <ComparisonEmptyState />
+          )
         ) : (
           <ComparisonTable
             items={items}

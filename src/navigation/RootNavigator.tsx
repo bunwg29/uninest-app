@@ -18,7 +18,7 @@ import {
   ListingDetailScreen,
   StudentListingPreviewScreen,
 } from '@features/listings';
-import { ComparisonScreen } from '@features/comparison';
+import { ComparisonScreen, useComparisonSync } from '@features/comparison';
 import { SavedRoomsScreen } from '@features/search';
 import {
   BookingConfirmScreen,
@@ -39,6 +39,7 @@ export const RootNavigator = () => {
   const [isSplashDone, setIsSplashDone] = useState(false);
 
   useChatRealtime(isAuthenticated ? (user?.id ?? null) : null);
+  useComparisonSync();
 
   const showSplash = !isInitialized || !isSplashDone;
 

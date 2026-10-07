@@ -24,7 +24,8 @@ import {
   useFavorites,
   type SearchListingItem,
 } from '@features/search';
-import { MAX_COMPARISON_ITEMS, useComparisonStore } from '../store';
+import { useAddComparison, useComparison } from '../hooks';
+import { MAX_COMPARISON_ITEMS } from '../store';
 
 interface AddComparisonSheetProps {
   isVisible: boolean;
@@ -77,8 +78,8 @@ export const AddComparisonSheet = ({
 }: AddComparisonSheetProps) => {
   const insets = useSafeAreaInsets();
   const toast = useToast();
-  const comparisonItems = useComparisonStore((state) => state.items);
-  const addComparison = useComparisonStore((state) => state.add);
+  const { items: comparisonItems } = useComparison();
+  const { add: addComparison } = useAddComparison();
   const recentIds = useRecentlyViewedStore((state) => state.listingIds);
   const favoritesQuery = useFavorites();
   const [activeTab, setActiveTab] = useState<SheetTab>('saved');
@@ -178,7 +179,14 @@ export const AddComparisonSheet = ({
           detail.availability !== 'rented' &&
           detail.availability !== 'paused'
       );
-      const addedCount = comparable.filter((detail) => addComparison(detail) === 'added').length;
+      let addedCount = 0;
+
+      for (const detail of comparable) {
+        if ((await addComparison(detail)) === 'added') {
+          addedCount += 1;
+        }
+      }
+
       const skippedCount = selectedIds.length - addedCount;
 
       if (skippedCount > 0) {

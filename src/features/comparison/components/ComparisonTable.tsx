@@ -34,6 +34,7 @@ const COLUMN_GAP = 12;
 const CELL_PADDING = 12;
 const IMAGE_HEIGHT = 96;
 const REMOVE_BUTTON_SIZE = 26;
+const DIMMED_OPACITY = 0.45;
 const AMENITY_ROW_HEIGHT = 29.5;
 const AMENITY_BLOCK_PADDING = 4;
 const AMENITY_ICON_SIZE = 15;
@@ -63,13 +64,15 @@ export const ComparisonTable = ({
   onRemove,
   onOpenDetail,
 }: ComparisonTableProps) => {
-  const distances = items.map((item) => getItemDistance(item, reference));
+  const distances = items.map((item) =>
+    isItemAvailable(item) ? getItemDistance(item, reference) : undefined
+  );
   const bestPrice = getBestIndexes(
-    items.map((item) => item.price),
+    items.map((item) => (isItemAvailable(item) ? item.price : undefined)),
     'min'
   );
   const bestArea = getBestIndexes(
-    items.map((item) => item.area),
+    items.map((item) => (isItemAvailable(item) ? item.area : undefined)),
     'max'
   );
   const bestDistance = getBestIndexes(distances, 'min');
@@ -116,116 +119,123 @@ export const ComparisonTable = ({
             <View key={item.id} style={styles.column}>
               <ImageCell item={item} onRemove={() => onRemove(item.id)} />
 
-              <ValueCell rowKey="price" isBest={bestPrice.has(index)}>
-                <Typography
-                  variant="body1"
-                  weight="BOLD"
-                  colorKey={bestPrice.has(index) ? 'SUCCESS' : 'PRIMARY_DARK'}
-                  style={styles.priceValue}
-                >
-                  {formatPrice(item.price)}
-                </Typography>
-                {bestPrice.has(index) ? (
-                  <View style={styles.bestPill}>
-                    <Typography
-                      variant="tiny"
-                      weight="SEMIBOLD"
-                      colorKey="SUCCESS"
-                      style={styles.bestPillText}
-                    >
-                      RẺ HƠN
-                    </Typography>
-                  </View>
-                ) : null}
-              </ValueCell>
-
-              <ValueCell rowKey="area" isBest={bestArea.has(index)}>
-                <Typography
-                  variant="body1"
-                  weight="BOLD"
-                  colorKey={bestArea.has(index) ? 'SUCCESS' : 'TEXT_PRIMARY'}
-                >
-                  {formatMeasure(item.area, 'm²')}
-                </Typography>
-              </ValueCell>
-
-              <ValueCell rowKey="occupants">
-                <Typography variant="body1" weight="BOLD">
-                  {formatMeasure(item.maxOccupants, 'người')}
-                </Typography>
-              </ValueCell>
-
-              <ValueCell rowKey="distance" isBest={bestDistance.has(index)}>
-                <Typography
-                  variant="body1"
-                  weight="BOLD"
-                  colorKey={bestDistance.has(index) ? 'SUCCESS' : 'TEXT_PRIMARY'}
-                >
-                  {distances[index] === undefined || distances[index] === null
-                    ? PLACEHOLDER_TEXT
-                    : (formatListingDistance(distances[index]) ?? PLACEHOLDER_TEXT)}
-                </Typography>
-                {typeof distances[index] === 'number' ? (
-                  <Typography variant="tiny" weight="REGULAR" colorKey="TEXT_PLACEHOLDER">
-                    {formatTravelEstimate(distances[index] as number)}
+              <View
+                style={isItemAvailable(item) ? undefined : styles.dimmedColumn}
+                pointerEvents={isItemAvailable(item) ? 'auto' : 'none'}
+              >
+                <ValueCell rowKey="price" isBest={bestPrice.has(index)}>
+                  <Typography
+                    variant="body1"
+                    weight="BOLD"
+                    colorKey={bestPrice.has(index) ? 'SUCCESS' : 'PRIMARY_DARK'}
+                    style={styles.priceValue}
+                  >
+                    {formatPrice(item.price)}
                   </Typography>
-                ) : null}
-              </ValueCell>
-
-              <ValueCell rowKey="rating">
-                <RatingValue rating={item.averageRating} reviewCount={item.reviewCount} />
-              </ValueCell>
-
-              <ValueCell rowKey="deposit">
-                <Typography variant="body1" weight="BOLD">
-                  {typeof item.deposit === 'number' && Number.isFinite(item.deposit)
-                    ? formatFullPrice(item.deposit)
-                    : PLACEHOLDER_TEXT}
-                </Typography>
-                {getDepositMonths(item.deposit, item.price) ? (
-                  <Typography variant="tiny" weight="REGULAR" colorKey="TEXT_PLACEHOLDER">
-                    {`${getDepositMonths(item.deposit, item.price)} tháng`}
-                  </Typography>
-                ) : null}
-              </ValueCell>
-
-              <ValueCell rowKey="status">
-                <AvailabilityBadge availability={item.availability} />
-              </ValueCell>
-
-              <View style={[styles.amenityBlock, { height: amenityBlockHeight }]}>
-                {amenityRows.map((row) => {
-                  const hasAmenity = item.amenities?.some((amenity) => amenity.id === row.id);
-
-                  return (
-                    <View key={row.id} style={styles.amenityRow}>
-                      {hasAmenity ? (
-                        <Check size={AMENITY_ICON_SIZE} color={THEME_COLORS.SUCCESS} />
-                      ) : (
-                        <Minus size={AMENITY_ICON_SIZE} color={OVERLAY_COLORS.TEXT_UNAVAILABLE} />
-                      )}
+                  {bestPrice.has(index) ? (
+                    <View style={styles.bestPill}>
                       <Typography
-                        variant="caption"
-                        weight="REGULAR"
-                        color={
-                          hasAmenity ? THEME_COLORS.TEXT_SECONDARY : OVERLAY_COLORS.TEXT_UNAVAILABLE
-                        }
-                        numberOfLines={1}
-                        style={styles.amenityName}
+                        variant="tiny"
+                        weight="SEMIBOLD"
+                        colorKey="SUCCESS"
+                        style={styles.bestPillText}
                       >
-                        {row.name}
+                        RẺ HƠN
                       </Typography>
                     </View>
-                  );
-                })}
-              </View>
+                  ) : null}
+                </ValueCell>
 
-              <ValueCell rowKey="landlord">
-                <LandlordValue landlord={item.landlord} />
-              </ValueCell>
+                <ValueCell rowKey="area" isBest={bestArea.has(index)}>
+                  <Typography
+                    variant="body1"
+                    weight="BOLD"
+                    colorKey={bestArea.has(index) ? 'SUCCESS' : 'TEXT_PRIMARY'}
+                  >
+                    {formatMeasure(item.area, 'm²')}
+                  </Typography>
+                </ValueCell>
 
-              <View style={[styles.actionsCell, { height: ROW_HEIGHTS.actions }]}>
-                <ColumnActions item={item} onOpenDetail={() => onOpenDetail(item.id)} />
+                <ValueCell rowKey="occupants">
+                  <Typography variant="body1" weight="BOLD">
+                    {formatMeasure(item.maxOccupants, 'người')}
+                  </Typography>
+                </ValueCell>
+
+                <ValueCell rowKey="distance" isBest={bestDistance.has(index)}>
+                  <Typography
+                    variant="body1"
+                    weight="BOLD"
+                    colorKey={bestDistance.has(index) ? 'SUCCESS' : 'TEXT_PRIMARY'}
+                  >
+                    {distances[index] === undefined || distances[index] === null
+                      ? PLACEHOLDER_TEXT
+                      : (formatListingDistance(distances[index]) ?? PLACEHOLDER_TEXT)}
+                  </Typography>
+                  {typeof distances[index] === 'number' ? (
+                    <Typography variant="tiny" weight="REGULAR" colorKey="TEXT_PLACEHOLDER">
+                      {formatTravelEstimate(distances[index] as number)}
+                    </Typography>
+                  ) : null}
+                </ValueCell>
+
+                <ValueCell rowKey="rating">
+                  <RatingValue rating={item.averageRating} reviewCount={item.reviewCount} />
+                </ValueCell>
+
+                <ValueCell rowKey="deposit">
+                  <Typography variant="body1" weight="BOLD">
+                    {typeof item.deposit === 'number' && Number.isFinite(item.deposit)
+                      ? formatFullPrice(item.deposit)
+                      : PLACEHOLDER_TEXT}
+                  </Typography>
+                  {getDepositMonths(item.deposit, item.price) ? (
+                    <Typography variant="tiny" weight="REGULAR" colorKey="TEXT_PLACEHOLDER">
+                      {`${getDepositMonths(item.deposit, item.price)} tháng`}
+                    </Typography>
+                  ) : null}
+                </ValueCell>
+
+                <ValueCell rowKey="status">
+                  <AvailabilityBadge availability={item.availability} />
+                </ValueCell>
+
+                <View style={[styles.amenityBlock, { height: amenityBlockHeight }]}>
+                  {amenityRows.map((row) => {
+                    const hasAmenity = item.amenities?.some((amenity) => amenity.id === row.id);
+
+                    return (
+                      <View key={row.id} style={styles.amenityRow}>
+                        {hasAmenity ? (
+                          <Check size={AMENITY_ICON_SIZE} color={THEME_COLORS.SUCCESS} />
+                        ) : (
+                          <Minus size={AMENITY_ICON_SIZE} color={OVERLAY_COLORS.TEXT_UNAVAILABLE} />
+                        )}
+                        <Typography
+                          variant="caption"
+                          weight="REGULAR"
+                          color={
+                            hasAmenity
+                              ? THEME_COLORS.TEXT_SECONDARY
+                              : OVERLAY_COLORS.TEXT_UNAVAILABLE
+                          }
+                          numberOfLines={1}
+                          style={styles.amenityName}
+                        >
+                          {row.name}
+                        </Typography>
+                      </View>
+                    );
+                  })}
+                </View>
+
+                <ValueCell rowKey="landlord">
+                  <LandlordValue landlord={item.landlord} />
+                </ValueCell>
+
+                <View style={[styles.actionsCell, { height: ROW_HEIGHTS.actions }]}>
+                  <ColumnActions item={item} onOpenDetail={() => onOpenDetail(item.id)} />
+                </View>
               </View>
             </View>
           ))}
@@ -275,8 +285,11 @@ const ValueCell = ({
   </View>
 );
 
+const isItemAvailable = (item: ComparisonItem): boolean => item.isAvailable !== false;
+
 const ImageCell = ({ item, onRemove }: { item: ComparisonItem; onRemove: () => void }) => {
   const [hasError, setHasError] = useState(false);
+  const isAvailable = isItemAvailable(item);
   const coverImage = item.images?.find((image) => image.isCover) ?? item.images?.[0];
   const gradientColors = getPlaceholderGradient({
     id: item.id,
@@ -285,7 +298,7 @@ const ImageCell = ({ item, onRemove }: { item: ComparisonItem; onRemove: () => v
 
   return (
     <View style={[styles.imageCell, { height: ROW_HEIGHTS.image }]}>
-      <View style={styles.imageFrame}>
+      <View style={[styles.imageFrame, !isAvailable && styles.dimmed]}>
         {coverImage?.url && !hasError ? (
           <Image
             source={{ uri: coverImage.url }}
@@ -296,26 +309,44 @@ const ImageCell = ({ item, onRemove }: { item: ComparisonItem; onRemove: () => v
         ) : (
           <GradientView colors={gradientColors} style={styles.image} />
         )}
-
-        <TouchableOpacity
-          onPress={onRemove}
-          style={styles.removeButton}
-          accessibilityRole="button"
-          accessibilityLabel={`Bỏ ${item.title} khỏi so sánh`}
-        >
-          <X size={13} color={THEME_COLORS.TEXT_PRIMARY} />
-        </TouchableOpacity>
       </View>
+
+      <TouchableOpacity
+        onPress={onRemove}
+        style={styles.removeButton}
+        accessibilityRole="button"
+        accessibilityLabel={`Bỏ ${item.title} khỏi so sánh`}
+      >
+        <X size={13} color={THEME_COLORS.TEXT_PRIMARY} />
+      </TouchableOpacity>
 
       <Typography
         variant="label"
         weight="SEMIBOLD"
         numberOfLines={2}
         ellipsizeMode="tail"
-        style={styles.itemTitle}
+        style={[styles.itemTitle, !isAvailable && styles.dimmed]}
       >
         {item.title}
       </Typography>
+
+      {!isAvailable ? (
+        <View accessibilityRole="alert" style={styles.unavailableNotice}>
+          <Typography variant="caption" weight="SEMIBOLD" colorKey="ERROR" numberOfLines={1}>
+            Phòng không còn trống
+          </Typography>
+          {item.unavailableReason ? (
+            <Typography
+              variant="tiny"
+              weight="REGULAR"
+              colorKey="TEXT_PLACEHOLDER"
+              numberOfLines={1}
+            >
+              {item.unavailableReason}
+            </Typography>
+          ) : null}
+        </View>
+      ) : null}
     </View>
   );
 };
@@ -459,10 +490,14 @@ const styles = StyleSheet.create({
     backgroundColor: THEME_COLORS.SURFACE_MUTED,
   },
   image: { width: '100%', height: '100%' },
+  dimmed: { opacity: DIMMED_OPACITY },
+  dimmedColumn: { opacity: DIMMED_OPACITY },
+  unavailableNotice: { marginTop: 2 },
   removeButton: {
     position: 'absolute',
-    top: 6,
-    right: 6,
+    top: CELL_PADDING + 6,
+    right: CELL_PADDING + 6,
+    zIndex: 1,
     width: REMOVE_BUTTON_SIZE,
     height: REMOVE_BUTTON_SIZE,
     alignItems: 'center',

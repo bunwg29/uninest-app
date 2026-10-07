@@ -47,7 +47,12 @@ import {
 import { Avatar, Button, GradientView, HeaderBar, ScreenContainer, Typography } from '@ui';
 import { useAuth } from '@features/auth';
 import { useOpenListingChat } from '@features/chat/hooks/useOpenListingChat';
-import { CompareIcon, MAX_COMPARISON_ITEMS, useComparisonStore } from '@features/comparison';
+import {
+  CompareIcon,
+  MAX_COMPARISON_ITEMS,
+  useAddComparison,
+  useComparison,
+} from '@features/comparison';
 import {
   SEARCH_SCHOOLS,
   formatListingDistance,
@@ -111,10 +116,10 @@ export const ListingDetailScreen = () => {
   const isStudent = role === 'student';
   const recordedListingId = useRef<string | null>(null);
   const recordRecentlyViewed = useRecentlyViewedStore((state) => state.recordView);
-  const comparisonItems = useComparisonStore((state) => state.items);
-  const addComparison = useComparisonStore((state) => state.add);
+  const { count: comparisonCount, isFull: isComparisonFull, contains } = useComparison();
+  const { add: addComparison } = useAddComparison();
   const appliedFilters = useSearchStore((state) => state.appliedFilters);
-  const isCompared = comparisonItems.some((item) => item.id === listingId);
+  const isCompared = contains(listingId);
   const [viewerIndex, setViewerIndex] = useState<number | null>(null);
   const [isAmenitiesVisible, setIsAmenitiesVisible] = useState(false);
   const [isReportVisible, setIsReportVisible] = useState(false);
@@ -158,7 +163,7 @@ export const ListingDetailScreen = () => {
     return () => clearTimeout(timer);
   }, [isLimitNoticeVisible]);
 
-  const handleCompare = () => {
+  const handleCompare = async () => {
     if (!detailQuery.data) {
       return;
     }
@@ -177,7 +182,7 @@ export const ListingDetailScreen = () => {
       return;
     }
 
-    const result = addComparison(detailQuery.data);
+    const result = await addComparison(detailQuery.data);
 
     if (result === 'limit-reached') {
       setIsLimitNoticeVisible(true);
@@ -185,7 +190,15 @@ export const ListingDetailScreen = () => {
       return;
     }
 
-    toast.success('Đã thêm tin vào danh sách so sánh');
+    if (result === 'unavailable') {
+      toast.warning('Phòng này hiện không nhận so sánh');
+
+      return;
+    }
+
+    if (result === 'added') {
+      toast.success('Đã thêm tin vào danh sách so sánh');
+    }
   };
 
   const handleToggleFavorite = () => {
@@ -293,7 +306,6 @@ export const ListingDetailScreen = () => {
       : (listing.distanceMeters ?? null);
   const visibleAmenities = listing.amenities.slice(0, VISIBLE_AMENITY_COUNT);
   const placeholderGradient = getPlaceholderGradient({ id: listing.id, isHighlighted: isHolding });
-  const isComparisonFull = comparisonItems.length >= MAX_COMPARISON_ITEMS;
 
   return (
     <View style={styles.root}>
@@ -556,14 +568,14 @@ export const ListingDetailScreen = () => {
             </RoundButton>
             <RoundButton
               label="So sánh phòng"
-              onPress={handleCompare}
+              onPress={() => void handleCompare()}
               style={isComparisonFull ? styles.roundButtonLimit : undefined}
             >
               <CompareIcon
                 size={19}
                 color={isCompared ? THEME_COLORS.PRIMARY : THEME_COLORS.TEXT_PRIMARY}
               />
-              {comparisonItems.length > 0 ? (
+              {comparisonCount > 0 ? (
                 <View style={styles.compareCount}>
                   <Typography
                     variant="tiny"
@@ -571,7 +583,7 @@ export const ListingDetailScreen = () => {
                     color={THEME_COLORS.WHITE}
                     style={styles.compareCountText}
                   >
-                    {comparisonItems.length}
+                    {comparisonCount}
                   </Typography>
                 </View>
               ) : null}

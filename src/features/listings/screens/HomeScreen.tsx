@@ -17,7 +17,7 @@ import {
   type SearchFilters,
   type SearchListingItem,
 } from '@features/search';
-import { useComparisonStore } from '@features/comparison';
+import { useComparison } from '@features/comparison';
 import { RecommendationCard, useRecentlyViewedStore } from '@features/recommendations';
 import type { MainTabParamList, RootStackParamList } from '@navigation';
 import { useListingPostStore } from '../store/listingPostStore';
@@ -73,7 +73,7 @@ export const HomeScreen = () => {
   const { openListing } = useOpenListing();
   const { width } = useWindowDimensions();
   const isCompact = width < 375;
-  const comparisonCount = useComparisonStore((state) => state.items.length);
+  const { count: comparisonCount } = useComparison();
   const applySearchPreset = useSearchStore((state) => state.applyPreset);
   const openSearchFilters = useSearchStore((state) => state.openFilters);
   const setSearchViewMode = useSearchStore((state) => state.setViewMode);
