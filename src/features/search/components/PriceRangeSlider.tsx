@@ -4,7 +4,10 @@ import { BORDER_RADIUS_TOKENS, THEME_COLORS } from '@theme';
 
 export const PRICE_SLIDER_MAX = 10_000_000;
 const PRICE_SLIDER_STEP = 100_000;
-const THUMB_SIZE = 20;
+const THUMB_SIZE = 32;
+const TRACK_HEIGHT = 8;
+const CONTAINER_HEIGHT = 48;
+const THUMB_HIT_SLOP = 12;
 
 interface PriceRangeSliderProps {
   minValue?: number;
@@ -41,7 +44,8 @@ export const PriceRangeSlider = ({ minValue, maxValue, onChange }: PriceRangeSli
 
         if (width <= 0) return;
 
-        const next = snap(dragStart.current + (gesture.dx / width) * PRICE_SLIDER_MAX);
+        const usable = Math.max(width - THUMB_SIZE, 1);
+        const next = snap(dragStart.current + (gesture.dx / usable) * PRICE_SLIDER_MAX);
 
         if (kind === 'min') {
           const value = clamp(next, 0, currentUpper - PRICE_SLIDER_STEP);
@@ -89,10 +93,12 @@ export const PriceRangeSlider = ({ minValue, maxValue, onChange }: PriceRangeSli
       />
       <View
         style={[styles.thumb, { left: lowerRatio * usableWidth }]}
+        hitSlop={THUMB_HIT_SLOP}
         {...minResponder.panHandlers}
       />
       <View
         style={[styles.thumb, { left: upperRatio * usableWidth }]}
+        hitSlop={THUMB_HIT_SLOP}
         {...maxResponder.panHandlers}
       />
     </View>
@@ -100,25 +106,25 @@ export const PriceRangeSlider = ({ minValue, maxValue, onChange }: PriceRangeSli
 };
 
 const styles = StyleSheet.create({
-  container: { height: 28, justifyContent: 'center' },
+  container: { height: CONTAINER_HEIGHT, justifyContent: 'center' },
   track: {
-    height: 6,
+    height: TRACK_HEIGHT,
     borderRadius: BORDER_RADIUS_TOKENS.FULL,
     backgroundColor: THEME_COLORS.BORDER,
   },
   fill: {
     position: 'absolute',
-    top: 11,
-    height: 6,
+    top: (CONTAINER_HEIGHT - TRACK_HEIGHT) / 2,
+    height: TRACK_HEIGHT,
     borderRadius: BORDER_RADIUS_TOKENS.FULL,
     backgroundColor: THEME_COLORS.PRIMARY,
   },
   thumb: {
     position: 'absolute',
-    top: 4,
+    top: (CONTAINER_HEIGHT - THUMB_SIZE) / 2,
     width: THUMB_SIZE,
     height: THUMB_SIZE,
-    borderWidth: 3,
+    borderWidth: 4,
     borderColor: THEME_COLORS.PRIMARY,
     borderRadius: BORDER_RADIUS_TOKENS.FULL,
     backgroundColor: THEME_COLORS.WHITE,
