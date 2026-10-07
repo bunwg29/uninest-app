@@ -48,7 +48,12 @@ const buildStripes = (width: number): StripeLine[] => {
   return stripes;
 };
 
-export const NearbyMapPreview = () => {
+interface NearbyMapPreviewProps {
+  listings?: Array<{ id: string; location?: { latitude: number; longitude: number } }>;
+  onPress?: () => void;
+}
+
+export const NearbyMapPreview = (_props: NearbyMapPreviewProps) => {
   const { width: windowWidth } = useWindowDimensions();
   const width = windowWidth - SPACING_TOKENS.MD * 2;
   const stripes = useMemo(() => buildStripes(width), [width]);

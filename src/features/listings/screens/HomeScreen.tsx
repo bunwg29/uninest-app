@@ -322,7 +322,7 @@ export const HomeScreen = () => {
               />
 
               <View style={styles.map}>
-                <NearbyMapPreview />
+                <NearbyMapPreview listings={listings} onPress={handleGoToMap} />
               </View>
             </View>
           )}
