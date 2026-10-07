@@ -1,11 +1,19 @@
 import { useCallback, useEffect } from 'react';
-import { View, ScrollView, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useNavigation, useRoute, type RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { THEME_COLORS, SPACING_TOKENS, BORDER_RADIUS_TOKENS, OVERLAY_COLORS } from '@theme';
-import { Button, Input, Typography, ScreenContainer, FilterChip } from '@ui';
+import {
+  Button,
+  Input,
+  Typography,
+  ScreenContainer,
+  FilterChip,
+  KeyboardAvoidingContainer,
+  KeyboardAwareScrollView,
+} from '@ui';
 import { formatNumberWithDots, parseRawNumberString } from '@core';
 import type { ListingPostStackParamList } from '@navigation';
 import { useListingPostStore } from '../store/listingPostStore';
@@ -100,11 +108,8 @@ export const BasicInfoScreen = () => {
         }}
       />
 
-      <KeyboardAvoidingView
-        style={styles.flex}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      >
-        <ScrollView
+      <KeyboardAvoidingContainer style={styles.flex}>
+        <KeyboardAwareScrollView
           style={styles.flex}
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
@@ -333,8 +338,8 @@ export const BasicInfoScreen = () => {
               />
             )}
           />
-        </ScrollView>
-      </KeyboardAvoidingView>
+        </KeyboardAwareScrollView>
+      </KeyboardAvoidingContainer>
 
       <View style={styles.bottomBar}>
         <Button variant="primary" size="lg" fullWidth onPress={handleSubmit(onSubmit)}>

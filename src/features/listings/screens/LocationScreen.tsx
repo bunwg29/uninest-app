@@ -4,7 +4,6 @@ import {
   StyleSheet,
   TouchableOpacity,
   FlatList,
-  ScrollView,
   ActivityIndicator,
   Alert,
 } from 'react-native';
@@ -13,7 +12,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import * as Location from 'expo-location';
 import { MapPin, ChevronDown, Search } from 'lucide-react-native';
 import { THEME_COLORS, SPACING_TOKENS, BORDER_RADIUS_TOKENS, OVERLAY_COLORS } from '@theme';
-import { Button, Typography, ScreenContainer, Modal, Input } from '@ui';
+import { Button, Typography, ScreenContainer, Modal, Input, KeyboardAwareScrollView } from '@ui';
 import { useToast } from '@hooks';
 import type { ListingPostStackParamList } from '@navigation';
 import {
@@ -266,7 +265,7 @@ export const LocationScreen = () => {
     <ScreenContainer applyTopInset applyBottomInset keyboardAvoiding={false}>
       <WizardHeader step={3} isEditing={Boolean(editingListingId)} onBack={navigation.goBack} />
 
-      <ScrollView
+      <KeyboardAwareScrollView
         style={styles.flex}
         contentContainerStyle={styles.content}
         keyboardShouldPersistTaps="handled"
@@ -344,7 +343,7 @@ export const LocationScreen = () => {
               : 'Chạm vào bản đồ hoặc bấm "Dùng vị trí hiện tại" để ghim vị trí phòng.'}
           </Typography>
         </View>
-      </ScrollView>
+      </KeyboardAwareScrollView>
 
       <View style={styles.bottomBar}>
         <Button

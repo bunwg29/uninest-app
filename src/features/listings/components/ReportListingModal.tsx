@@ -1,18 +1,9 @@
 import { useEffect, useState } from 'react';
-import {
-  KeyboardAvoidingView,
-  Modal,
-  Platform,
-  ScrollView,
-  StyleSheet,
-  TextInput,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+import { Modal, StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
 import { CircleAlert, X } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BORDER_RADIUS_TOKENS, OVERLAY_COLORS, SPACING_TOKENS, THEME_COLORS } from '@theme';
-import { Button, Typography } from '@ui';
+import { Button, Typography, KeyboardAvoidingContainer, KeyboardAwareScrollView } from '@ui';
 
 export const LISTING_REPORT_REASON_OPTIONS = [
   { value: 'false_information', label: 'Giá hoặc thông tin sai sự thật' },
@@ -54,10 +45,7 @@ export const ReportListingModal = ({
 
   return (
     <Modal visible={isVisible} animationType="slide" onRequestClose={onClose}>
-      <KeyboardAvoidingView
-        style={[styles.container, { paddingTop: insets.top }]}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      >
+      <KeyboardAvoidingContainer style={[styles.container, { paddingTop: insets.top }]}>
         <View style={styles.header}>
           <TouchableOpacity
             onPress={onClose}
@@ -72,7 +60,7 @@ export const ReportListingModal = ({
           </Typography>
         </View>
 
-        <ScrollView
+        <KeyboardAwareScrollView
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.content}
@@ -157,7 +145,7 @@ export const ReportListingModal = ({
               </Typography>
             </View>
           </View>
-        </ScrollView>
+        </KeyboardAwareScrollView>
 
         <View
           style={[styles.footer, { paddingBottom: Math.max(insets.bottom, SPACING_TOKENS.MD) }]}
@@ -174,7 +162,7 @@ export const ReportListingModal = ({
             />
           </View>
         </View>
-      </KeyboardAvoidingView>
+      </KeyboardAvoidingContainer>
     </Modal>
   );
 };
