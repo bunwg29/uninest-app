@@ -26,8 +26,6 @@ const ANONYMOUS_VIEWER_ID = 'anonymous';
 const getNextPage = <T>(lastPage: PaginatedResponse<T>) =>
   lastPage.hasMore ? lastPage.page + 1 : undefined;
 
-// isOwner/canManage/isLiked phụ thuộc người xem, nên cache phải tách theo tài khoản
-// để khi đổi tài khoản trên cùng thiết bị không hiển thị quyền của người trước.
 const useForumViewerId = () => useAuth().user?.id ?? ANONYMOUS_VIEWER_ID;
 
 export const useForumFeed = (filters: ForumFeedFilters) => {

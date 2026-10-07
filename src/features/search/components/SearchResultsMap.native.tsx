@@ -47,7 +47,6 @@ const SearchResultsMapComponent = ({
       userLocation
         ? { ...userLocation, latitudeDelta: 0.04, longitudeDelta: 0.04 }
         : DEFAULT_REGION,
-    // Vùng ban đầu chỉ tính một lần, các lần đổi vị trí sau được xử lý bằng animateToRegion.
     []
   );
   const [region, setRegion] = useState<Region>(initialRegion);

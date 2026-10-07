@@ -16,8 +16,6 @@ export const resetAllStores = (): void => {
   storeResetters.forEach((resetter) => {
     try {
       resetter();
-    } catch {
-      // ignore reset error
-    }
+    } catch {}
   });
 };

@@ -150,7 +150,6 @@ export const SearchMapPanel = ({
     if (containerHeight > 0) {
       sheetHeight.setValue(isSheetExpanded ? expandedHeight : collapsedHeight);
     }
-    // Chỉ đặt lại chiều cao khi kích thước vùng chứa thay đổi, không ghi đè lúc người dùng đang kéo.
   }, [containerHeight]);
 
   const sheetPanResponder = useMemo(() => {

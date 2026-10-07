@@ -7,9 +7,7 @@ const MAX_RECENT_SEARCHES = 8;
 const persist = async (terms: string[]) => {
   try {
     await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(terms));
-  } catch {
-    // Lịch sử tìm kiếm chỉ là tiện ích, lỗi lưu không được làm gián đoạn việc tìm phòng.
-  }
+  } catch {}
 };
 
 export const useRecentSearches = () => {

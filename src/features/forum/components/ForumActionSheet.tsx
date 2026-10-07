@@ -29,7 +29,6 @@ export const ForumActionSheet = ({ isVisible, actions, onClose }: ForumActionShe
           style={[styles.item, index < actions.length - 1 && styles.itemDivider]}
           onPress={() => {
             onClose();
-            // iOS không mở được Modal mới khi Modal hiện tại chưa đóng xong animation.
             setTimeout(action.onPress, SHEET_TRANSITION_DELAY_MS);
           }}
         >

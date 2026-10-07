@@ -239,9 +239,7 @@ export const authService = {
           refreshToken,
           deviceId: deviceId || undefined,
         });
-      } catch {
-        // ignore logout errors
-      }
+      } catch {}
     }
   },
 };
