@@ -137,7 +137,7 @@ export const LandlordAppointmentsScreen = () => {
             <TouchableOpacity
               key={tab.key}
               onPress={() => setActiveTab(tab.key)}
-              style={styles.tab}
+              style={[styles.tab, { flexGrow: tab.label.length }]}
               accessibilityRole="tab"
               accessibilityState={{ selected: isActive }}
             >
@@ -146,6 +146,9 @@ export const LandlordAppointmentsScreen = () => {
                 weight={isActive ? 'BOLD' : 'MEDIUM'}
                 color={isActive ? THEME_COLORS.PRIMARY_DARK : THEME_COLORS.TEXT_PLACEHOLDER}
                 style={styles.tabLabel}
+                numberOfLines={1}
+                adjustsFontSizeToFit
+                minimumFontScale={0.8}
               >
                 {count > 0 ? `${tab.label} (${count})` : tab.label}
               </Typography>
@@ -234,7 +237,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: THEME_COLORS.BORDER,
   },
-  tab: { flex: 1, alignItems: 'center', gap: 8, paddingTop: 6 },
+  tab: { flexBasis: 0, flexShrink: 1, alignItems: 'center', gap: 8, paddingTop: 6 },
   tabLabel: { fontSize: 12.5, lineHeight: 20 },
   tabIndicator: {
     alignSelf: 'stretch',

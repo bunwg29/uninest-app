@@ -130,12 +130,19 @@ export const MyBookingsScreen = () => {
           <TouchableOpacity
             key={tab.key}
             onPress={() => setActiveTab(tab.key)}
-            style={[styles.tab, activeTab === tab.key && styles.activeTab]}
+            style={[
+              styles.tab,
+              { flexGrow: tab.label.length },
+              activeTab === tab.key && styles.activeTab,
+            ]}
           >
             <Typography
               variant="label"
               weight={activeTab === tab.key ? 'BOLD' : 'MEDIUM'}
               align="center"
+              numberOfLines={1}
+              adjustsFontSizeToFit
+              minimumFontScale={0.8}
               colorKey={activeTab === tab.key ? 'PRIMARY_DARK' : 'TEXT_PLACEHOLDER'}
             >
               {countFor(tab.key) > 0 ? `${tab.label} (${countFor(tab.key)})` : tab.label}
@@ -206,7 +213,8 @@ const styles = StyleSheet.create({
     borderBottomColor: THEME_COLORS.BORDER,
   },
   tab: {
-    flex: 1,
+    flexBasis: 0,
+    flexShrink: 1,
     alignItems: 'center',
     justifyContent: 'center',
     minHeight: 56,
