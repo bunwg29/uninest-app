@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import { Modal, Pressable, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BORDER_RADIUS_TOKENS, OVERLAY_COLORS, SPACING_TOKENS, THEME_COLORS } from '@theme';
-import { Typography } from '@ui';
+import { KeyboardAvoidingContainer, Typography } from '@ui';
 
 const SHEET_RADIUS = 24;
 
@@ -25,7 +25,7 @@ export const ForumBottomSheet = ({
 
   return (
     <Modal visible={isVisible} transparent animationType="slide" onRequestClose={onClose}>
-      <View style={styles.root}>
+      <KeyboardAvoidingContainer style={styles.root}>
         <Pressable style={styles.backdrop} onPress={onClose} accessibilityLabel="Đóng" />
 
         <View style={[styles.sheet, { paddingBottom: Math.max(insets.bottom, SPACING_TOKENS.MD) }]}>
@@ -50,7 +50,7 @@ export const ForumBottomSheet = ({
 
           {children}
         </View>
-      </View>
+      </KeyboardAvoidingContainer>
     </Modal>
   );
 };

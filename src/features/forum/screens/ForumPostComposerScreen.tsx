@@ -1,15 +1,5 @@
 import { useEffect, useState } from 'react';
-import {
-  ActivityIndicator,
-  Alert,
-  Image,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-  StyleSheet,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+import { ActivityIndicator, Alert, Image, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { useNavigation, useRoute, type RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -19,7 +9,15 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { ImagePlus, MapPin, X } from 'lucide-react-native';
 import { filterValidUploadImages, resolveImageContentType } from '@core';
 import { BORDER_RADIUS_TOKENS, OVERLAY_COLORS, SPACING_TOKENS, THEME_COLORS } from '@theme';
-import { Button, FilterChip, Input, ScreenContainer, Typography } from '@ui';
+import {
+  Button,
+  FilterChip,
+  Input,
+  ScreenContainer,
+  Typography,
+  KeyboardAvoidingContainer,
+  KeyboardAwareScrollView,
+} from '@ui';
 import { useToast } from '@hooks';
 import { formatNumberWithDots, parseRawNumberString } from '@core';
 import type { RootStackParamList } from '@navigation';
@@ -305,11 +303,11 @@ export const ForumPostComposerScreen = () => {
         hasBottomBorder
       />
 
-      <KeyboardAvoidingView
-        style={styles.flexOne}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      >
-        <ScrollView contentContainerStyle={styles.form} keyboardShouldPersistTaps="handled">
+      <KeyboardAvoidingContainer style={styles.flexOne}>
+        <KeyboardAwareScrollView
+          contentContainerStyle={styles.form}
+          keyboardShouldPersistTaps="handled"
+        >
           <ForumFormField label="Chuyên mục" style={styles.group}>
             <Controller
               control={control}
@@ -610,7 +608,7 @@ export const ForumPostComposerScreen = () => {
               ) : null}
             </View>
           ) : null}
-        </ScrollView>
+        </KeyboardAwareScrollView>
 
         <View style={[styles.footer, { paddingBottom: insets.bottom + SPACING_TOKENS.SM }]}>
           {canSaveDraft ? (
@@ -631,7 +629,7 @@ export const ForumPostComposerScreen = () => {
             style={[styles.footerButton, styles.flexOne]}
           />
         </View>
-      </KeyboardAvoidingView>
+      </KeyboardAvoidingContainer>
 
       <ModerationWarningModal
         result={moderationResult}

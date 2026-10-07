@@ -4,8 +4,6 @@ import {
   Alert,
   FlatList,
   Image,
-  KeyboardAvoidingView,
-  Platform,
   StyleSheet,
   TextInput,
   TouchableOpacity,
@@ -25,7 +23,7 @@ import {
   Trash2,
 } from 'lucide-react-native';
 import { BORDER_RADIUS_TOKENS, SPACING_TOKENS, THEME_COLORS } from '@theme';
-import { EmptyState, ScreenContainer, Typography } from '@ui';
+import { EmptyState, ScreenContainer, Typography, KeyboardAvoidingContainer } from '@ui';
 import { useToast } from '@hooks';
 import { HTTP_STATUS_CODES, USER_ROLES, type AppError } from '@core';
 import { useAuth } from '@features/auth';
@@ -453,10 +451,7 @@ export const ForumPostDetailScreen = () => {
         }
       />
 
-      <KeyboardAvoidingView
-        style={styles.flexOne}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      >
+      <KeyboardAvoidingContainer style={styles.flexOne}>
         <View style={styles.flexOne}>{renderContent()}</View>
 
         {canComment ? (
@@ -515,7 +510,7 @@ export const ForumPostDetailScreen = () => {
             </View>
           </View>
         ) : null}
-      </KeyboardAvoidingView>
+      </KeyboardAvoidingContainer>
 
       <ForumActionSheet
         isVisible={Boolean(actionSheet?.length)}
