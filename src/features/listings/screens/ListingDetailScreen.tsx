@@ -16,7 +16,6 @@ import { useNavigation, useRoute } from '@react-navigation/native';
 import type { RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import {
-  ChevronLeft,
   CircleAlert,
   Clock3,
   Eye,
@@ -44,7 +43,15 @@ import {
   THEME_COLORS,
   TYPOGRAPHY_TOKENS,
 } from '@theme';
-import { Avatar, Button, GradientView, HeaderBar, ScreenContainer, Typography } from '@ui';
+import {
+  Avatar,
+  BackButton,
+  Button,
+  GradientView,
+  HeaderBar,
+  ScreenContainer,
+  Typography,
+} from '@ui';
 import { useAuth } from '@features/auth';
 import { useOpenListingChat } from '@features/chat/hooks/useOpenListingChat';
 import {
@@ -92,6 +99,7 @@ const VISIBLE_AMENITY_COUNT = 6;
 const ACTION_BAR_HEIGHT = 72;
 const HOLD_STRIP_HEIGHT = 38;
 const TOP_SCRIM_HEIGHT = 110;
+const TOP_SCRIM_OPACITIES = [1, 0.75, 0.5, 0.3, 0.15, 0.06] as const;
 const LIMIT_NOTICE_DURATION_MS = 3500;
 
 const formatShortDate = (value: string) => {
@@ -532,10 +540,12 @@ export const ListingDetailScreen = () => {
               <TouchableOpacity
                 onPress={() => setIsReportVisible(true)}
                 style={styles.reportButton}
+                activeOpacity={0.8}
                 accessibilityRole="button"
+                accessibilityLabel="Báo cáo tin đăng này"
               >
-                <Flag size={16} color={THEME_COLORS.TEXT_MUTED} />
-                <Typography variant="caption" weight="SEMIBOLD" colorKey="TEXT_MUTED">
+                <Flag size={18} color={THEME_COLORS.ERROR} />
+                <Typography variant="body2" weight="SEMIBOLD" colorKey="ERROR">
                   Báo cáo tin đăng này
                 </Typography>
               </TouchableOpacity>
@@ -549,9 +559,7 @@ export const ListingDetailScreen = () => {
         style={[styles.overlayHeader, { paddingTop: insets.top + OVERLAY_TOP_OFFSET }]}
       >
         <View style={styles.overlayRow}>
-          <RoundButton label="Quay lại" onPress={handleBack}>
-            <ChevronLeft size={20} color={THEME_COLORS.TEXT_PRIMARY} />
-          </RoundButton>
+          <BackButton onPress={handleBack} />
           <View style={styles.overlayActions}>
             <RoundButton label="Chia sẻ" onPress={handleShare}>
               <ShareIcon size={19} color={THEME_COLORS.TEXT_PRIMARY} />
@@ -792,12 +800,18 @@ const ListingImageGallery = ({
         />
       )}
 
-      <GradientView
-        colors={[OVERLAY_COLORS.SCRIM_TOP, OVERLAY_COLORS.SCRIM_TOP_CLEAR]}
-        angle={180}
-        pointerEvents="none"
-        style={styles.topScrim}
-      />
+      <View pointerEvents="none" style={styles.topScrim}>
+        {TOP_SCRIM_OPACITIES.map((opacity) => (
+          <View
+            key={opacity}
+            style={{
+              flex: 1,
+              backgroundColor: OVERLAY_COLORS.SCRIM_TOP,
+              opacity,
+            }}
+          />
+        ))}
+      </View>
 
       {images.length > 0 ? (
         <View style={styles.imageCounter}>
@@ -916,7 +930,7 @@ const formatMeasuredValue = (value: number | null | undefined, unit: string): st
     : `${value} ${unit}`;
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: THEME_COLORS.BACKGROUND },
+  root: { flex: 1, backgroundColor: THEME_COLORS.SURFACE },
   column: { width: '100%', maxWidth: MAX_CONTENT_WIDTH, alignSelf: 'center' },
   stateContainer: {
     flex: 1,
@@ -943,8 +957,10 @@ const styles = StyleSheet.create({
     height: ROUND_BUTTON_SIZE,
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: BORDER_RADIUS_TOKENS.FULL,
-    backgroundColor: OVERLAY_COLORS.FLOATING_BUTTON,
+    borderWidth: 1,
+    borderColor: THEME_COLORS.BORDER,
+    borderRadius: BORDER_RADIUS_TOKENS.MD,
+    backgroundColor: THEME_COLORS.SURFACE,
     shadowColor: OVERLAY_COLORS.SHADOW,
     shadowOpacity: 0.12,
     shadowRadius: 8,
@@ -1100,12 +1116,16 @@ const styles = StyleSheet.create({
   landlordInfo: { flex: 1, marginLeft: SPACING_TOKENS.MD },
   landlordNameRow: { flexDirection: 'row', alignItems: 'center', gap: SPACING_TOKENS.XS },
   reportButton: {
+    height: 48,
     flexDirection: 'row',
     alignItems: 'center',
-    alignSelf: 'center',
-    gap: SPACING_TOKENS.XS,
+    justifyContent: 'center',
+    gap: SPACING_TOKENS.SM,
     marginTop: SPACING_TOKENS.LG,
-    padding: SPACING_TOKENS.SM,
+    borderWidth: 1,
+    borderColor: THEME_COLORS.ERROR,
+    borderRadius: BORDER_RADIUS_TOKENS.MD,
+    backgroundColor: THEME_COLORS.ERROR_LIGHT,
   },
   actionBar: {
     position: 'absolute',
