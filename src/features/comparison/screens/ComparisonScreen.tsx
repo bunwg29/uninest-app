@@ -2,11 +2,10 @@ import { useCallback, useState } from 'react';
 import { StyleSheet, TouchableOpacity, View } from 'react-native';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { ChevronLeft } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { RootStackParamList } from '@navigation';
 import { OVERLAY_COLORS, SPACING_TOKENS, THEME_COLORS } from '@theme';
-import { Button, Typography } from '@ui';
+import { Button, Typography, BackButton } from '@ui';
 import { SEARCH_SCHOOLS, useSearchStore } from '@features/search';
 import { AddComparisonSheet } from '../components/AddComparisonSheet';
 import { ComparisonEmptyState } from '../components/ComparisonEmptyState';
@@ -51,14 +50,7 @@ export const ComparisonScreen = () => {
     <View style={[styles.root, isEmpty ? styles.rootEmpty : styles.rootFilled]}>
       <View style={[styles.header, { paddingTop: insets.top }]}>
         <View style={styles.headerRow}>
-          <TouchableOpacity
-            onPress={handleBack}
-            style={styles.back}
-            accessibilityRole="button"
-            accessibilityLabel="Quay lại"
-          >
-            <ChevronLeft size={20} color={THEME_COLORS.TEXT_PRIMARY} />
-          </TouchableOpacity>
+          <BackButton onPress={handleBack} accessibilityLabel="Quay lại" />
 
           <Typography variant="h3" weight="SEMIBOLD" numberOfLines={1} style={styles.title}>
             {isEmpty ? 'So sánh phòng' : `So sánh phòng (${items.length}/${MAX_COMPARISON_ITEMS})`}

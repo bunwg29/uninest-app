@@ -1,7 +1,7 @@
 import { StyleSheet, TouchableOpacity, View, type StyleProp, type ViewStyle } from 'react-native';
-import { ChevronLeft, Search, SlidersHorizontal } from 'lucide-react-native';
+import { Search, SlidersHorizontal } from 'lucide-react-native';
 import { BORDER_RADIUS_TOKENS, OVERLAY_COLORS, SPACING_TOKENS, THEME_COLORS } from '@theme';
-import { Typography } from '@ui';
+import { BackButton, Typography } from '@ui';
 
 interface SearchHeaderProps {
   querySummary: string;
@@ -31,14 +31,7 @@ export const SearchHeader = ({
 
   return (
     <View style={[styles.container, !isOverlay && styles.solidContainer, style]}>
-      <TouchableOpacity
-        style={[styles.backButton, isOverlay ? styles.overlayCircle : styles.outlinedButton]}
-        onPress={onBack}
-        accessibilityRole="button"
-        accessibilityLabel="Quay lại"
-      >
-        <ChevronLeft size={20} color={THEME_COLORS.TEXT_PRIMARY} />
-      </TouchableOpacity>
+      <BackButton onPress={onBack} style={isOverlay ? styles.overlayShadow : undefined} />
 
       {hasQueryPill ? (
         <TouchableOpacity
@@ -118,6 +111,13 @@ const styles = StyleSheet.create({
     backgroundColor: THEME_COLORS.SURFACE,
   },
   filterButtonActive: { borderColor: THEME_COLORS.PRIMARY },
+  overlayShadow: {
+    shadowColor: OVERLAY_COLORS.SHADOW,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.12,
+    shadowRadius: 4,
+    elevation: 3,
+  },
   overlayCircle: {
     width: 44,
     height: 44,

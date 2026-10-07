@@ -13,7 +13,6 @@ import { useNavigation, useRoute, type RouteProp } from '@react-navigation/nativ
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import {
   CalendarDays,
-  ChevronLeft,
   ChevronRight,
   EllipsisVertical,
   Eye,
@@ -23,7 +22,7 @@ import {
   X,
   XCircle,
 } from 'lucide-react-native';
-import { Button, GradientView, Modal, ScreenContainer, Typography } from '@ui';
+import { Button, GradientView, Modal, ScreenContainer, Typography, BackButton } from '@ui';
 import { BORDER_RADIUS_TOKENS, OVERLAY_COLORS, SPACING_TOKENS, THEME_COLORS } from '@theme';
 import type { RootStackParamList } from '@navigation';
 import { useResponsiveLayout, useToast } from '@hooks';
@@ -179,15 +178,7 @@ export const LandlordListingDetailScreen = () => {
   return (
     <ScreenContainer style={styles.safeArea} keyboardAvoiding={false}>
       <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.headerButton}
-          onPress={() => navigation.goBack()}
-          accessibilityRole="button"
-          accessibilityLabel="Quay lại"
-          activeOpacity={0.7}
-        >
-          <ChevronLeft size={22} color={THEME_COLORS.TEXT_PRIMARY} />
-        </TouchableOpacity>
+        <BackButton onPress={() => navigation.goBack()} accessibilityLabel="Quay lại" />
 
         <Typography variant="h3" weight="SEMIBOLD" numberOfLines={1} style={styles.headerTitle}>
           {getHeaderTitle()}

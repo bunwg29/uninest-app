@@ -1,10 +1,10 @@
 import { useState } from 'react';
-import { View, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { ChevronLeft, KeyRound, Phone } from 'lucide-react-native';
+import { KeyRound, Phone } from 'lucide-react-native';
 import { THEME_COLORS, SPACING_TOKENS, BORDER_RADIUS_TOKENS } from '@theme';
-import { Button, Input, ScreenContainer, Typography } from '@ui';
+import { Button, Input, ScreenContainer, Typography, BackButton } from '@ui';
 import { useToast } from '@hooks';
 import type { AuthStackParamList } from '@navigation';
 import { authService } from '../services';
@@ -54,13 +54,7 @@ export const ForgotPasswordScreen = () => {
 
   return (
     <ScreenContainer scrollable style={styles.container}>
-      <TouchableOpacity
-        style={styles.screenBackButton}
-        onPress={() => navigation.goBack()}
-        activeOpacity={0.7}
-      >
-        <ChevronLeft size={22} color={THEME_COLORS.TEXT_PRIMARY} />
-      </TouchableOpacity>
+      <BackButton onPress={() => navigation.goBack()} style={styles.backSpacing} />
       <View style={styles.content}>
         <View style={styles.iconCircle}>
           <KeyRound size={32} color={THEME_COLORS.SECONDARY} />
@@ -107,6 +101,7 @@ export const ForgotPasswordScreen = () => {
 };
 
 const styles = StyleSheet.create({
+  backSpacing: { marginTop: SPACING_TOKENS.XS, marginBottom: SPACING_TOKENS.MD },
   container: {
     paddingHorizontal: SPACING_TOKENS.LG,
     paddingVertical: SPACING_TOKENS.MD,

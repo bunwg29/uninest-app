@@ -1,18 +1,11 @@
 import { useMemo } from 'react';
-import {
-  ActivityIndicator,
-  FlatList,
-  RefreshControl,
-  StyleSheet,
-  TouchableOpacity,
-  View,
-} from 'react-native';
-import { AlertTriangle, ChevronLeft, Heart } from 'lucide-react-native';
+import { ActivityIndicator, FlatList, RefreshControl, StyleSheet, View } from 'react-native';
+import { AlertTriangle, Heart } from 'lucide-react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '@navigation';
 import { SPACING_TOKENS, THEME_COLORS } from '@theme';
-import { EmptyState, ScreenContainer, Typography } from '@ui';
+import { EmptyState, ScreenContainer, Typography, BackButton } from '@ui';
 import { SavedRoomRow, SearchResultSkeleton } from '../components';
 import { useFavorites, useToggleFavorite } from '../hooks';
 
@@ -95,14 +88,7 @@ export const SavedRoomsScreen = () => {
   return (
     <ScreenContainer keyboardAvoiding={false}>
       <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => navigation.goBack()}
-          accessibilityRole="button"
-          accessibilityLabel="Quay lại"
-        >
-          <ChevronLeft size={22} color={THEME_COLORS.TEXT_PRIMARY} />
-        </TouchableOpacity>
+        <BackButton onPress={() => navigation.goBack()} accessibilityLabel="Quay lại" />
         <Typography variant="h3" weight="SEMIBOLD" style={styles.title}>
           Phòng đã lưu
         </Typography>

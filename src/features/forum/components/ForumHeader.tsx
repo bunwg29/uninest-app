@@ -1,8 +1,7 @@
 import type { ReactNode } from 'react';
-import { StyleSheet, TouchableOpacity, View } from 'react-native';
-import { ChevronLeft, X } from 'lucide-react-native';
+import { StyleSheet, View } from 'react-native';
 import { SPACING_TOKENS, THEME_COLORS } from '@theme';
-import { Typography } from '@ui';
+import { Typography, BackButton } from '@ui';
 
 export interface ForumHeaderProps {
   title: string;
@@ -22,18 +21,7 @@ export const ForumHeader = ({
   <View style={[styles.container, hasBottomBorder && styles.bottomBorder]}>
     <View style={styles.sideSlot}>
       {onBack ? (
-        <TouchableOpacity
-          style={styles.sideButton}
-          onPress={onBack}
-          activeOpacity={0.7}
-          accessibilityLabel={leftIcon === 'close' ? 'Đóng' : 'Quay lại'}
-        >
-          {leftIcon === 'close' ? (
-            <X size={20} color={THEME_COLORS.TEXT_PRIMARY} />
-          ) : (
-            <ChevronLeft size={20} color={THEME_COLORS.TEXT_PRIMARY} />
-          )}
-        </TouchableOpacity>
+        <BackButton onPress={onBack} icon={leftIcon === 'close' ? 'close' : 'back'} />
       ) : null}
     </View>
 

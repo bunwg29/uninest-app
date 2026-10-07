@@ -3,9 +3,9 @@ import { StyleSheet, TouchableOpacity, View } from 'react-native';
 import { useMutation } from '@tanstack/react-query';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { Check, ChevronLeft, Circle, HelpCircle, Lock } from 'lucide-react-native';
+import { Check, Circle, HelpCircle, Lock } from 'lucide-react-native';
 import { THEME_COLORS, SPACING_TOKENS, BORDER_RADIUS_TOKENS } from '@theme';
-import { Button, Input, Modal, ScreenContainer, Typography } from '@ui';
+import { Button, Input, Modal, ScreenContainer, Typography, BackButton } from '@ui';
 import { useToast } from '@hooks';
 import type { RootStackParamList } from '@navigation';
 import { authService } from '../services';
@@ -86,13 +86,7 @@ export const ChangePasswordScreen = () => {
   return (
     <ScreenContainer scrollable style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity
-          onPress={() => navigation.goBack()}
-          style={styles.backButton}
-          activeOpacity={0.7}
-        >
-          <ChevronLeft size={22} color={THEME_COLORS.TEXT_PRIMARY} />
-        </TouchableOpacity>
+        <BackButton onPress={() => navigation.goBack()} />
         <Typography variant="h3" weight="BOLD">
           Đổi mật khẩu
         </Typography>

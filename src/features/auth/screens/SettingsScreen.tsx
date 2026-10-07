@@ -1,18 +1,9 @@
 import { StyleSheet, TouchableOpacity, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import {
-  Bell,
-  ChevronLeft,
-  ChevronRight,
-  FileText,
-  LockKeyhole,
-  Shield,
-  Sun,
-  Type,
-} from 'lucide-react-native';
+import { Bell, ChevronRight, FileText, LockKeyhole, Shield, Sun, Type } from 'lucide-react-native';
 import { THEME_COLORS, SPACING_TOKENS, BORDER_RADIUS_TOKENS } from '@theme';
-import { ScreenContainer, Typography } from '@ui';
+import { ScreenContainer, Typography, BackButton } from '@ui';
 import { useToast } from '@hooks';
 import type { RootStackParamList } from '@navigation';
 
@@ -97,9 +88,7 @@ export const SettingsScreen = () => {
   return (
     <ScreenContainer scrollable style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <ChevronLeft size={22} color={THEME_COLORS.TEXT_PRIMARY} />
-        </TouchableOpacity>
+        <BackButton onPress={() => navigation.goBack()} />
 
         <Typography variant="h3" weight="BOLD">
           Cài đặt

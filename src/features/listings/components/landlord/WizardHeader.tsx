@@ -1,7 +1,6 @@
-import { StyleSheet, TouchableOpacity, View } from 'react-native';
-import { ChevronLeft, X } from 'lucide-react-native';
+import { StyleSheet, View } from 'react-native';
 import { BORDER_RADIUS_TOKENS, THEME_COLORS } from '@theme';
-import { Typography } from '@ui';
+import { Typography, BackButton } from '@ui';
 
 export const WIZARD_STEP_LABELS = [
   'Thông tin cơ bản',
@@ -19,21 +18,11 @@ interface WizardHeaderProps {
 
 export const WizardHeader = ({ step, isEditing = false, onBack }: WizardHeaderProps) => {
   const isFirstStep = step === 1;
-  const Icon = isFirstStep ? X : ChevronLeft;
 
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity
-          onPress={onBack}
-          style={styles.backButton}
-          activeOpacity={0.7}
-          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-          accessibilityRole="button"
-          accessibilityLabel={isFirstStep ? 'Đóng' : 'Quay lại'}
-        >
-          <Icon size={24} color={THEME_COLORS.TEXT_PRIMARY} />
-        </TouchableOpacity>
+        <BackButton onPress={onBack} icon={isFirstStep ? 'close' : 'back'} />
 
         <Typography variant="h3" weight="SEMIBOLD" style={styles.title} numberOfLines={1}>
           {isEditing ? 'Chỉnh sửa tin đăng' : 'Đăng tin mới'}

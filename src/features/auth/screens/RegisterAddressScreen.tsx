@@ -2,9 +2,9 @@ import { useState, useEffect, useMemo } from 'react';
 import { View, StyleSheet, TouchableOpacity, FlatList, ActivityIndicator } from 'react-native';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { MapPin, ChevronDown, ChevronLeft, Search, Check } from 'lucide-react-native';
+import { MapPin, ChevronDown, Search, Check } from 'lucide-react-native';
 import { THEME_COLORS, SPACING_TOKENS, BORDER_RADIUS_TOKENS } from '@theme';
-import { Button, Input, Modal, ScreenContainer, Typography } from '@ui';
+import { Button, Input, Modal, ScreenContainer, Typography, BackButton } from '@ui';
 import { useToast } from '@hooks';
 import type { AuthStackParamList } from '@navigation';
 import { useAuth } from '../hooks';
@@ -179,13 +179,7 @@ export const RegisterAddressScreen = () => {
     <ScreenContainer scrollable style={styles.container}>
       <View style={styles.header}>
         <View style={styles.topRow}>
-          <TouchableOpacity
-            onPress={() => navigation.goBack()}
-            style={styles.backButton}
-            activeOpacity={0.7}
-          >
-            <ChevronLeft size={22} color={THEME_COLORS.TEXT_PRIMARY} />
-          </TouchableOpacity>
+          <BackButton onPress={() => navigation.goBack()} />
 
           <View style={styles.stepBadge}>
             <Typography variant="caption" weight="SEMIBOLD" color={THEME_COLORS.PRIMARY}>

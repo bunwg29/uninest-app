@@ -1,10 +1,10 @@
 import { useCallback, useMemo } from 'react';
-import { View, StyleSheet, ScrollView, Image, TouchableOpacity } from 'react-native';
+import { View, StyleSheet, ScrollView, Image } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { AlertCircle, Check, ChevronLeft, Clock3, Eye } from 'lucide-react-native';
+import { AlertCircle, Check, Clock3, Eye } from 'lucide-react-native';
 import { THEME_COLORS, SPACING_TOKENS, BORDER_RADIUS_TOKENS, OVERLAY_COLORS } from '@theme';
-import { Button, Typography, ScreenContainer, LoadingOverlay } from '@ui';
+import { Button, Typography, ScreenContainer, LoadingOverlay, BackButton } from '@ui';
 import { useResponsiveLayout, useToast } from '@hooks';
 import type { ListingPostStackParamList, RootStackParamList } from '@navigation';
 import { useListingPostStore } from '../store/listingPostStore';
@@ -250,14 +250,7 @@ export const PreviewScreen = () => {
   return (
     <ScreenContainer applyTopInset applyBottomInset keyboardAvoiding={false}>
       <View style={styles.header}>
-        <TouchableOpacity
-          onPress={navigation.goBack}
-          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-          accessibilityRole="button"
-          accessibilityLabel="Quay lại"
-        >
-          <ChevronLeft size={24} color={THEME_COLORS.TEXT_PRIMARY} />
-        </TouchableOpacity>
+        <BackButton onPress={navigation.goBack} accessibilityLabel="Quay lại" />
         <Typography variant="h3" weight="SEMIBOLD">
           Xem trước
         </Typography>

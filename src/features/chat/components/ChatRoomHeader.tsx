@@ -1,7 +1,7 @@
 import { View, TouchableOpacity, StyleSheet } from 'react-native';
-import { ChevronLeft, MoreVertical } from 'lucide-react-native';
+import { MoreVertical } from 'lucide-react-native';
 import { THEME_COLORS, SPACING_TOKENS } from '@theme';
-import { GradientAvatar, Typography } from '@ui';
+import { GradientAvatar, Typography, BackButton } from '@ui';
 import { formatPresence } from '../services/chatFormatters';
 import type { ChatCounterpart } from '../types';
 
@@ -13,14 +13,7 @@ export interface ChatRoomHeaderProps {
 
 export const ChatRoomHeader = ({ counterpart, onBack, onPressMenu }: ChatRoomHeaderProps) => (
   <View style={styles.container}>
-    <TouchableOpacity
-      style={styles.backButton}
-      onPress={onBack}
-      accessibilityLabel="Quay lại"
-      hitSlop={8}
-    >
-      <ChevronLeft size={20} color={THEME_COLORS.TEXT_PRIMARY} />
-    </TouchableOpacity>
+    <BackButton onPress={onBack} accessibilityLabel="Quay lại" />
 
     <GradientAvatar
       uri={counterpart?.avatarUrl}

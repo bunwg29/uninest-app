@@ -5,9 +5,9 @@ import * as ImagePicker from 'expo-image-picker';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { Camera, ChevronLeft, GraduationCap, Mail, Phone, UserRound } from 'lucide-react-native';
+import { Camera, GraduationCap, Mail, Phone, UserRound } from 'lucide-react-native';
 import { THEME_COLORS, SPACING_TOKENS, BORDER_RADIUS_TOKENS } from '@theme';
-import { Avatar, Badge, Button, Input, ScreenContainer, Typography } from '@ui';
+import { Avatar, Badge, Button, Input, ScreenContainer, Typography, BackButton } from '@ui';
 import { useToast } from '@hooks';
 import type { RootStackParamList } from '@navigation';
 import { authService } from '../services';
@@ -131,9 +131,7 @@ export const ProfileEditScreen = () => {
   return (
     <ScreenContainer scrollable style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={handleBack} style={styles.backButton} activeOpacity={0.7}>
-          <ChevronLeft size={22} color={THEME_COLORS.TEXT_PRIMARY} />
-        </TouchableOpacity>
+        <BackButton onPress={handleBack} />
         <Typography variant="h3" weight="BOLD">
           Chỉnh sửa hồ sơ
         </Typography>

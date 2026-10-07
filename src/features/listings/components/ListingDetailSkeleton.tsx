@@ -1,8 +1,7 @@
-import { StyleSheet, TouchableOpacity, View } from 'react-native';
-import { ChevronLeft } from 'lucide-react-native';
+import { StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BORDER_RADIUS_TOKENS, OVERLAY_COLORS, SPACING_TOKENS, THEME_COLORS } from '@theme';
-import { SkeletonBox } from '@ui';
+import { SkeletonBox, BackButton } from '@ui';
 
 interface ListingDetailSkeletonProps {
   onBack: () => void;
@@ -27,14 +26,7 @@ export const ListingDetailSkeleton = ({ onBack }: ListingDetailSkeletonProps) =>
       <View style={styles.hero} />
 
       <View style={[styles.backWrapper, { top: insets.top + 12 }]}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={onBack}
-          accessibilityRole="button"
-          accessibilityLabel="Quay lại"
-        >
-          <ChevronLeft size={20} color={THEME_COLORS.TEXT_PRIMARY} />
-        </TouchableOpacity>
+        <BackButton onPress={onBack} accessibilityLabel="Quay lại" />
       </View>
 
       <View style={styles.content}>

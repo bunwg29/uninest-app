@@ -1,10 +1,10 @@
 import { useState } from 'react';
-import { View, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { ChevronLeft, Info } from 'lucide-react-native';
+import { Info } from 'lucide-react-native';
 import { THEME_COLORS, SPACING_TOKENS, BORDER_RADIUS_TOKENS } from '@theme';
-import { Button, ScreenContainer, Typography } from '@ui';
+import { Button, ScreenContainer, Typography, BackButton } from '@ui';
 import type { AuthStackParamList } from '@navigation';
 import { RoleCard } from '../components';
 import { useAuth } from '../hooks';
@@ -27,13 +27,7 @@ export const RoleSelectionScreen = () => {
   return (
     <ScreenContainer scrollable style={styles.container}>
       <View style={styles.topNav}>
-        <TouchableOpacity
-          onPress={() => navigation.goBack()}
-          style={styles.backButton}
-          activeOpacity={0.7}
-        >
-          <ChevronLeft size={22} color={THEME_COLORS.TEXT_PRIMARY} />
-        </TouchableOpacity>
+        <BackButton onPress={() => navigation.goBack()} />
       </View>
 
       <View style={styles.header}>
