@@ -3,7 +3,7 @@ import { ActivityIndicator, ScrollView, StyleSheet, TouchableOpacity, View } fro
 import { useNavigation, useRoute, type RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '@navigation';
-import { useListingDetail } from '@features/listings';
+import { useListingDetail } from '@features/listings/hooks/useListingDetail';
 import { SPACING_TOKENS, THEME_COLORS } from '@theme';
 import { Button, HeaderBar, ScreenContainer, Typography } from '@ui';
 import {

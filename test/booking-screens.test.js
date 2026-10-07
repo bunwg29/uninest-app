@@ -63,7 +63,7 @@ jest.mock('../src/features/auth/hooks', () => ({
 jest.mock('../src/features/listings/hooks/useOpenListing', () => ({
   useOpenListing: () => ({ openListing: mockOpenListing, isOpening: false }),
 }));
-jest.mock('@features/listings', () => ({
+jest.mock('@features/listings/hooks/useListingDetail', () => ({
   useListingDetail: () => mockRoomQuery,
 }));
 jest.mock('@features/listings/hooks/useLandlordListings', () => ({

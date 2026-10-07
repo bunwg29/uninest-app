@@ -12,7 +12,7 @@ import {
 import { useNavigation } from '@react-navigation/native';
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import { useAuthStore } from '@features/auth';
-import { useLandlordBookings } from '@features/booking';
+import { useLandlordBookings } from '@features/booking/hooks';
 import { useChatSummary } from '@features/chat';
 import { useToast } from '@hooks';
 import type { LandlordTabParamList } from '@navigation';

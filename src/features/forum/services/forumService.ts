@@ -1,6 +1,6 @@
 import { apiClient } from '@core';
 import type { ApiResponse, PaginatedResponse } from '@core';
-import { listingService } from '@features/listings';
+import { listingService } from '@features/listings/services/listingService';
 import type {
   CreateForumCommentPayload,
   ForumComment,
