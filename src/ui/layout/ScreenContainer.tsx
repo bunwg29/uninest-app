@@ -1,8 +1,6 @@
 import type { ReactNode, ReactElement } from 'react';
 import {
   View,
-  ScrollView,
-  KeyboardAvoidingView,
   Platform,
   StyleSheet,
   StatusBar,
@@ -13,6 +11,8 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { THEME_COLORS, SPACING_TOKENS } from '@theme';
 import { RESPONSIVE_MAX_CONTENT_WIDTH } from '@hooks';
+import { KeyboardAvoidingContainer } from './KeyboardAvoidingContainer';
+import { KeyboardAwareScrollView } from './KeyboardAwareScrollView';
 
 export type ScreenPadding = 'none' | 'sm' | 'md' | 'lg';
 
@@ -61,7 +61,7 @@ export const ScreenContainer = ({
   };
 
   const content = scrollable ? (
-    <ScrollView
+    <KeyboardAwareScrollView
       style={styles.flexOne}
       contentContainerStyle={[
         responsiveContentStyle,
@@ -70,10 +70,9 @@ export const ScreenContainer = ({
       ]}
       showsVerticalScrollIndicator={false}
       refreshControl={refreshControl}
-      keyboardShouldPersistTaps="handled"
     >
       {children}
-    </ScrollView>
+    </KeyboardAwareScrollView>
   ) : (
     <View
       style={[
@@ -90,12 +89,7 @@ export const ScreenContainer = ({
   return (
     <View style={[styles.container, style, safePaddingStyle]}>
       {keyboardAvoiding ? (
-        <KeyboardAvoidingView
-          style={styles.flexOne}
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        >
-          {content}
-        </KeyboardAvoidingView>
+        <KeyboardAvoidingContainer style={styles.flexOne}>{content}</KeyboardAvoidingContainer>
       ) : (
         content
       )}
