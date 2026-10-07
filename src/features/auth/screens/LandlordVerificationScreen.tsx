@@ -1,11 +1,18 @@
 import { useState } from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { ShieldAlert } from 'lucide-react-native';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigation } from '@react-navigation/native';
 import { useToast } from '@hooks';
 import { BORDER_RADIUS_TOKENS, SPACING_TOKENS, THEME_COLORS } from '@theme';
-import { Button, HeaderBar, Input, ScreenContainer, Typography } from '@ui';
+import {
+  Button,
+  HeaderBar,
+  Input,
+  ScreenContainer,
+  Typography,
+  KeyboardAwareScrollView,
+} from '@ui';
 import { authService } from '../services';
 
 const IDENTITY_PATTERN = /^(\d{9}|\d{12})$/;
@@ -50,7 +57,10 @@ export const LandlordVerificationScreen = ({ onVerified }: LandlordVerificationS
   return (
     <ScreenContainer keyboardAvoiding>
       <HeaderBar title="Xác minh Chủ trọ" onBack={() => navigation.goBack()} />
-      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+      <KeyboardAwareScrollView
+        contentContainerStyle={styles.content}
+        keyboardShouldPersistTaps="handled"
+      >
         <View style={styles.notice}>
           <ShieldAlert size={22} color={THEME_COLORS.WARNING} />
           <View style={styles.noticeText}>
@@ -86,7 +96,7 @@ export const LandlordVerificationScreen = ({ onVerified }: LandlordVerificationS
           isLoading={verification.isPending}
           onPress={handleSubmit}
         />
-      </ScrollView>
+      </KeyboardAwareScrollView>
     </ScreenContainer>
   );
 };
