@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { CalendarDays, Clock3, Phone, User } from 'lucide-react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -8,7 +8,14 @@ import { useAuthStore } from '@features/auth';
 import { useToast } from '@hooks';
 import type { RootStackParamList } from '@navigation';
 import { BORDER_RADIUS_TOKENS, OVERLAY_COLORS, SPACING_TOKENS, THEME_COLORS } from '@theme';
-import { Button, HeaderBar, Input, ScreenContainer, Typography } from '@ui';
+import {
+  Button,
+  HeaderBar,
+  Input,
+  ScreenContainer,
+  Typography,
+  KeyboardAwareScrollView,
+} from '@ui';
 import {
   BookingFooter,
   BookingStepper,
@@ -80,7 +87,10 @@ export const BookingConfirmScreen = () => {
   return (
     <ScreenContainer>
       <HeaderBar title="Xác nhận yêu cầu" onBack={() => navigation.goBack()} />
-      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+      <KeyboardAwareScrollView
+        contentContainerStyle={styles.content}
+        keyboardShouldPersistTaps="handled"
+      >
         <BookingStepper step={3} />
         <View style={styles.body}>
           <ResourceCard
@@ -157,7 +167,7 @@ export const BookingConfirmScreen = () => {
             Đặt lịch xem phòng hoàn toàn miễn phí. Bạn chưa phải trả bất kỳ khoản nào ở bước này.
           </NoticeBanner>
         </View>
-      </ScrollView>
+      </KeyboardAwareScrollView>
       <BookingFooter>
         <FooterButton
           title="Gửi yêu cầu xem phòng"

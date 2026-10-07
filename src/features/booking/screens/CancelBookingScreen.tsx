@@ -1,12 +1,19 @@
 import { useState } from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { TriangleAlert } from 'lucide-react-native';
 import { useNavigation, useRoute, type RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '@navigation';
 import { useToast } from '@hooks';
 import { BORDER_RADIUS_TOKENS, SPACING_TOKENS, THEME_COLORS } from '@theme';
-import { Button, HeaderBar, Input, ScreenContainer, Typography } from '@ui';
+import {
+  Button,
+  HeaderBar,
+  Input,
+  ScreenContainer,
+  Typography,
+  KeyboardAwareScrollView,
+} from '@ui';
 import { ResourceCard } from '../components';
 import { useBookingDetail, useCancelBooking } from '../hooks';
 
@@ -41,7 +48,7 @@ export const CancelBookingScreen = () => {
   return (
     <ScreenContainer>
       <HeaderBar title="Hủy lịch hẹn" onBack={() => navigation.goBack()} />
-      <ScrollView contentContainerStyle={styles.content}>
+      <KeyboardAwareScrollView contentContainerStyle={styles.content}>
         <View style={styles.warning}>
           <TriangleAlert size={24} color={THEME_COLORS.ERROR} />
           <View style={styles.flex}>
@@ -72,7 +79,7 @@ export const CancelBookingScreen = () => {
             Bạn vẫn có thể chọn một phòng và thời gian khác phù hợp hơn.
           </Typography>
         </View>
-      </ScrollView>
+      </KeyboardAwareScrollView>
       <View style={styles.footer}>
         <Button
           title="Gửi lý do"

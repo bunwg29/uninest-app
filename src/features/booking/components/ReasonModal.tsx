@@ -1,9 +1,6 @@
 import { useEffect, useState } from 'react';
 import {
-  KeyboardAvoidingView,
   Modal,
-  Platform,
-  ScrollView,
   StyleSheet,
   TextInput,
   TouchableOpacity,
@@ -11,7 +8,7 @@ import {
   View,
 } from 'react-native';
 import { BORDER_RADIUS_TOKENS, OVERLAY_COLORS, THEME_COLORS } from '@theme';
-import { Button, Typography } from '@ui';
+import { Button, Typography, KeyboardAvoidingContainer, KeyboardAwareScrollView } from '@ui';
 
 interface ReasonModalProps {
   isVisible: boolean;
@@ -89,11 +86,11 @@ export const ReasonModal = ({
           <View style={styles.dismissArea} />
         </TouchableWithoutFeedback>
 
-        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        <KeyboardAvoidingContainer>
           <View style={styles.sheet}>
             <View style={styles.handle} />
 
-            <ScrollView
+            <KeyboardAwareScrollView
               bounces={false}
               keyboardShouldPersistTaps="handled"
               showsVerticalScrollIndicator={false}
@@ -176,9 +173,9 @@ export const ReasonModal = ({
                   textStyle={styles.confirmText}
                 />
               </View>
-            </ScrollView>
+            </KeyboardAwareScrollView>
           </View>
-        </KeyboardAvoidingView>
+        </KeyboardAvoidingContainer>
       </View>
     </Modal>
   );
