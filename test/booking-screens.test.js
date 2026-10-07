@@ -1,5 +1,5 @@
 import React from 'react';
-import { Alert, Linking } from 'react-native';
+import { Linking } from 'react-native';
 import { cleanup, fireEvent, render, waitFor } from '@testing-library/react-native';
 import { BookingNewScreen } from '../src/features/booking/screens/BookingNewScreen';
 import { BookingConfirmScreen } from '../src/features/booking/screens/BookingConfirmScreen';
@@ -162,7 +162,6 @@ describe('Các màn hình Booking', () => {
     mockCreate.mutateAsync.mockResolvedValue(mockBooking);
     mockCancel.mutateAsync.mockResolvedValue({ ...mockBooking, status: 'cancelled' });
     mockHold.mutateAsync.mockResolvedValue({ ...mockBooking, status: 'holding' });
-    jest.spyOn(Alert, 'alert').mockImplementation(() => undefined);
     jest.spyOn(Linking, 'openURL').mockResolvedValue(true);
   });
 
@@ -307,7 +306,7 @@ describe('Các màn hình Booking', () => {
     expect(screen.getByText('Chủ trọ đã xác nhận.')).toBeTruthy();
     expect(Linking.openURL).toHaveBeenCalled();
     await fireEvent.press(screen.getByText('Huỷ lịch hẹn'));
-    expect(screen.getByText('Hủy lịch hẹn?')).toBeTruthy();
+    expect(screen.getByText('Huỷ lịch hẹn?')).toBeTruthy();
     await fireEvent.press(screen.getByText('Không'));
     expect(mockCancel.mutateAsync).not.toHaveBeenCalled();
   });
@@ -339,7 +338,7 @@ describe('Các màn hình Booking', () => {
     const screen = await render(<BookingDetailScreen />);
 
     await fireEvent.press(screen.getByText('Huỷ lịch hẹn'));
-    await fireEvent.press(screen.getByText('Hủy lịch'));
+    await fireEvent.press(screen.getByText('Huỷ lịch'));
 
     await waitFor(() =>
       expect(mockCancel.mutateAsync).toHaveBeenCalledWith({ id: mockBooking.id })
@@ -400,8 +399,10 @@ describe('Các màn hình Booking', () => {
     const screen = await render(<MyBookingsScreen />);
 
     await fireEvent.press(screen.getByText('Huỷ yêu cầu'));
-    const actions = Alert.alert.mock.calls[0][2];
-    await actions[1].onPress();
+    expect(screen.getByText('Huỷ yêu cầu xem phòng?')).toBeTruthy();
+    const confirmButtons = screen.getAllByText('Huỷ yêu cầu');
+
+    await fireEvent.press(confirmButtons[confirmButtons.length - 1]);
 
     expect(mockCancel.mutateAsync).toHaveBeenCalledWith({ id: mockBooking.id });
     expect(mockToast.success).toHaveBeenCalledWith('Đã hủy yêu cầu xem phòng');

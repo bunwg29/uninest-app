@@ -12,3 +12,4 @@ export * from './BookingStepper';
 export * from './NoticeBanner';
 export * from './BookingCalendar';
 export * from './LandlordBookingDetailView';
+export * from './CancelBookingModal';

@@ -15,6 +15,7 @@ import { Button, HeaderBar, Modal, ScreenContainer, Typography } from '@ui';
 import {
   BookingFooter,
   FooterButton,
+  CancelBookingModal,
   LandlordBookingDetailView,
   REJECT_REASONS,
   RELEASE_REASONS,
@@ -295,14 +296,9 @@ export const BookingDetailScreen = () => {
           ) : null}
         </>
       )}
-      <Modal
+      <CancelBookingModal
         isVisible={isCancelDialogOpen}
-        title="Hủy lịch hẹn?"
-        description="Bạn có thể đặt lại nếu khung giờ vẫn còn trống."
-        cancelText="Không"
-        confirmText="Hủy lịch"
-        confirmVariant="danger"
-        isConfirmLoading={cancelBooking.isPending}
+        isLoading={cancelBooking.isPending}
         onClose={() => setIsCancelDialogOpen(false)}
         onConfirm={() => void handleConfirmCancel()}
       />

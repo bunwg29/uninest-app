@@ -1,12 +1,5 @@
 import { useState } from 'react';
-import {
-  Alert,
-  RefreshControl,
-  ScrollView,
-  StyleSheet,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+import { RefreshControl, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { CalendarX2 } from 'lucide-react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -22,7 +15,7 @@ import {
   ScreenContainer,
   Typography,
 } from '@ui';
-import { BookingCard } from '../components';
+import { BookingCard, CancelBookingModal } from '../components';
 import { useBookings, useCancelBooking } from '../hooks';
 import type { Booking, BookingStatus } from '../types';
 import { getHoursUntil } from '../utils';
@@ -55,6 +48,7 @@ const getBookingSubtitle = (booking: Booking) =>
 export const MyBookingsScreen = () => {
   const navigation = useNavigation<NavigationProp>();
   const [activeTab, setActiveTab] = useState<TabKey>('pending');
+  const [cancelTarget, setCancelTarget] = useState<Booking | null>(null);
   const bookingsQuery = useBookings();
   const cancelBooking = useCancelBooking();
   const { openChat } = useOpenListingChat();
@@ -64,6 +58,21 @@ export const MyBookingsScreen = () => {
   const countFor = (tab: TabKey) =>
     allBookings.filter((booking) => isInTab(booking.status, tab)).length;
 
+  const handleConfirmCancel = async () => {
+    if (!cancelTarget) return;
+
+    const target = cancelTarget;
+
+    setCancelTarget(null);
+
+    try {
+      await cancelBooking.mutateAsync({ id: target.id });
+      toast.success('Đã hủy yêu cầu xem phòng');
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Không thể hủy yêu cầu');
+    }
+  };
+
   const handleCancel = (booking: Booking) => {
     if (getHoursUntil(booking.startTime) < 24) {
       navigation.navigate('CancelBooking', { id: booking.id });
@@ -71,21 +80,7 @@ export const MyBookingsScreen = () => {
       return;
     }
 
-    Alert.alert('Huỷ yêu cầu xem phòng?', 'Khung giờ sẽ được trả lại để người khác có thể đặt.', [
-      { text: 'Giữ lại', style: 'cancel' },
-      {
-        text: 'Huỷ yêu cầu',
-        style: 'destructive',
-        onPress: async () => {
-          try {
-            await cancelBooking.mutateAsync({ id: booking.id });
-            toast.success('Đã hủy yêu cầu xem phòng');
-          } catch (error) {
-            toast.error(error instanceof Error ? error.message : 'Không thể hủy yêu cầu');
-          }
-        },
-      },
-    ]);
+    setCancelTarget(booking);
   };
 
   const renderActions = (booking: Booking) => {
@@ -189,6 +184,15 @@ export const MyBookingsScreen = () => {
           ))}
         </ScrollView>
       )}
+      <CancelBookingModal
+        isVisible={cancelTarget !== null}
+        isLoading={cancelBooking.isPending}
+        title="Huỷ yêu cầu xem phòng?"
+        description="Khung giờ sẽ được trả lại để người khác có thể đặt."
+        confirmText="Huỷ yêu cầu"
+        onClose={() => setCancelTarget(null)}
+        onConfirm={() => void handleConfirmCancel()}
+      />
     </ScreenContainer>
   );
 };
