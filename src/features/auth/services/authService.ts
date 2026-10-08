@@ -129,6 +129,7 @@ export const authService = {
       provinceCode: payload.provinceCode || undefined,
       wardCode: payload.wardCode || undefined,
       streetAddress: payload.streetAddress?.trim() || undefined,
+      universityCodes: payload.universityCodes?.length ? payload.universityCodes : undefined,
     });
 
     const result = unwrapData<{ message: string }>(response.data);
@@ -203,7 +204,6 @@ export const authService = {
 
   async submitLandlordVerification(payload: {
     identityNumber: string;
-    universityCodes?: string[];
     provinceCode?: string;
     wardCode?: string;
     streetAddress?: string;

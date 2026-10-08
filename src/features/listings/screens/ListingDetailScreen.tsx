@@ -21,9 +21,10 @@ import {
   Eye,
   Flag,
   Footprints,
-  LayoutTemplate,
+  GraduationCap,
   Heart,
   ImageOff,
+  LayoutTemplate,
   MapPin,
   MessageSquare,
   Plus,
@@ -481,6 +482,19 @@ export const ListingDetailScreen = () => {
             {listing.videoUrl ? (
               <Section title="Video giới thiệu">
                 <ListingVideoPlayer uri={listing.videoUrl} />
+              </Section>
+            ) : null}
+
+            {listing.universities && listing.universities.length > 0 ? (
+              <Section title="Gần các trường">
+                {listing.universities.map((university) => (
+                  <View key={university.code} style={styles.universityRow}>
+                    <GraduationCap size={18} color={THEME_COLORS.PRIMARY} />
+                    <Typography variant="body2" style={styles.universityName}>
+                      {university.name}
+                    </Typography>
+                  </View>
+                ))}
               </Section>
             ) : null}
 
@@ -951,6 +965,13 @@ const formatMeasuredValue = (value: number | null | undefined, unit: string): st
     : `${value} ${unit}`;
 
 const styles = StyleSheet.create({
+  universityRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING_TOKENS.SM,
+    marginBottom: SPACING_TOKENS.XS,
+  },
+  universityName: { flex: 1 },
   root: { flex: 1, backgroundColor: THEME_COLORS.SURFACE },
   column: { width: '100%', maxWidth: MAX_CONTENT_WIDTH, alignSelf: 'center' },
   stateContainer: {

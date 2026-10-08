@@ -7,6 +7,8 @@ import { Button, ScreenContainer, Typography, BackButton } from '@ui';
 import { useToast } from '@hooks';
 import type { AuthStackParamList } from '@navigation';
 import { AddressFields, EMPTY_ADDRESS, type AddressValue } from '../components/AddressFields';
+import { UniversityPicker } from '../components/UniversityPicker';
+import type { University } from '../services/universitiesService';
 import { useAuth } from '../hooks';
 
 type NavigationProp = NativeStackNavigationProp<AuthStackParamList>;
@@ -21,6 +23,8 @@ export const RegisterAddressScreen = () => {
   const { fullName, phoneNumber, email, password, role } = route.params;
 
   const [address, setAddress] = useState<AddressValue>(EMPTY_ADDRESS);
+  const [universities, setUniversities] = useState<University[]>([]);
+  const isStudent = role !== 'landlord';
 
   const handleSubmit = async () => {
     if (!address.province) {
@@ -45,6 +49,7 @@ export const RegisterAddressScreen = () => {
         provinceCode: address.province.code,
         wardCode: address.ward.code,
         streetAddress: address.streetAddress.trim() || undefined,
+        universityCodes: isStudent ? universities.map((university) => university.code) : undefined,
       });
 
       toast.success(`Mã xác thực đã được gửi tới ${phoneNumber}`);
@@ -90,6 +95,16 @@ export const RegisterAddressScreen = () => {
       ) : null}
 
       <View style={styles.form}>
+        {isStudent ? (
+          <UniversityPicker
+            label="Trường đang học"
+            value={universities}
+            maxSelection={1}
+            helperText="Giúp UniNest gợi ý phòng gần trường của bạn"
+            onChange={setUniversities}
+          />
+        ) : null}
+
         <AddressFields value={address} onChange={setAddress} />
 
         <Button

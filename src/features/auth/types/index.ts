@@ -84,6 +84,7 @@ export interface RegisterPayload {
   provinceCode?: string;
   wardCode?: string;
   streetAddress?: string;
+  universityCodes?: string[];
 }
 
 export interface VerifyOtpPayload {

@@ -20,6 +20,7 @@ export interface CreateListingPayload {
   longitude: number;
   images?: CreateListingImagePayload[];
   videoKey?: string | null;
+  universityCodes?: string[];
   amenityIds?: number[];
   viewingSchedule?: ViewingSchedule;
 }
@@ -100,6 +101,7 @@ export interface ListingDetail {
   status: string;
   viewingSchedule: Record<string, unknown> | null;
   videoUrl?: string | null;
+  universities?: ListingUniversity[];
   averageRating: number | null;
   reviewCount?: number | null;
   isHighlighted?: boolean;
@@ -141,6 +143,11 @@ export interface LocalImageItem {
   fileName: string;
   contentType: string;
   fileSize?: number;
+}
+
+export interface ListingUniversity {
+  code: string;
+  name: string;
 }
 
 export interface LocalVideoItem {

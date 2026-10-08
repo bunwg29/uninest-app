@@ -23,6 +23,9 @@ import {
 import { useListingPostStore } from '../store/listingPostStore';
 import { WizardHeader } from '../components/landlord/WizardHeader';
 import { LocationMap, type MapCoordinate } from '../components/LocationMap';
+import { UniversityPicker } from '@features/auth';
+
+const MAX_LISTING_UNIVERSITIES = 3;
 
 type NavigationProp = NativeStackNavigationProp<ListingPostStackParamList>;
 
@@ -36,7 +39,8 @@ const DEFAULT_REGION = {
 export const LocationScreen = () => {
   const navigation = useNavigation<NavigationProp>();
   const toast = useToast();
-  const { step3, setStep3, editingListingId } = useListingPostStore();
+  const { step3, setStep3, universities, setUniversities, editingListingId } =
+    useListingPostStore();
 
   const [streetAddress, setStreetAddress] = useState(step3.streetAddress);
   const [selectedProvince, setSelectedProvince] = useState<LocationProvince | null>(
@@ -343,6 +347,14 @@ export const LocationScreen = () => {
               : 'Chạm vào bản đồ hoặc bấm "Dùng vị trí hiện tại" để ghim vị trí phòng.'}
           </Typography>
         </View>
+
+        <UniversityPicker
+          label="Trường đại học gần phòng"
+          value={universities}
+          maxSelection={MAX_LISTING_UNIVERSITIES}
+          helperText="Chọn tối đa 3 trường để sinh viên các trường này dễ tìm thấy phòng"
+          onChange={setUniversities}
+        />
       </KeyboardAwareScrollView>
 
       <View style={styles.bottomBar}>

@@ -45,6 +45,7 @@ export const PreviewScreen = () => {
     setLocalImages,
     video,
     setVideo,
+    universities,
     selectedAmenityIds,
     viewingSchedule,
     editingListingId,
@@ -214,6 +215,7 @@ export const PreviewScreen = () => {
       longitude: step3.longitude ?? 0,
       images: finalImages,
       videoKey: videoResult.key,
+      universityCodes: universities.map((university) => university.code),
       amenityIds: selectedAmenityIds,
       viewingSchedule,
     };
@@ -254,6 +256,7 @@ export const PreviewScreen = () => {
     localImages,
     video,
     setVideo,
+    universities,
     uploadAll,
     setUploadedImages,
     setLocalImages,
@@ -360,6 +363,12 @@ export const PreviewScreen = () => {
             <Typography variant="body2" colorKey="TEXT_SECONDARY">
               {fullAddress || 'Chưa chọn địa chỉ'}
             </Typography>
+
+            {universities.length > 0 ? (
+              <Typography variant="body2" colorKey="PRIMARY">
+                {`Gần ${universities.map((university) => university.name).join(' · ')}`}
+              </Typography>
+            ) : null}
 
             {selectedAmenityNames.length > 0 ? (
               <View style={styles.amenitiesWrap}>

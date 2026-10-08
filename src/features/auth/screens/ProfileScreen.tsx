@@ -111,9 +111,7 @@ export const ProfileScreen = () => {
               <Typography variant="body2" color={THEME_COLORS.TEXT_MUTED} style={styles.phoneText}>
                 {profile.role.toLowerCase() === 'student'
                   ? `Sinh viên · ${profile.universities?.[0]?.name || 'Chưa cập nhật trường'}`
-                  : profile.universities?.length
-                    ? `Chủ trọ · gần ${profile.universities.map((university) => university.code).join(', ')}`
-                    : 'Chủ trọ'}
+                  : 'Chủ trọ'}
               </Typography>
 
               <View style={styles.badgeRow}>

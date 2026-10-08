@@ -6,6 +6,7 @@ import type {
   ListingStep1State,
   ListingStep3State,
   LocalImageItem,
+  ListingUniversity,
   LocalVideoItem,
   UploadedImageItem,
   ViewingSchedule,
@@ -53,6 +54,7 @@ interface ListingPostState {
   step1: ListingStep1State;
   localImages: LocalImageItem[];
   video: LocalVideoItem | null;
+  universities: ListingUniversity[];
   uploadedImages: UploadedImageItem[];
   step3: ListingStep3State;
   selectedAmenityIds: number[];
@@ -62,6 +64,7 @@ interface ListingPostState {
   setEditingListingId: (id: string | null) => void;
   setLocalImages: (images: LocalImageItem[]) => void;
   setVideo: (video: LocalVideoItem | null) => void;
+  setUniversities: (universities: ListingUniversity[]) => void;
   setUploadedImages: (images: UploadedImageItem[]) => void;
   setStep3: (data: Partial<ListingStep3State>) => void;
   setSelectedAmenityIds: (ids: number[]) => void;
@@ -78,6 +81,7 @@ const INITIAL_STATE = {
   step1: INITIAL_STEP1,
   localImages: [] as LocalImageItem[],
   video: null as LocalVideoItem | null,
+  universities: [] as ListingUniversity[],
   uploadedImages: [] as UploadedImageItem[],
   step3: INITIAL_STEP3,
   selectedAmenityIds: [] as number[],
@@ -88,12 +92,19 @@ const getDraftSnapshot = ({
   step1,
   localImages,
   video,
+  universities,
   step3,
   selectedAmenityIds,
   viewingSchedule,
 }: Pick<
   ListingPostState,
-  'step1' | 'localImages' | 'video' | 'step3' | 'selectedAmenityIds' | 'viewingSchedule'
+  | 'step1'
+  | 'localImages'
+  | 'video'
+  | 'universities'
+  | 'step3'
+  | 'selectedAmenityIds'
+  | 'viewingSchedule'
 >): string =>
   JSON.stringify({
     basicInfo: {
@@ -113,6 +124,7 @@ const getDraftSnapshot = ({
       sortOrder: image.sortOrder,
     })),
     video: video ? (video.uploadedKey ?? video.uri) : null,
+    universityCodes: universities.map((university) => university.code),
     location: {
       streetAddress: step3.streetAddress.trim(),
       provinceCode: step3.provinceCode,
@@ -138,6 +150,8 @@ export const useListingPostStore = create<ListingPostState>()(
       setLocalImages: (localImages) => set({ localImages }),
 
       setVideo: (video) => set({ video }),
+
+      setUniversities: (universities) => set({ universities }),
 
       setUploadedImages: (uploadedImages) => set({ uploadedImages }),
 
@@ -230,10 +244,13 @@ export const useListingPostStore = create<ListingPostState>()(
             }
           : null;
 
+        const universities = listing.universities ?? [];
+
         const editBaseline = getDraftSnapshot({
           step1: basicInfo,
           localImages,
           video,
+          universities,
           step3,
           selectedAmenityIds: listing.amenityIds || [],
           viewingSchedule: schedule,
@@ -245,6 +262,7 @@ export const useListingPostStore = create<ListingPostState>()(
           step1: basicInfo,
           localImages,
           video,
+          universities,
           uploadedImages,
           step3,
           selectedAmenityIds: listing.amenityIds || [],
@@ -275,6 +293,7 @@ export const useListingPostStore = create<ListingPostState>()(
               viewingSchedule: state.viewingSchedule,
               localImages: state.localImages,
               video: state.video,
+              universities: state.universities,
               uploadedImages: state.uploadedImages,
             },
     }

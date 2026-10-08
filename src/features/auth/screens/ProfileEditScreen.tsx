@@ -70,7 +70,9 @@ export const ProfileEditScreen = () => {
       authService.updateProfile({
         name,
         bio,
-        universityCodes: universities.map((university) => university.code),
+        ...(isLandlord
+          ? {}
+          : { universityCodes: universities.map((university) => university.code) }),
         ...(address.province && address.ward
           ? {
               provinceCode: address.province.code,
