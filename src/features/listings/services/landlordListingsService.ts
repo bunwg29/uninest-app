@@ -5,6 +5,7 @@ import type {
   LandlordStatsPeriod,
   LandlordListingStatus,
   LandlordListingsPage,
+  LandlordPublicProfile,
 } from '../types/landlord';
 
 type ApiListingStatus =
@@ -113,5 +114,11 @@ export const landlordListingsService = {
     const result = unwrapData<{ deleted?: boolean } | null>(response.data);
 
     return { deleted: result?.deleted !== false };
+  },
+
+  async getPublicProfile(landlordId: string): Promise<LandlordPublicProfile> {
+    const response = await apiClient.get(`/landlords/${landlordId}`);
+
+    return unwrapData<LandlordPublicProfile>(response.data);
   },
 };

@@ -19,6 +19,7 @@ export interface SearchFilters {
   longitude?: number;
   radius?: number;
   schoolId?: string;
+  ownerId?: string;
   sortBy: SearchSortBy;
   page: number;
   limit: number;

@@ -80,3 +80,17 @@ export const LANDLORD_STATS_PERIOD_OPTIONS: ReadonlyArray<{
   { value: '90d', label: '90 ngày', title: '90 ngày qua' },
   { value: 'all', label: 'Tất cả', title: 'Từ trước đến nay' },
 ];
+
+export interface LandlordPublicProfile {
+  id: string;
+  fullName: string;
+  avatarUrl: string | null;
+  isVerified: boolean;
+  joinedAt: string;
+  bio: string | null;
+  activeListingCount: number;
+  phone: string | null;
+  averageRating: number | null;
+  reviewCount: number;
+  responseMinutes: number | null;
+}
