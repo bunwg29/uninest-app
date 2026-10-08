@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { RefreshControl, StyleSheet, TouchableOpacity, View } from 'react-native';
 import {
   Bell,
@@ -11,16 +11,20 @@ import {
 } from 'lucide-react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
-import { useAuthStore } from '@features/auth';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { useAuth } from '@features/auth';
 import { useLandlordBookings } from '@features/booking/hooks';
 import { useChatSummary } from '@features/chat';
 import { useToast } from '@hooks';
-import type { LandlordTabParamList } from '@navigation';
+import type { LandlordTabParamList, RootStackParamList } from '@navigation';
 import { BORDER_RADIUS_TOKENS, OVERLAY_COLORS, SPACING_TOKENS, THEME_COLORS } from '@theme';
-import { GradientAvatar, ScreenContainer, Typography } from '@ui';
-import { useLandlordListings } from '../hooks';
+import { GradientAvatar, Modal, ScreenContainer, Typography } from '@ui';
+import { LandlordAccountSheet, StatsPeriodSheet } from '../components';
+import { useLandlordListings, useLandlordStats } from '../hooks';
+import { LANDLORD_STATS_PERIOD_OPTIONS, type LandlordStatsPeriod } from '../types';
 
 type NavigationProp = BottomTabNavigationProp<LandlordTabParamList, 'Overview'>;
+type RootNavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 const EXPIRING_SOON_HOURS = 12;
 const MS_PER_HOUR = 3_600_000;
@@ -124,11 +128,18 @@ const TaskRow = ({
 
 export const LandlordOverviewScreen = () => {
   const navigation = useNavigation<NavigationProp>();
+  const rootNavigation = useNavigation<RootNavigationProp>();
   const toast = useToast();
-  const user = useAuthStore((state) => state.user);
+  const { user, logout } = useAuth();
+  const [period, setPeriod] = useState<LandlordStatsPeriod>('7d');
+  const [isPeriodVisible, setIsPeriodVisible] = useState(false);
+  const [isAccountVisible, setIsAccountVisible] = useState(false);
+  const [isLogoutVisible, setIsLogoutVisible] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
   const publishedQuery = useLandlordListings('published');
   const bookingsQuery = useLandlordBookings();
   const chatSummaryQuery = useChatSummary();
+  const statsQuery = useLandlordStats(period);
 
   const publishedListings = useMemo(
     () => publishedQuery.data?.pages.flatMap((page) => page.items) ?? [],
@@ -136,8 +147,10 @@ export const LandlordOverviewScreen = () => {
   );
   const counters = publishedQuery.data?.pages[0]?.counters;
   const totalListings = counters ? Object.values(counters).reduce((sum, item) => sum + item, 0) : 0;
-  const totalViews = publishedListings.reduce((sum, item) => sum + (item.viewCount ?? 0), 0);
-  const totalContacts = publishedListings.reduce((sum, item) => sum + (item.contactCount ?? 0), 0);
+  const stats = statsQuery.data;
+  const periodOption =
+    LANDLORD_STATS_PERIOD_OPTIONS.find((option) => option.value === period) ??
+    LANDLORD_STATS_PERIOD_OPTIONS[0];
   const hasFeatured = publishedListings.some((item) => item.isFeatured);
 
   const pendingBookings = (bookingsQuery.data?.items ?? []).filter(
@@ -156,7 +169,25 @@ export const LandlordOverviewScreen = () => {
       publishedQuery.refetch(),
       bookingsQuery.refetch(),
       chatSummaryQuery.refetch(),
+      statsQuery.refetch(),
     ]);
+  };
+
+  const openFromAccount = (action: () => void) => {
+    setIsAccountVisible(false);
+    action();
+  };
+
+  const handleConfirmLogout = async () => {
+    setIsLoggingOut(true);
+
+    try {
+      await logout();
+      toast.info('Đã đăng xuất thành công');
+    } finally {
+      setIsLoggingOut(false);
+      setIsLogoutVisible(false);
+    }
   };
 
   const handleComingSoon = () => toast.info('Tính năng đang được hoàn thiện');
@@ -173,24 +204,35 @@ export const LandlordOverviewScreen = () => {
       }
     >
       <View style={styles.header}>
-        <GradientAvatar name={user?.fullName} uri={user?.avatarUrl} size={44} />
+        <TouchableOpacity
+          style={styles.accountButton}
+          onPress={() => setIsAccountVisible(true)}
+          activeOpacity={0.7}
+          accessibilityRole="button"
+          accessibilityLabel="Mở menu tài khoản"
+          testID="landlord-overview-account"
+        >
+          <GradientAvatar name={user?.fullName} uri={user?.avatarUrl} size={44} />
 
-        <View style={styles.headerBody}>
-          <Typography variant="body2" weight="BOLD" numberOfLines={1}>
-            {user?.fullName ?? 'Chủ trọ'}
-          </Typography>
+          <View style={styles.headerBody}>
+            <Typography variant="body2" weight="BOLD" numberOfLines={1}>
+              {user?.fullName ?? 'Chủ trọ'}
+            </Typography>
 
-          <View style={styles.roleRow}>
-            <View style={styles.roleBadge}>
-              <Typography variant="tiny" weight="BOLD" colorKey="WARNING" style={styles.roleText}>
-                CHỦ TRỌ
+            <View style={styles.roleRow}>
+              <View style={styles.roleBadge}>
+                <Typography variant="tiny" weight="BOLD" colorKey="WARNING" style={styles.roleText}>
+                  CHỦ TRỌ
+                </Typography>
+              </View>
+              <Typography variant="caption" weight="MEDIUM" colorKey="TEXT_PLACEHOLDER">
+                {totalListings} phòng
               </Typography>
             </View>
-            <Typography variant="caption" weight="MEDIUM" colorKey="TEXT_PLACEHOLDER">
-              {totalListings} phòng
-            </Typography>
           </View>
-        </View>
+
+          <ChevronDown size={16} color={THEME_COLORS.TEXT_PLACEHOLDER} />
+        </TouchableOpacity>
 
         <TouchableOpacity
           style={styles.bellButton}
@@ -249,33 +291,42 @@ export const LandlordOverviewScreen = () => {
 
         <View style={styles.sectionHeader}>
           <Typography variant="h3" weight="BOLD">
-            7 ngày qua
+            {periodOption.title}
           </Typography>
 
-          <View style={styles.periodPill}>
+          <TouchableOpacity
+            style={styles.periodPill}
+            onPress={() => setIsPeriodVisible(true)}
+            activeOpacity={0.8}
+            accessibilityRole="button"
+            accessibilityLabel={`Khoảng thời gian thống kê: ${periodOption.label}`}
+            testID="landlord-overview-period"
+          >
             <Typography variant="caption" weight="MEDIUM" colorKey="TEXT_SECONDARY">
-              7 ngày
+              {periodOption.label}
             </Typography>
             <ChevronDown size={13} color={THEME_COLORS.TEXT_SECONDARY} />
-          </View>
+          </TouchableOpacity>
         </View>
 
         <View style={styles.statsGrid}>
           <StatCard
             testID="landlord-overview-stat-views"
             label="Lượt xem tin"
-            value={formatCount(totalViews)}
+            value={stats ? formatCount(stats.views) : '–'}
           />
           <StatCard
             testID="landlord-overview-stat-contacts"
             label="Lượt liên hệ"
-            value={formatCount(totalContacts)}
+            value={stats ? formatCount(stats.contacts) : '–'}
           />
           <StatCard
             testID="landlord-overview-stat-bookings"
             label="Yêu cầu xem phòng"
-            value={String(pendingBookings.length)}
-            note={pendingBookings.length > 0 ? 'Đang chờ xác nhận' : undefined}
+            value={stats ? formatCount(stats.bookings) : '–'}
+            note={
+              pendingBookings.length > 0 ? `${pendingBookings.length} đang chờ xác nhận` : undefined
+            }
             noteColor={OVERLAY_COLORS.EXPIRED_TEXT}
           />
           <StatCard
@@ -383,6 +434,37 @@ export const LandlordOverviewScreen = () => {
           </TouchableOpacity>
         </View>
       </View>
+
+      <StatsPeriodSheet
+        isVisible={isPeriodVisible}
+        value={period}
+        onSelect={setPeriod}
+        onClose={() => setIsPeriodVisible(false)}
+      />
+
+      <LandlordAccountSheet
+        isVisible={isAccountVisible}
+        fullName={user?.fullName}
+        contact={user?.phoneNumber || user?.email}
+        avatarUrl={user?.avatarUrl}
+        onEditProfile={() => openFromAccount(() => rootNavigation.navigate('ProfileEdit'))}
+        onChangePassword={() => openFromAccount(() => rootNavigation.navigate('ChangePassword'))}
+        onOpenSettings={() => openFromAccount(() => rootNavigation.navigate('Settings'))}
+        onLogout={() => openFromAccount(() => setIsLogoutVisible(true))}
+        onClose={() => setIsAccountVisible(false)}
+      />
+
+      <Modal
+        isVisible={isLogoutVisible}
+        onClose={() => setIsLogoutVisible(false)}
+        title="Đăng xuất?"
+        description="Bạn sẽ cần đăng nhập lại để quản lý tin đăng và lịch hẹn."
+        confirmText="Đăng xuất"
+        cancelText="Huỷ"
+        confirmVariant="danger"
+        isConfirmLoading={isLoggingOut}
+        onConfirm={() => void handleConfirmLogout()}
+      />
     </ScreenContainer>
   );
 };
@@ -399,6 +481,7 @@ const styles = StyleSheet.create({
     gap: 12,
     backgroundColor: THEME_COLORS.SURFACE,
   },
+  accountButton: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 12 },
   headerBody: { flex: 1, gap: 2 },
   roleRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   roleBadge: {
