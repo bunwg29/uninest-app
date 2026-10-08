@@ -852,7 +852,11 @@ const styles = StyleSheet.create({
     borderRadius: BORDER_RADIUS_TOKENS.FULL,
   },
   footerLoader: { paddingVertical: SPACING_TOKENS.LG },
-  sheetBackdrop: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(23, 27, 34, 0.45)' },
+  sheetBackdrop: {
+    flex: 1,
+    justifyContent: 'flex-end',
+    backgroundColor: OVERLAY_COLORS.SHEET_BACKDROP,
+  },
   sheet: {
     backgroundColor: THEME_COLORS.SURFACE,
     borderTopLeftRadius: BORDER_RADIUS_TOKENS.XL,

@@ -113,7 +113,7 @@ const styles = StyleSheet.create({
     width: 64,
     height: 64,
     borderRadius: BORDER_RADIUS_TOKENS.FULL,
-    backgroundColor: '#FFF8E6',
+    backgroundColor: THEME_COLORS.WARNING_LIGHT,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: SPACING_TOKENS.MD,

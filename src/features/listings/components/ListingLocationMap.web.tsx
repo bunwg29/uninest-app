@@ -1,6 +1,6 @@
 import { Linking, Pressable, StyleSheet, View } from 'react-native';
 import { MapPin } from 'lucide-react-native';
-import { SPACING_TOKENS, THEME_COLORS } from '@theme';
+import { SPACING_TOKENS, THEME_COLORS, OVERLAY_COLORS } from '@theme';
 import { Typography } from '@ui';
 import type { ListingLocationMapProps } from './ListingLocationMap.native';
 
@@ -31,7 +31,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: SPACING_TOKENS.XS,
-    backgroundColor: '#E4E8E0',
+    backgroundColor: OVERLAY_COLORS.MAP_LAND,
   },
   pin: { alignItems: 'center' },
 });

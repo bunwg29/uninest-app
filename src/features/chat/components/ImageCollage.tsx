@@ -8,7 +8,7 @@ import {
   type StyleProp,
   type ViewStyle,
 } from 'react-native';
-import { THEME_COLORS, BORDER_RADIUS_TOKENS } from '@theme';
+import { THEME_COLORS, BORDER_RADIUS_TOKENS, OVERLAY_COLORS } from '@theme';
 import { Typography } from '@ui';
 
 export interface ImageCollageProps {
@@ -29,7 +29,6 @@ const MAX_COLLAGE_WIDTH = 260;
 const COLLAGE_WIDTH_RATIO = 0.62;
 const MIN_ASPECT_RATIO = 0.75;
 const MAX_ASPECT_RATIO = 1.5;
-const MORE_OVERLAY_COLOR = 'rgba(23, 27, 34, 0.55)';
 
 const getCollageRows = (total: number, width: number): CollageRow[] => {
   if (total === 2) {
@@ -183,6 +182,6 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFill,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: MORE_OVERLAY_COLOR,
+    backgroundColor: OVERLAY_COLORS.IMAGE_MORE_SCRIM,
   },
 });

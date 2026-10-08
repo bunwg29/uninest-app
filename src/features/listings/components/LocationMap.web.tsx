@@ -1,6 +1,6 @@
 import { Pressable, StyleSheet, View } from 'react-native';
 import { MapPin } from 'lucide-react-native';
-import { THEME_COLORS } from '@theme';
+import { THEME_COLORS, OVERLAY_COLORS } from '@theme';
 
 export interface MapCoordinate {
   latitude: number;
@@ -35,7 +35,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#E4E8E0',
+    backgroundColor: OVERLAY_COLORS.MAP_LAND,
   },
   road: { position: 'absolute', backgroundColor: THEME_COLORS.SURFACE },
   horizontalRoad: { left: 0, right: 0, top: '55%', height: 10 },

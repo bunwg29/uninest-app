@@ -19,7 +19,7 @@ import {
   Bot,
   CheckCircle2,
 } from 'lucide-react-native';
-import { THEME_COLORS, SPACING_TOKENS, BORDER_RADIUS_TOKENS } from '@theme';
+import { THEME_COLORS, SPACING_TOKENS, BORDER_RADIUS_TOKENS, OVERLAY_COLORS } from '@theme';
 import { Button, ScreenContainer, Typography } from '@ui';
 import { useResponsiveLayout } from '@hooks';
 import type { AuthStackParamList } from '@navigation';
@@ -334,7 +334,7 @@ const styles = StyleSheet.create({
   },
   illustrationCard: {
     borderRadius: BORDER_RADIUS_TOKENS.FULL,
-    backgroundColor: '#EFF4FF',
+    backgroundColor: THEME_COLORS.PRIMARY_LIGHT,
     justifyContent: 'center',
     alignItems: 'center',
     position: 'relative',
@@ -372,10 +372,10 @@ const styles = StyleSheet.create({
     width: 120,
     height: 120,
     borderRadius: BORDER_RADIUS_TOKENS.FULL,
-    backgroundColor: '#7C3AED',
+    backgroundColor: OVERLAY_COLORS.ACCENT_PURPLE,
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#7C3AED',
+    shadowColor: OVERLAY_COLORS.ACCENT_PURPLE,
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.3,
     shadowRadius: 14,
@@ -389,7 +389,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: SPACING_TOKENS.MD,
     paddingVertical: SPACING_TOKENS.XS,
     borderRadius: BORDER_RADIUS_TOKENS.FULL,
-    shadowColor: '#000',
+    shadowColor: OVERLAY_COLORS.SHADOW,
     shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.1,
     shadowRadius: 6,
@@ -442,7 +442,7 @@ const styles = StyleSheet.create({
   },
   dotInactive: {
     width: 8,
-    backgroundColor: '#C9CFDA',
+    backgroundColor: OVERLAY_COLORS.FIELD_BORDER,
   },
   actionButton: {
     width: '100%',

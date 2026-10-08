@@ -12,7 +12,7 @@ import {
   Zap,
 } from 'lucide-react-native';
 import type { RootStackParamList } from '@navigation';
-import { BORDER_RADIUS_TOKENS, SPACING_TOKENS, THEME_COLORS } from '@theme';
+import { BORDER_RADIUS_TOKENS, SPACING_TOKENS, THEME_COLORS, OVERLAY_COLORS } from '@theme';
 import { Badge, Button, HeaderBar, ScreenContainer, Typography } from '@ui';
 import { useResponsiveLayout } from '@hooks';
 import {
@@ -334,7 +334,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: SPACING_TOKENS.SM,
     paddingVertical: 4,
     borderRadius: BORDER_RADIUS_TOKENS.FULL,
-    backgroundColor: 'rgba(0, 0, 0, 0.65)',
+    backgroundColor: OVERLAY_COLORS.RENTED_PILL,
   },
   card: {
     marginHorizontal: SPACING_TOKENS.MD,

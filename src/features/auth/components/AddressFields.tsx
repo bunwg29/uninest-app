@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, FlatList, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { Check, ChevronDown, MapPin, Search } from 'lucide-react-native';
-import { BORDER_RADIUS_TOKENS, SPACING_TOKENS, THEME_COLORS } from '@theme';
+import { BORDER_RADIUS_TOKENS, SPACING_TOKENS, THEME_COLORS, OVERLAY_COLORS } from '@theme';
 import { Input, Modal, Typography } from '@ui';
 import { useToast } from '@hooks';
 import {
@@ -381,7 +381,7 @@ const styles = StyleSheet.create({
     marginTop: SPACING_TOKENS.SM,
     marginBottom: SPACING_TOKENS.MD,
     borderWidth: 1,
-    borderColor: THEME_COLORS.PRIMARY + '33',
+    borderColor: OVERLAY_COLORS.INFO_BORDER,
   },
   previewHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 4 },
   previewTitle: { marginLeft: 6 },

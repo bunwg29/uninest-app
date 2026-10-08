@@ -23,7 +23,7 @@ import {
   Star,
   Home,
 } from 'lucide-react-native';
-import { THEME_COLORS, SPACING_TOKENS, BORDER_RADIUS_TOKENS } from '@theme';
+import { THEME_COLORS, SPACING_TOKENS, BORDER_RADIUS_TOKENS, OVERLAY_COLORS } from '@theme';
 import { Avatar, Button, ScreenContainer, Typography } from '@ui';
 import { useToast } from '@hooks';
 import type { RootStackParamList } from '@navigation';
@@ -34,7 +34,7 @@ type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 type IconComponent = typeof Heart;
 
 const ICON_TONES = {
-  RED: { foreground: '#D21F2B', background: '#FFF0F1' },
+  RED: { foreground: THEME_COLORS.ERROR, background: THEME_COLORS.ERROR_LIGHT },
   BLUE: { foreground: THEME_COLORS.PRIMARY, background: THEME_COLORS.PRIMARY_LIGHT },
   AMBER: { foreground: THEME_COLORS.SECONDARY, background: THEME_COLORS.WARNING_LIGHT },
   GREEN: { foreground: THEME_COLORS.SUCCESS, background: THEME_COLORS.SUCCESS_LIGHT },
@@ -503,9 +503,9 @@ const styles = StyleSheet.create({
   customLogoutButton: {
     height: 52,
     borderRadius: BORDER_RADIUS_TOKENS.LG,
-    backgroundColor: '#FEE2E2',
+    backgroundColor: THEME_COLORS.ERROR_LIGHT,
     borderWidth: 1,
-    borderColor: '#FECACA',
+    borderColor: OVERLAY_COLORS.ERROR_BORDER,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',

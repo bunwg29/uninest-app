@@ -231,7 +231,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: BORDER_RADIUS_TOKENS.FULL,
-    backgroundColor: 'rgba(29, 83, 204, 0.18)',
+    backgroundColor: OVERLAY_COLORS.PRIMARY_HALO,
   },
   myLocationDot: {
     width: 18,

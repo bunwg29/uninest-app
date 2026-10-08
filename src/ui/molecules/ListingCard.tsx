@@ -1,6 +1,6 @@
 import { View, Image, TouchableOpacity, StyleSheet, ViewStyle, StyleProp } from 'react-native';
 import { Star, Heart, MapPin } from 'lucide-react-native';
-import { THEME_COLORS, BORDER_RADIUS_TOKENS, SPACING_TOKENS } from '@theme';
+import { THEME_COLORS, BORDER_RADIUS_TOKENS, SPACING_TOKENS, OVERLAY_COLORS } from '@theme';
 import { Typography } from '../atoms/Typography';
 import { Badge, BadgeVariant } from '../atoms/Badge';
 
@@ -206,7 +206,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: THEME_COLORS.BORDER,
     overflow: 'hidden',
-    shadowColor: '#171B22',
+    shadowColor: OVERLAY_COLORS.SHADOW,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.06,
     shadowRadius: 8,
@@ -264,7 +264,7 @@ const styles = StyleSheet.create({
     backgroundColor: THEME_COLORS.SURFACE,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#171B22',
+    shadowColor: OVERLAY_COLORS.SHADOW,
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.12,
     shadowRadius: 4,

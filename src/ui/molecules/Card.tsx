@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { View, TouchableOpacity, StyleSheet, ViewStyle, StyleProp } from 'react-native';
-import { THEME_COLORS, BORDER_RADIUS_TOKENS, SPACING_TOKENS } from '@theme';
+import { THEME_COLORS, BORDER_RADIUS_TOKENS, SPACING_TOKENS, OVERLAY_COLORS } from '@theme';
 import { Typography } from '../atoms/Typography';
 
 export type CardPadding = 'none' | 'sm' | 'md' | 'lg';
@@ -74,7 +74,7 @@ const styles = StyleSheet.create({
     borderColor: THEME_COLORS.BORDER,
   },
   shadow: {
-    shadowColor: '#171B22',
+    shadowColor: OVERLAY_COLORS.SHADOW,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.06,
     shadowRadius: 8,
