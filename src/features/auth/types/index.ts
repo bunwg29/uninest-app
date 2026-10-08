@@ -22,6 +22,7 @@ export interface Profile {
   phoneVerified: boolean;
   email?: string | null;
   school?: string | null;
+  universities?: { code: string; name: string }[];
   bio?: string | null;
   provinceCode?: string | null;
   provinceName?: string | null;
@@ -43,7 +44,7 @@ export interface Profile {
 export interface UpdateProfilePayload {
   name?: string;
   email?: string;
-  school?: string;
+  universityCodes?: string[];
   bio?: string;
   interestedAreas?: string[];
   provinceCode?: string;

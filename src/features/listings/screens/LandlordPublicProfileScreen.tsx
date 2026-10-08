@@ -9,7 +9,7 @@ import {
 } from 'react-native';
 import { useNavigation, useRoute, type RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { Eye, MessageSquare, Phone, ShieldCheck } from 'lucide-react-native';
+import { Eye, GraduationCap, MessageSquare, Phone, ShieldCheck } from 'lucide-react-native';
 import { BORDER_RADIUS_TOKENS, SPACING_TOKENS, THEME_COLORS } from '@theme';
 import { BackButton, GradientAvatar, ScreenContainer, Typography } from '@ui';
 import { useToast } from '@hooks';
@@ -168,6 +168,22 @@ export const LandlordPublicProfileScreen = () => {
             />
           </View>
 
+          {profile.universities.length > 0 ? (
+            <View style={styles.universities}>
+              <Typography variant="caption" weight="SEMIBOLD" colorKey="TEXT_MUTED">
+                GẦN CÁC TRƯỜNG
+              </Typography>
+              {profile.universities.map((university) => (
+                <View key={university.code} style={styles.universityRow}>
+                  <GraduationCap size={16} color={THEME_COLORS.PRIMARY} />
+                  <Typography variant="body2" style={styles.universityName}>
+                    {university.name}
+                  </Typography>
+                </View>
+              ))}
+            </View>
+          ) : null}
+
           {profile.bio ? (
             <Typography variant="body2" style={styles.bio}>
               {profile.bio}
@@ -292,6 +308,9 @@ const styles = StyleSheet.create({
   statItem: { flex: 1, alignItems: 'center', gap: 2 },
   statDivider: { width: 1, height: 32, backgroundColor: THEME_COLORS.BORDER },
   bio: { lineHeight: 22 },
+  universities: { gap: SPACING_TOKENS.XS },
+  universityRow: { flexDirection: 'row', alignItems: 'center', gap: SPACING_TOKENS.SM },
+  universityName: { flex: 1 },
   actions: { flexDirection: 'row', gap: SPACING_TOKENS.SM },
   action: {
     flex: 1,

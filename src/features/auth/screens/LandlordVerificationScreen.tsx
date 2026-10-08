@@ -14,6 +14,8 @@ import {
   KeyboardAwareScrollView,
 } from '@ui';
 import { AddressFields, EMPTY_ADDRESS, type AddressValue } from '../components/AddressFields';
+import { UniversityPicker } from '../components/UniversityPicker';
+import type { University } from '../services/universitiesService';
 import { authService } from '../services';
 
 const IDENTITY_PATTERN = /^(\d{9}|\d{12})$/;
@@ -28,11 +30,13 @@ export const LandlordVerificationScreen = ({ onVerified }: LandlordVerificationS
   const toast = useToast();
   const [identityNumber, setIdentityNumber] = useState('');
   const [address, setAddress] = useState<AddressValue>(EMPTY_ADDRESS);
+  const [universities, setUniversities] = useState<University[]>([]);
   const [errorMessage, setErrorMessage] = useState<string>();
   const verification = useMutation({
     mutationFn: () =>
       authService.submitLandlordVerification({
         identityNumber: identityNumber.trim(),
+        universityCodes: universities.map((university) => university.code),
         ...(address.province && address.ward
           ? {
               provinceCode: address.province.code,
@@ -95,6 +99,13 @@ export const LandlordVerificationScreen = ({ onVerified }: LandlordVerificationS
           placeholder="Nhập 9 hoặc 12 chữ số"
           errorMessage={errorMessage}
         />
+        <UniversityPicker
+          label="Trường đại học gần trọ (không bắt buộc)"
+          value={universities}
+          maxSelection={3}
+          onChange={setUniversities}
+        />
+
         <AddressFields
           value={address}
           onChange={setAddress}

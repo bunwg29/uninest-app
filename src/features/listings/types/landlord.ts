@@ -90,6 +90,7 @@ export interface LandlordPublicProfile {
   isVerified: boolean;
   joinedAt: string;
   bio: string | null;
+  universities: { code: string; name: string }[];
   activeListingCount: number;
   phone: string | null;
   averageRating: number | null;

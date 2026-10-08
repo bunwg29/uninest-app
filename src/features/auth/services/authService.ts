@@ -203,6 +203,7 @@ export const authService = {
 
   async submitLandlordVerification(payload: {
     identityNumber: string;
+    universityCodes?: string[];
     provinceCode?: string;
     wardCode?: string;
     streetAddress?: string;

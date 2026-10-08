@@ -5,13 +5,15 @@ import * as ImagePicker from 'expo-image-picker';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { Camera, GraduationCap, Mail, Phone, UserRound } from 'lucide-react-native';
+import { Camera, Mail, Phone, UserRound } from 'lucide-react-native';
 import { THEME_COLORS, SPACING_TOKENS, BORDER_RADIUS_TOKENS } from '@theme';
 import { Avatar, Badge, Button, Input, ScreenContainer, Typography, BackButton } from '@ui';
 import { useToast } from '@hooks';
 import type { RootStackParamList } from '@navigation';
 import { AddressFields, EMPTY_ADDRESS, type AddressValue } from '../components/AddressFields';
 import { ChangeContactSheet } from '../components/ChangeContactSheet';
+import { UniversityPicker } from '../components/UniversityPicker';
+import type { University } from '../services/universitiesService';
 import { useAuth } from '../hooks';
 import type { ContactKind } from '../services';
 import { authService } from '../services';
@@ -26,18 +28,19 @@ export const ProfileEditScreen = () => {
   const profile = profileQuery.data;
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
-  const [school, setSchool] = useState('');
+  const [universities, setUniversities] = useState<University[]>([]);
   const [bio, setBio] = useState('');
   const [address, setAddress] = useState<AddressValue>(EMPTY_ADDRESS);
   const [contactKind, setContactKind] = useState<ContactKind | null>(null);
-  const { updateUser } = useAuth();
+  const { updateUser, role } = useAuth();
+  const isLandlord = role === 'landlord';
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
 
   useEffect(() => {
     if (profile) {
       setName(profile.name);
       setEmail(profile.email || '');
-      setSchool(profile.school || '');
+      setUniversities(profile.universities ?? []);
       setBio(profile.bio || '');
       setAddress({
         province: profile.provinceCode
@@ -66,8 +69,8 @@ export const ProfileEditScreen = () => {
     mutationFn: () =>
       authService.updateProfile({
         name,
-        school,
         bio,
+        universityCodes: universities.map((university) => university.code),
         ...(address.province && address.ward
           ? {
               provinceCode: address.province.code,
@@ -86,7 +89,8 @@ export const ProfileEditScreen = () => {
 
   const isDirty = profile
     ? name !== profile.name ||
-      school !== (profile.school || '') ||
+      universities.map((university) => university.code).join(',') !==
+        (profile.universities ?? []).map((university) => university.code).join(',') ||
       bio !== (profile.bio || '') ||
       address.province?.code !== (profile.provinceCode ?? undefined) ||
       address.ward?.code !== (profile.wardCode ?? undefined) ||
@@ -221,11 +225,14 @@ export const ProfileEditScreen = () => {
         leftIcon={<Mail size={18} color={THEME_COLORS.TEXT_PLACEHOLDER} />}
         rightIcon={<ChangeContactLink onPress={() => setContactKind('email')} />}
       />
-      <Input
-        label="Trường đang học"
-        value={school}
-        onChangeText={setSchool}
-        leftIcon={<GraduationCap size={18} color={THEME_COLORS.TEXT_PLACEHOLDER} />}
+      <UniversityPicker
+        label={isLandlord ? 'Trường đại học gần trọ' : 'Trường đang học'}
+        value={universities}
+        maxSelection={isLandlord ? 3 : 1}
+        helperText={
+          isLandlord ? 'Chọn tối đa 3 trường để sinh viên dễ tìm thấy trọ của bạn' : undefined
+        }
+        onChange={setUniversities}
       />
       <Typography variant="body1" weight="BOLD" style={styles.sectionTitle}>
         Địa chỉ
