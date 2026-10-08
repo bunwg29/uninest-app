@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
-import { View, StyleSheet } from 'react-native';
+import { View, StyleSheet, TouchableOpacity } from 'react-native';
+import { Check } from 'lucide-react-native';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useNavigation, useRoute, type RouteProp } from '@react-navigation/native';
@@ -277,18 +278,20 @@ export const BasicInfoScreen = () => {
                 control={control}
                 name="electricPrice"
                 render={({ field: { onChange, value } }) => (
-                  <Input
-                    label="Tiền điện"
-                    placeholder="3.500"
-                    value={formatNumberWithDots(value)}
-                    onChangeText={(text) => onChange(parseRawNumberString(text))}
-                    keyboardType="numeric"
-                    errorMessage={errors.electricPrice?.message}
-                    rightIcon={renderSuffix('đ/kWh')}
-                    idleBorderColor={OVERLAY_COLORS.FIELD_BORDER}
-                    containerStyle={styles.field}
-                    inputContainerStyle={styles.fieldInput}
-                  />
+                  <View style={styles.costField}>
+                    <CostLabel label="Tiền điện" />
+                    <Input
+                      placeholder="3.500"
+                      value={formatNumberWithDots(value)}
+                      onChangeText={(text) => onChange(parseRawNumberString(text))}
+                      keyboardType="numeric"
+                      errorMessage={errors.electricPrice?.message}
+                      rightIcon={renderSuffix('đ/kWh')}
+                      idleBorderColor={OVERLAY_COLORS.FIELD_BORDER}
+                      containerStyle={styles.field}
+                      inputContainerStyle={styles.fieldInput}
+                    />
+                  </View>
                 )}
               />
             </View>
@@ -298,67 +301,65 @@ export const BasicInfoScreen = () => {
                 control={control}
                 name="waterPrice"
                 render={({ field: { onChange, value } }) => (
-                  <Input
-                    label="Tiền nước"
-                    placeholder={isWaterFree ? 'Miễn phí' : '100.000'}
-                    value={isWaterFree ? '' : formatNumberWithDots(value)}
-                    onChangeText={(text) => onChange(parseRawNumberString(text))}
-                    editable={!isWaterFree}
-                    keyboardType="numeric"
-                    errorMessage={errors.waterPrice?.message}
-                    rightIcon={renderSuffix('đ/m³')}
-                    idleBorderColor={OVERLAY_COLORS.FIELD_BORDER}
-                    containerStyle={styles.field}
-                    inputContainerStyle={styles.fieldInput}
-                  />
+                  <View style={styles.costField}>
+                    <CostLabel
+                      label="Tiền nước"
+                      toggleLabel="Miễn phí"
+                      isToggled={isWaterFree}
+                      onToggle={() =>
+                        setValue('waterPrice', isWaterFree ? '' : '0', { shouldValidate: true })
+                      }
+                    />
+                    <Input
+                      placeholder={isWaterFree ? 'Miễn phí' : '100.000'}
+                      value={isWaterFree ? '' : formatNumberWithDots(value)}
+                      onChangeText={(text) => onChange(parseRawNumberString(text))}
+                      editable={!isWaterFree}
+                      keyboardType="numeric"
+                      errorMessage={errors.waterPrice?.message}
+                      rightIcon={isWaterFree ? undefined : renderSuffix('đ/m³')}
+                      idleBorderColor={OVERLAY_COLORS.FIELD_BORDER}
+                      containerStyle={styles.field}
+                      inputContainerStyle={styles.fieldInput}
+                    />
+                  </View>
                 )}
               />
             </View>
-          </View>
-
-          <View style={styles.toggleRow}>
-            <FilterChip
-              label="Nước miễn phí"
-              isSelected={isWaterFree}
-              onPress={() =>
-                setValue('waterPrice', isWaterFree ? '' : '0', { shouldValidate: true })
-              }
-            />
           </View>
 
           <Controller
             control={control}
             name="deposit"
             render={({ field: { onChange, value } }) => (
-              <Input
-                label="Tiền cọc"
-                placeholder="2.500.000"
-                value={formatNumberWithDots(value)}
-                onChangeText={(text) => onChange(parseRawNumberString(text))}
-                editable={!depositFollowsRent}
-                keyboardType="numeric"
-                errorMessage={errors.deposit?.message}
-                rightIcon={renderSuffix('đ')}
-                idleBorderColor={OVERLAY_COLORS.FIELD_BORDER}
-                containerStyle={styles.field}
-                inputContainerStyle={styles.fieldInput}
-              />
+              <View style={styles.depositField}>
+                <CostLabel
+                  label="Tiền cọc"
+                  toggleLabel="Bằng tiền phòng"
+                  isToggled={depositFollowsRent}
+                  onToggle={() => {
+                    const next = !depositFollowsRent;
+
+                    setDepositFollowsRent(next);
+
+                    if (next) setValue('deposit', price ?? '', { shouldValidate: true });
+                  }}
+                />
+                <Input
+                  placeholder="2.500.000"
+                  value={formatNumberWithDots(value)}
+                  onChangeText={(text) => onChange(parseRawNumberString(text))}
+                  editable={!depositFollowsRent}
+                  keyboardType="numeric"
+                  errorMessage={errors.deposit?.message}
+                  rightIcon={renderSuffix('đ')}
+                  idleBorderColor={OVERLAY_COLORS.FIELD_BORDER}
+                  containerStyle={styles.field}
+                  inputContainerStyle={styles.fieldInput}
+                />
+              </View>
             )}
           />
-
-          <View style={styles.toggleRow}>
-            <FilterChip
-              label="Bằng tiền phòng"
-              isSelected={depositFollowsRent}
-              onPress={() => {
-                const next = !depositFollowsRent;
-
-                setDepositFollowsRent(next);
-
-                if (next) setValue('deposit', price ?? '', { shouldValidate: true });
-              }}
-            />
-          </View>
 
           <Controller
             control={control}
@@ -391,8 +392,75 @@ export const BasicInfoScreen = () => {
   );
 };
 
+interface CostLabelProps {
+  label: string;
+  toggleLabel?: string;
+  isToggled?: boolean;
+  onToggle?: () => void;
+}
+
+const CostLabel = ({ label, toggleLabel, isToggled = false, onToggle }: CostLabelProps) => (
+  <View style={styles.costLabelRow}>
+    <Typography
+      variant="label"
+      weight="MEDIUM"
+      colorKey="TEXT_PRIMARY"
+      numberOfLines={1}
+      style={styles.costLabelText}
+    >
+      {label}
+    </Typography>
+
+    {toggleLabel && onToggle ? (
+      <TouchableOpacity
+        style={styles.costToggle}
+        onPress={onToggle}
+        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        accessibilityRole="checkbox"
+        accessibilityState={{ checked: isToggled }}
+        accessibilityLabel={toggleLabel}
+      >
+        <View style={[styles.checkbox, isToggled && styles.checkboxChecked]}>
+          {isToggled ? <Check size={12} color={THEME_COLORS.WHITE} strokeWidth={3} /> : null}
+        </View>
+        <Typography
+          variant="caption"
+          weight="SEMIBOLD"
+          colorKey={isToggled ? 'PRIMARY' : 'TEXT_SECONDARY'}
+        >
+          {toggleLabel}
+        </Typography>
+      </TouchableOpacity>
+    ) : null}
+  </View>
+);
+
 const styles = StyleSheet.create({
-  toggleRow: { flexDirection: 'row', marginBottom: SPACING_TOKENS.MD },
+  costField: { gap: 8 },
+  depositField: { gap: 8, marginBottom: 20 },
+  costLabelRow: {
+    minHeight: 22,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 8,
+  },
+  costLabelText: { flexShrink: 1 },
+  costToggle: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  checkbox: {
+    width: 18,
+    height: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 5,
+    borderWidth: 1.5,
+    borderColor: OVERLAY_COLORS.FIELD_BORDER,
+    backgroundColor: THEME_COLORS.SURFACE,
+  },
+  checkboxChecked: {
+    borderColor: THEME_COLORS.PRIMARY,
+    backgroundColor: THEME_COLORS.PRIMARY,
+  },
   flex: { flex: 1 },
   scrollContent: { padding: SPACING_TOKENS.MD, paddingBottom: SPACING_TOKENS.XL },
   field: { marginBottom: 0 },
