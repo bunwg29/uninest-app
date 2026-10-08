@@ -253,7 +253,7 @@ export const useListingPostStore = create<ListingPostState>()(
               step3: state.step3,
               selectedAmenityIds: state.selectedAmenityIds,
               viewingSchedule: state.viewingSchedule,
-              localImages: state.localImages.filter((image) => Boolean(image.uploadedKey)),
+              localImages: state.localImages,
               uploadedImages: state.uploadedImages,
             },
     }
