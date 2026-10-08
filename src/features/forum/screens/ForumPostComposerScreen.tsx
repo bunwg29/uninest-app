@@ -6,7 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
 import { Controller, useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { ImagePlus, MapPin, X } from 'lucide-react-native';
+import { Plus, X } from 'lucide-react-native';
 import { filterValidUploadImages, resolveImageContentType } from '@core';
 import { BORDER_RADIUS_TOKENS, OVERLAY_COLORS, SPACING_TOKENS, THEME_COLORS } from '@theme';
 import {
@@ -19,7 +19,8 @@ import {
   KeyboardAvoidingContainer,
   KeyboardAwareScrollView,
 } from '@ui';
-import { useToast } from '@hooks';
+import { useResponsiveLayout, useToast } from '@hooks';
+import { AddressFields, EMPTY_ADDRESS, type AddressValue } from '@features/auth';
 import { formatNumberWithDots, parseRawNumberString } from '@core';
 import type { RootStackParamList } from '@navigation';
 import { ForumBadge, ForumFormField, ForumHeader, ModerationWarningModal } from '../components';
@@ -51,6 +52,8 @@ const TITLE_HELPER_TEXT = 'Ghi rõ khu vực và giá ngay ở tiêu đề để
 
 const CATEGORY_ORDER = Object.keys(FORUM_COMPOSER_CATEGORY_LABELS) as ForumCategory[];
 
+const IMAGE_GRID_GAP = 12;
+
 const toFormValues = (post: ForumPost): ForumPostFormValues => ({
   category: post.category,
   title: post.title,
@@ -61,11 +64,38 @@ const toFormValues = (post: ForumPost): ForumPostFormValues => ({
   minStayMonths: post.roommate?.minStayMonths ? String(post.roommate.minStayMonths) : '',
   costNote: post.roommate?.costNote ?? '',
   lifestyle: post.roommate?.lifestyle ?? '',
-  area: post.roommate?.area ?? '',
+  area:
+    post.roommate?.streetAddress ??
+    (post.roommate?.provinceCode ? '' : (post.roommate?.area ?? '')),
   roommateStatus: post.roommateStatus ?? 'open',
 });
 
-const toPayload = (values: ForumPostFormValues): SaveForumPostPayload => {
+const toAddressValue = (post: ForumPost): AddressValue => {
+  const roommate = post.roommate;
+
+  if (!roommate?.provinceCode || !roommate.wardCode) {
+    return { ...EMPTY_ADDRESS, streetAddress: roommate?.area ?? '' };
+  }
+
+  return {
+    province: {
+      code: roommate.provinceCode,
+      name: roommate.provinceName ?? '',
+      fullName: roommate.provinceName ?? '',
+      codeName: '',
+    },
+    ward: {
+      code: roommate.wardCode,
+      name: roommate.wardName ?? '',
+      fullName: roommate.wardName ?? '',
+      codeName: '',
+      provinceCode: roommate.provinceCode,
+    },
+    streetAddress: roommate.streetAddress ?? '',
+  };
+};
+
+const toPayload = (values: ForumPostFormValues, address: AddressValue): SaveForumPostPayload => {
   const isRoommate = values.category === 'roommate';
   const minStayMonths = Number(values.minStayMonths);
 
@@ -82,7 +112,9 @@ const toPayload = (values: ForumPostFormValues): SaveForumPostPayload => {
             moveInDate: values.moveInDate || undefined,
             minStayMonths: values.minStayMonths.trim() ? minStayMonths : undefined,
             lifestyle: values.lifestyle?.trim() || undefined,
-            area: values.area?.trim() || undefined,
+            provinceCode: address.province?.code,
+            wardCode: address.ward?.code,
+            streetAddress: values.area?.trim() || undefined,
           },
           roommateStatus: values.roommateStatus,
         }
@@ -98,6 +130,12 @@ export const ForumPostComposerScreen = () => {
   const postId = params?.postId;
   const isEditing = Boolean(postId);
   const [images, setImages] = useState<ForumLocalImage[]>([]);
+  const [address, setAddress] = useState<AddressValue>(EMPTY_ADDRESS);
+  const { contentWidth } = useResponsiveLayout();
+  const imageColumns = contentWidth >= 700 ? 5 : contentWidth >= 500 ? 4 : 3;
+  const imageCellSize = Math.floor(
+    (contentWidth - SPACING_TOKENS.MD * 2 - IMAGE_GRID_GAP * (imageColumns - 1)) / imageColumns
+  );
   const [moderationResult, setModerationResult] = useState<ModerationResult | null>(null);
   const [pendingPayload, setPendingPayload] = useState<SaveForumPostPayload | null>(null);
   const [flaggedFields, setFlaggedFields] = useState<ModeratedField[]>([]);
@@ -131,6 +169,7 @@ export const ForumPostComposerScreen = () => {
     if (!editingPost) return;
 
     reset(toFormValues(editingPost));
+    setAddress(toAddressValue(editingPost));
     setImages(
       editingPost.imageKeys.map((key, index) => ({
         uri: editingPost.imageUrls[index] ?? '',
@@ -215,9 +254,19 @@ export const ForumPostComposerScreen = () => {
     );
   };
 
+  const hasIncompleteAddress = () => {
+    if (!isRoommate || (address.province && address.ward)) return false;
+
+    toast.error('Vui lòng chọn tỉnh/thành phố và phường/xã cho khu vực', 'Thiếu khu vực');
+
+    return true;
+  };
+
   const handlePublish = handleSubmit((values) => {
+    if (hasIncompleteAddress()) return;
+
     const shouldPublish = !isEditing || editingPost?.status === 'draft';
-    const payload = { ...toPayload(values), isDraft: shouldPublish ? false : undefined };
+    const payload = { ...toPayload(values, address), isDraft: shouldPublish ? false : undefined };
 
     checkMutation.mutate(
       {
@@ -226,7 +275,7 @@ export const ForumPostComposerScreen = () => {
         roommate: payload.roommate && {
           costNote: payload.roommate.costNote,
           lifestyle: payload.roommate.lifestyle,
-          area: payload.roommate.area,
+          area: payload.roommate.streetAddress,
         },
       },
       {
@@ -247,7 +296,13 @@ export const ForumPostComposerScreen = () => {
   });
 
   const handleSaveDraft = handleSubmit((values) => {
-    savePost({ ...toPayload(values), isDraft: true });
+    if (address.province && !address.ward) {
+      toast.error('Vui lòng chọn phường/xã cho khu vực', 'Thiếu khu vực');
+
+      return;
+    }
+
+    savePost({ ...toPayload(values, address), isDraft: true });
   });
 
   const handleAutoRemove = () => {
@@ -268,6 +323,12 @@ export const ForumPostComposerScreen = () => {
       }
     }
 
+    const sanitizedStreet = sanitized['roommate.area'];
+
+    if (sanitizedStreet !== undefined) {
+      setAddress((current) => ({ ...current, streetAddress: sanitizedStreet }));
+    }
+
     setModerationResult(null);
     setPendingPayload(null);
     setFlaggedFields([]);
@@ -275,7 +336,7 @@ export const ForumPostComposerScreen = () => {
   };
 
   const handlePublishAnyway = () => {
-    const payload = pendingPayload ?? toPayload(getValues());
+    const payload = pendingPayload ?? toPayload(getValues(), address);
 
     savePost({ ...payload, acknowledgeWarnings: true });
   };
@@ -385,29 +446,40 @@ export const ForumPostComposerScreen = () => {
             />
           </ForumFormField>
 
-          <ForumFormField label={`Ảnh (${images.length}/${FORUM_MAX_IMAGES})`} style={styles.group}>
+          <ForumFormField label="Ảnh" style={styles.group}>
             <View style={styles.imageGrid}>
               {images.map((image, index) => (
-                <View key={`${image.uri}-${index}`} style={styles.imageTile}>
+                <View
+                  key={`${image.uri}-${index}`}
+                  style={[styles.imageTile, { width: imageCellSize, height: imageCellSize }]}
+                >
                   <Image source={{ uri: image.uri }} style={styles.imagePreview} />
                   <TouchableOpacity
                     style={styles.removeImage}
                     onPress={() => handleRemoveImage(index)}
+                    hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+                    accessibilityRole="button"
                     accessibilityLabel={`Xoá ảnh ${index + 1}`}
                   >
-                    <X size={14} color={THEME_COLORS.WHITE} />
+                    <X size={12} color={THEME_COLORS.WHITE} />
                   </TouchableOpacity>
                 </View>
               ))}
 
               {images.length < FORUM_MAX_IMAGES ? (
                 <TouchableOpacity
-                  style={[styles.imageTile, styles.addImage]}
+                  style={[styles.addImage, { width: imageCellSize, height: imageCellSize }]}
                   onPress={handlePickImages}
+                  activeOpacity={0.7}
+                  accessibilityRole="button"
+                  accessibilityLabel="Thêm ảnh"
                 >
-                  <ImagePlus size={24} color={THEME_COLORS.PRIMARY} />
-                  <Typography variant="caption" colorKey="PRIMARY">
+                  <Plus size={24} color={THEME_COLORS.TEXT_MUTED} />
+                  <Typography variant="caption" weight="SEMIBOLD" colorKey="TEXT_MUTED">
                     Thêm ảnh
+                  </Typography>
+                  <Typography variant="tiny" colorKey="TEXT_PLACEHOLDER">
+                    {images.length} / {FORUM_MAX_IMAGES}
                   </Typography>
                 </TouchableOpacity>
               ) : null}
@@ -485,25 +557,14 @@ export const ForumPostComposerScreen = () => {
               </View>
 
               <ForumFormField label="KHU VỰC" tone="caption" style={styles.subGroup}>
-                <Controller
-                  control={control}
-                  name="area"
-                  render={({ field: { value, onChange } }) => (
-                    <Input
-                      value={value}
-                      onChangeText={(text) => {
-                        clearFlag('roommate.area');
-                        onChange(text);
-                      }}
-                      placeholder="Kiệt 154 Nguyễn Lương Bằng, P. Hoà Khánh Bắc"
-                      errorMessage={errors.area?.message}
-                      leftIcon={<MapPin size={18} color={THEME_COLORS.TEXT_PLACEHOLDER} />}
-                      idleBorderColor={OVERLAY_COLORS.FIELD_BORDER}
-                      inputContainerStyle={[styles.lineInput, getFlagStyle('roommate.area')]}
-                      style={styles.lineInputText}
-                      containerStyle={styles.inputReset}
-                    />
-                  )}
+                <AddressFields
+                  value={address}
+                  onChange={(next) => {
+                    clearFlag('roommate.area');
+                    setAddress(next);
+                    setValue('area', next.streetAddress, { shouldValidate: true });
+                  }}
+                  streetHelperText="Số nhà, tên đường hoặc kiệt/hẻm (không bắt buộc)"
                 />
               </ForumFormField>
 
@@ -610,7 +671,9 @@ export const ForumPostComposerScreen = () => {
           ) : null}
         </KeyboardAwareScrollView>
 
-        <View style={[styles.footer, { paddingBottom: insets.bottom + SPACING_TOKENS.SM }]}>
+        <View
+          style={[styles.footer, { paddingBottom: Math.max(insets.bottom, SPACING_TOKENS.SM) }]}
+        >
           {canSaveDraft ? (
             <Button
               title="Lưu nháp"
@@ -720,13 +783,12 @@ const styles = StyleSheet.create({
   imageGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: SPACING_TOKENS.SM,
+    gap: IMAGE_GRID_GAP,
   },
   imageTile: {
-    width: 76,
-    height: 76,
     borderRadius: BORDER_RADIUS_TOKENS.MD,
     overflow: 'hidden',
+    backgroundColor: THEME_COLORS.PRIMARY_LIGHT,
   },
   imagePreview: {
     width: '100%',
@@ -734,23 +796,23 @@ const styles = StyleSheet.create({
   },
   removeImage: {
     position: 'absolute',
-    top: 4,
-    right: 4,
+    top: 8,
+    right: 8,
     width: 22,
     height: 22,
     borderRadius: BORDER_RADIUS_TOKENS.FULL,
-    backgroundColor: OVERLAY_COLORS.COUNTER_BADGE,
+    backgroundColor: OVERLAY_COLORS.RENTED_PILL,
     alignItems: 'center',
     justifyContent: 'center',
   },
   addImage: {
-    borderWidth: 1,
-    borderStyle: 'dashed',
-    borderColor: THEME_COLORS.PRIMARY,
-    backgroundColor: THEME_COLORS.PRIMARY_LIGHT,
+    gap: 2,
     alignItems: 'center',
     justifyContent: 'center',
-    gap: SPACING_TOKENS.XXS,
+    borderRadius: BORDER_RADIUS_TOKENS.MD,
+    borderWidth: 1,
+    borderColor: OVERLAY_COLORS.FIELD_BORDER,
+    backgroundColor: THEME_COLORS.SURFACE,
   },
   inlineFields: {
     flexDirection: 'row',
@@ -763,7 +825,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: SPACING_TOKENS.SM + 4,
     paddingHorizontal: SPACING_TOKENS.MD,
-    paddingTop: 14,
+    paddingTop: SPACING_TOKENS.SM + 2,
     borderTopWidth: 1,
     borderTopColor: THEME_COLORS.BORDER,
     backgroundColor: THEME_COLORS.SURFACE,

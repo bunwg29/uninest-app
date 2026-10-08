@@ -31,6 +31,11 @@ export interface ForumAuthor {
 }
 
 export interface RoommateCriteria {
+  provinceCode?: string | null;
+  wardCode?: string | null;
+  provinceName?: string | null;
+  wardName?: string | null;
+  streetAddress?: string | null;
   gender: RoommateGender;
   genderLabel?: string;
   costPerPerson: number;
@@ -90,6 +95,9 @@ export interface ForumFeedFilters {
 }
 
 export interface RoommateCriteriaPayload {
+  provinceCode?: string;
+  wardCode?: string;
+  streetAddress?: string;
   gender: RoommateGender;
   costPerPerson: number;
   costNote?: string;
