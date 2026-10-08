@@ -11,6 +11,7 @@ import { filterValidUploadImages, resolveImageContentType } from '@core';
 import { BORDER_RADIUS_TOKENS, OVERLAY_COLORS, SPACING_TOKENS, THEME_COLORS } from '@theme';
 import {
   Button,
+  DatePickerField,
   FilterChip,
   Input,
   ScreenContainer,
@@ -37,7 +38,6 @@ import {
   ROOMMATE_GENDER_OPTIONS,
   ROOMMATE_STATUS_OPTIONS,
 } from '../types';
-import { formatDisplayDate, parseDisplayDate } from '../utils';
 import {
   FORUM_POST_FORM_DEFAULTS,
   forumPostSchema,
@@ -57,7 +57,7 @@ const toFormValues = (post: ForumPost): ForumPostFormValues => ({
   content: post.content,
   gender: post.roommate?.gender ?? 'female',
   costPerPerson: post.roommate ? formatNumberWithDots(post.roommate.costPerPerson) : '',
-  moveInDate: formatDisplayDate(post.roommate?.moveInDate),
+  moveInDate: post.roommate?.moveInDate?.slice(0, 10) ?? '',
   minStayMonths: post.roommate?.minStayMonths ? String(post.roommate.minStayMonths) : '',
   costNote: post.roommate?.costNote ?? '',
   lifestyle: post.roommate?.lifestyle ?? '',
@@ -79,7 +79,7 @@ const toPayload = (values: ForumPostFormValues): SaveForumPostPayload => {
             gender: values.gender,
             costPerPerson: Number(parseRawNumberString(values.costPerPerson)),
             costNote: values.costNote?.trim() || undefined,
-            moveInDate: parseDisplayDate(values.moveInDate),
+            moveInDate: values.moveInDate || undefined,
             minStayMonths: values.minStayMonths.trim() ? minStayMonths : undefined,
             lifestyle: values.lifestyle?.trim() || undefined,
             area: values.area?.trim() || undefined,
@@ -468,11 +468,11 @@ export const ForumPostComposerScreen = () => {
                     control={control}
                     name="moveInDate"
                     render={({ field: { value, onChange } }) => (
-                      <Input
+                      <DatePickerField
                         value={value}
-                        onChangeText={onChange}
-                        placeholder="01/10/2026"
-                        keyboardType="numbers-and-punctuation"
+                        onChange={onChange}
+                        placeholder="Chọn ngày dọn vào"
+                        minimumDate={new Date()}
                         errorMessage={errors.moveInDate?.message}
                         idleBorderColor={OVERLAY_COLORS.FIELD_BORDER}
                         inputContainerStyle={styles.lineInput}

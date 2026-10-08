@@ -1,6 +1,5 @@
 import { z } from 'zod';
 import { parseRawNumberString } from '@core';
-import { parseDisplayDate } from '../utils/forumFormat';
 
 const optionalText = (maxLength: number, message: string) =>
   z.string().trim().max(maxLength, message).optional().or(z.literal(''));
@@ -45,14 +44,6 @@ export const forumPostSchema = z
         code: z.ZodIssueCode.custom,
         path: ['costPerPerson'],
         message: 'Chi phí mỗi người vượt quá giới hạn cho phép',
-      });
-    }
-
-    if (values.moveInDate.trim() && !parseDisplayDate(values.moveInDate)) {
-      context.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ['moveInDate'],
-        message: 'Ngày dọn vào phải có dạng DD/MM/YYYY',
       });
     }
 

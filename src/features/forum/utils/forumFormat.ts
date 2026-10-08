@@ -30,16 +30,6 @@ export const formatDisplayDate = (isoDate: string | null | undefined): string =>
   return year && month && day ? `${day}/${month}/${year}` : isoDate;
 };
 
-export const parseDisplayDate = (displayDate: string): string | undefined => {
-  const match = displayDate.trim().match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
-
-  if (!match) return undefined;
-
-  const [, day, month, year] = match;
-
-  return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
-};
-
 export const formatCostPerPerson = (cost: number): string => `${formatNumberWithDots(cost)}đ/người`;
 
 export const formatCompactMillion = (value: number): string =>
