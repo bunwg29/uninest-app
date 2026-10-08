@@ -11,7 +11,7 @@ interface SearchSortSheetProps {
   value: SearchSortBy;
   hasLocation: boolean;
   onSelect: (sortBy: SearchSortBy) => void;
-  onDistanceWithoutLocation: () => void;
+  onRequestLocation: () => Promise<boolean>;
   onClose: () => void;
 }
 
@@ -20,7 +20,7 @@ export const SearchSortSheet = ({
   value,
   hasLocation,
   onSelect,
-  onDistanceWithoutLocation,
+  onRequestLocation,
   onClose,
 }: SearchSortSheetProps) => {
   const insets = useSafeAreaInsets();
@@ -30,9 +30,11 @@ export const SearchSortSheet = ({
     if (isVisible) setPendingValue(value);
   }, [isVisible, value]);
 
-  const handleChoose = (sortBy: SearchSortBy) => {
+  const handleChoose = async (sortBy: SearchSortBy) => {
     if (sortBy === 'distance' && !hasLocation) {
-      onDistanceWithoutLocation();
+      const isGranted = await onRequestLocation();
+
+      if (isGranted) setPendingValue(sortBy);
 
       return;
     }
@@ -61,29 +63,23 @@ export const SearchSortSheet = ({
 
           {SEARCH_SORT_OPTIONS.map((option) => {
             const isSelected = option.value === pendingValue;
-            const isDisabled = option.value === 'distance' && !hasLocation;
 
             return (
               <View key={option.value}>
                 <TouchableOpacity
                   style={[styles.option, isSelected && styles.optionSelected]}
-                  onPress={() => handleChoose(option.value)}
+                  onPress={() => void handleChoose(option.value)}
                   accessibilityRole="radio"
-                  accessibilityState={{ selected: isSelected, disabled: isDisabled }}
+                  accessibilityState={{ selected: isSelected }}
                 >
                   <View style={styles.optionText}>
                     <Typography
                       variant="body2"
                       weight={isSelected ? 'SEMIBOLD' : 'MEDIUM'}
-                      colorKey={isDisabled ? 'TEXT_PLACEHOLDER' : 'TEXT_PRIMARY'}
+                      colorKey="TEXT_PRIMARY"
                     >
                       {option.label}
                     </Typography>
-                    {isDisabled ? (
-                      <Typography variant="caption" colorKey="TEXT_PLACEHOLDER">
-                        Cần quyền truy cập vị trí
-                      </Typography>
-                    ) : null}
                   </View>
                   <RadioMark isSelected={isSelected} />
                 </TouchableOpacity>

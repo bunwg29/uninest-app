@@ -3,6 +3,7 @@ import {
   ActivityIndicator,
   FlatList,
   Keyboard,
+  Platform,
   RefreshControl,
   StyleSheet,
   TouchableOpacity,
@@ -680,7 +681,12 @@ export const SearchScreen = () => {
   return (
     <View style={styles.container}>
       {isMapVisible ? null : (
-        <View style={{ height: insets.top, backgroundColor: THEME_COLORS.SURFACE }} />
+        <View
+          style={{
+            height: insets.top + (Platform.OS === 'android' ? SPACING_TOKENS.SM : 0),
+            backgroundColor: THEME_COLORS.SURFACE,
+          }}
+        />
       )}
       {renderBody()}
 
@@ -707,9 +713,15 @@ export const SearchScreen = () => {
         value={appliedFilters.sortBy}
         hasLocation={hasLocation}
         onSelect={setSortBy}
-        onDistanceWithoutLocation={() => {
-          closeSort();
-          toast.warning('Vui lòng bật quyền vị trí để sắp xếp theo khoảng cách.');
+        onRequestLocation={async () => {
+          const coordinates = await fetchCurrentCoordinates();
+
+          if (!coordinates) return false;
+
+          setMyLocation(coordinates);
+          setLocation(coordinates.latitude, coordinates.longitude);
+
+          return true;
         }}
         onClose={closeSort}
       />
