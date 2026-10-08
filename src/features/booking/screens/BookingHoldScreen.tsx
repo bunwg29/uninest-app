@@ -7,17 +7,16 @@ import { BORDER_RADIUS_TOKENS, SPACING_TOKENS, THEME_COLORS } from '@theme';
 import { HeaderBar, ScreenContainer, Typography } from '@ui';
 import { BookingFooter, FooterButton, ResourceCard } from '../components';
 import { useBookingDetail, useHoldBooking } from '../hooks';
+import { formatFullPrice } from '@core';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 type ScreenRouteProp = RouteProp<RootStackParamList, 'BookingHold'>;
 
 const DEFAULT_DEPOSIT = 2_500_000;
 
-const formatMoney = (amount: number) => `${amount.toLocaleString('vi-VN')}đ`;
-
 const getHoldRules = (deposit: number, price: number | undefined) => [
   {
-    title: `Cọc ${formatMoney(deposit)}${deposit === price ? ', bằng 1 tháng tiền phòng' : ''}`,
+    title: `Cọc ${formatFullPrice(deposit)}${deposit === price ? ', bằng 1 tháng tiền phòng' : ''}`,
     body: 'Khoản cọc được trừ vào tiền thuê tháng đầu khi bạn dọn vào.',
   },
   {
@@ -101,7 +100,7 @@ export const BookingHoldScreen = () => {
               Số tiền cần cọc
             </Typography>
             <Typography variant="h3" weight="SEMIBOLD" style={styles.depositAmount}>
-              {formatMoney(deposit)}
+              {formatFullPrice(deposit)}
             </Typography>
           </View>
           <View style={styles.sandboxBadge}>

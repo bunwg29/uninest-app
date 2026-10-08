@@ -44,8 +44,6 @@ export const formatMillions = (value: number) => {
 
 export const formatShortPrice = (price: number) => `${formatMillions(price)}tr`;
 
-export const formatFullPrice = (price: number) => `${price.toLocaleString('vi-VN')}đ`;
-
 export const formatListingDistance = (distanceMeters?: number | null) => {
   if (distanceMeters === undefined || distanceMeters === null) return null;
 

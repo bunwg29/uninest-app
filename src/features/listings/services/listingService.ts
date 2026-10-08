@@ -1,6 +1,6 @@
 import { Platform } from 'react-native';
 import * as FileSystem from 'expo-file-system/legacy';
-import { apiClient } from '@core';
+import { apiClient, unwrapApiData } from '@core';
 import type {
   CreateListingPayload,
   ListingDetail,
@@ -10,24 +10,11 @@ import type {
   RecordListingViewResponse,
 } from '../types';
 
-const unwrapData = <T>(payload: unknown): T => {
-  if (
-    typeof payload === 'object' &&
-    payload !== null &&
-    'data' in payload &&
-    (payload as { status?: boolean }).status !== undefined
-  ) {
-    return (payload as { data: T }).data;
-  }
-
-  return payload as T;
-};
-
 export const listingService = {
   async getListingDetail(id: string): Promise<ListingDetail> {
     const response = await apiClient.get(`/listings/${id}`);
 
-    return unwrapData<ListingDetail>(response.data);
+    return unwrapApiData<ListingDetail>(response.data);
   },
 
   async getListingsByIds(ids: string[]): Promise<ListingDetail[]> {
@@ -37,13 +24,13 @@ export const listingService = {
       params: { ids: ids.join(',') },
     });
 
-    return unwrapData<ListingDetail[]>(response.data);
+    return unwrapApiData<ListingDetail[]>(response.data);
   },
 
   async recordListingView(id: string): Promise<RecordListingViewResponse> {
     const response = await apiClient.patch(`/listings/${id}/view`);
 
-    return unwrapData<RecordListingViewResponse>(response.data);
+    return unwrapApiData<RecordListingViewResponse>(response.data);
   },
 
   async reportListing(id: string, reason: string, note?: string): Promise<void> {
@@ -58,7 +45,7 @@ export const listingService = {
       fileSize: req.fileSize,
     });
 
-    return unwrapData<PresignedUploadResponse>(response.data);
+    return unwrapApiData<PresignedUploadResponse>(response.data);
   },
 
   async uploadVideo(video: {
@@ -72,7 +59,7 @@ export const listingService = {
       contentType: video.contentType,
       fileSize: video.fileSize,
     });
-    const { uploadUrl, key } = unwrapData<PresignedUploadResponse>(response.data);
+    const { uploadUrl, key } = unwrapApiData<PresignedUploadResponse>(response.data);
 
     await this.uploadImageToR2(uploadUrl, video.uri, video.contentType);
 
@@ -113,12 +100,12 @@ export const listingService = {
   async createListing(dto: CreateListingPayload): Promise<ListingResponse> {
     const response = await apiClient.post('/listings', dto);
 
-    return unwrapData<ListingResponse>(response.data);
+    return unwrapApiData<ListingResponse>(response.data);
   },
 
   async updateListing(id: string, dto: CreateListingPayload): Promise<ListingResponse> {
     const response = await apiClient.put(`/landlord/listings/${id}`, dto);
 
-    return unwrapData<ListingResponse>(response.data);
+    return unwrapApiData<ListingResponse>(response.data);
   },
 };

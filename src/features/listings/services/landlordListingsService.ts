@@ -1,4 +1,4 @@
-import { apiClient } from '@core';
+import { apiClient, unwrapApiData } from '@core';
 import type {
   LandlordListing,
   LandlordStats,
@@ -25,14 +25,6 @@ interface ApiLandlordListingsPage {
   };
   countsByStatus: Record<ApiListingStatus, number>;
 }
-
-const unwrapData = <T>(payload: unknown): T => {
-  if (typeof payload === 'object' && payload !== null && 'data' in payload) {
-    return (payload as { data: T }).data;
-  }
-
-  return payload as T;
-};
 
 const getApiStatus = (status: LandlordListingStatus): ApiListingStatus => {
   if (status === 'published') return 'active';
@@ -77,18 +69,18 @@ export const landlordListingsService = {
       params: { status: getApiStatus(status), keyword: keyword || undefined, page, limit: 10 },
     });
 
-    return mapPage(unwrapData<ApiLandlordListingsPage>(response.data));
+    return mapPage(unwrapApiData<ApiLandlordListingsPage>(response.data));
   },
 
   async getStats(period: LandlordStatsPeriod): Promise<LandlordStats> {
     const response = await apiClient.get('/landlord/listings/stats', { params: { period } });
 
-    return unwrapData<LandlordStats>(response.data);
+    return unwrapApiData<LandlordStats>(response.data);
   },
 
   async getListing(id: string): Promise<LandlordListing> {
     const response = await apiClient.get(`/landlord/listings/${id}`);
-    const listing = unwrapData<ApiLandlordListing>(response.data);
+    const listing = unwrapApiData<ApiLandlordListing>(response.data);
 
     return { ...listing, status: getAppStatus(listing.status) };
   },
@@ -111,7 +103,7 @@ export const landlordListingsService = {
 
   async deleteListing(id: string): Promise<{ deleted: boolean }> {
     const response = await apiClient.delete(`/landlord/listings/${id}`);
-    const result = unwrapData<{ deleted?: boolean } | null>(response.data);
+    const result = unwrapApiData<{ deleted?: boolean } | null>(response.data);
 
     return { deleted: result?.deleted !== false };
   },
@@ -119,6 +111,6 @@ export const landlordListingsService = {
   async getPublicProfile(landlordId: string): Promise<LandlordPublicProfile> {
     const response = await apiClient.get(`/landlords/${landlordId}`);
 
-    return unwrapData<LandlordPublicProfile>(response.data);
+    return unwrapApiData<LandlordPublicProfile>(response.data);
   },
 };

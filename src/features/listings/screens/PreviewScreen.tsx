@@ -14,22 +14,13 @@ import { listingService } from '../services/listingService';
 import { ROOM_TYPE_OPTIONS, AMENITY_DISPLAY_LIST } from '../types/constants';
 import { LandlordStatusPill } from '../components/landlord/LandlordStatusPill';
 import type { CreateListingPayload, CreateListingImagePayload, UploadedImageItem } from '../types';
+import { formatFullPrice } from '@core';
 
 type NavigationProp = NativeStackNavigationProp<ListingPostStackParamList>;
 
 const MAX_PREVIEW_AMENITIES = 3;
 const RECOMMENDED_IMAGE_COUNT = 6;
 const PHONE_PATTERN = /(?:\+?84|0)[\s.-]?\d(?:[\s.-]?\d){8}/;
-
-const formatVND = (value: string | number | undefined): string => {
-  if (!value) return '0đ';
-
-  const num = typeof value === 'string' ? Number(value) : value;
-
-  if (isNaN(num)) return '0đ';
-
-  return `${num.toLocaleString('vi-VN')}đ`;
-};
 
 export const PreviewScreen = () => {
   const navigation = useNavigation<NavigationProp>();
@@ -343,7 +334,7 @@ export const PreviewScreen = () => {
             </Typography>
 
             <Typography variant="h2" weight="BOLD" colorKey="PRIMARY">
-              {formatVND(step1.price)}
+              {formatFullPrice(Number(step1.price) || 0)}
               <Typography variant="body1" colorKey="TEXT_SECONDARY">
                 {' '}
                 /tháng

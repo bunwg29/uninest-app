@@ -1,17 +1,9 @@
-import { apiClient } from '@core';
+import { apiClient, unwrapApiData } from '@core';
 
 export interface University {
   code: string;
   name: string;
 }
-
-const unwrapData = <T>(payload: unknown): T => {
-  if (typeof payload === 'object' && payload !== null && 'data' in payload) {
-    return (payload as { data: T }).data;
-  }
-
-  return payload as T;
-};
 
 export const UNIVERSITY_SEARCH_LIMIT = 30;
 
@@ -22,6 +14,6 @@ export const universitiesService = {
       signal,
     });
 
-    return unwrapData<University[]>(response.data);
+    return unwrapApiData<University[]>(response.data);
   },
 };

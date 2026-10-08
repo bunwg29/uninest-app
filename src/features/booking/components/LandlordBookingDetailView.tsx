@@ -7,6 +7,7 @@ import { NoticeBanner } from './NoticeBanner';
 import { StatusBadge } from './StatusBadge';
 import type { Booking, BookingStatus } from '../types';
 import { formatDayMonth, formatFullDate, formatTimelineStamp, formatViewingSlot } from '../utils';
+import { formatFullPrice } from '@core';
 
 const MS_PER_DAY = 86_400_000;
 const MS_PER_HOUR = 3_600_000;
@@ -40,8 +41,6 @@ const getRemainingText = (expiresAt: string | null) => {
     ? `Còn ${Math.ceil(remainingMs / MS_PER_DAY)} ngày.`
     : `Còn ${Math.ceil(remainingMs / MS_PER_HOUR)} giờ.`;
 };
-
-const formatMoney = (value: number) => `${value.toLocaleString('vi-VN')}đ`;
 
 const getNotice = (booking: Booking) => {
   const base = STATUS_NOTICES[booking.status];
@@ -215,7 +214,7 @@ export const LandlordBookingDetailView = ({
                 </Typography>
                 <View style={styles.priceRow}>
                   <Typography variant="body1" weight="BOLD" colorKey="PRIMARY_DARK">
-                    {formatMoney(booking.listing.price)}
+                    {formatFullPrice(booking.listing.price)}
                   </Typography>
                   <Typography variant="caption" weight="MEDIUM" colorKey="TEXT_PLACEHOLDER">
                     /tháng
@@ -238,7 +237,7 @@ export const LandlordBookingDetailView = ({
               state="done"
               title={
                 booking.depositAmount
-                  ? `Đã cọc ${formatMoney(booking.depositAmount)} qua UniNest`
+                  ? `Đã cọc ${formatFullPrice(booking.depositAmount)} qua UniNest`
                   : 'Đã ghi nhận đặt cọc'
               }
               value={depositEvent ? formatTimelineStamp(depositEvent.createdAt) : undefined}

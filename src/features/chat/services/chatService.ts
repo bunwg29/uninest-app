@@ -1,4 +1,4 @@
-import { apiClient, AppError } from '@core';
+import { apiClient, AppError, unwrapApiData } from '@core';
 import { listingService } from '@features/listings/services';
 import type {
   ChatMessage,
@@ -11,19 +11,6 @@ import type {
   SendMessagePayload,
 } from '../types';
 import { CHAT_LIMITS } from '../types';
-
-const unwrapData = <T>(payload: unknown): T => {
-  if (
-    typeof payload === 'object' &&
-    payload !== null &&
-    'data' in payload &&
-    (payload as { status?: boolean }).status !== undefined
-  ) {
-    return (payload as { data: T }).data;
-  }
-
-  return payload as T;
-};
 
 export const isOfflineError = (error: unknown): boolean =>
   error instanceof AppError && error.data === undefined;
@@ -40,7 +27,7 @@ export const chatService = {
   async startConversation(listingId: string, studentId?: string): Promise<Conversation> {
     const response = await apiClient.post('/conversations', { listingId, studentId });
 
-    return unwrapData<Conversation>(response.data);
+    return unwrapApiData<Conversation>(response.data);
   },
 
   async getConversations(
@@ -57,19 +44,19 @@ export const chatService = {
       },
     });
 
-    return unwrapData<ConversationsPage>(response.data);
+    return unwrapApiData<ConversationsPage>(response.data);
   },
 
   async getSummary(): Promise<ConversationSummary> {
     const response = await apiClient.get('/conversations/summary');
 
-    return unwrapData<ConversationSummary>(response.data);
+    return unwrapApiData<ConversationSummary>(response.data);
   },
 
   async getConversation(conversationId: string): Promise<Conversation> {
     const response = await apiClient.get(`/conversations/${conversationId}`);
 
-    return unwrapData<Conversation>(response.data);
+    return unwrapApiData<Conversation>(response.data);
   },
 
   async getMessages(conversationId: string, cursor?: string): Promise<MessagesPage> {
@@ -77,20 +64,20 @@ export const chatService = {
       params: { cursor, limit: CHAT_LIMITS.MESSAGE_PAGE_SIZE },
     });
 
-    return unwrapData<MessagesPage>(response.data);
+    return unwrapApiData<MessagesPage>(response.data);
   },
 
   async sendMessage(payload: SendMessagePayload): Promise<ChatMessage> {
     const { conversationId, ...body } = payload;
     const response = await apiClient.post(`/conversations/${conversationId}/messages`, body);
 
-    return unwrapData<ChatMessage>(response.data);
+    return unwrapApiData<ChatMessage>(response.data);
   },
 
   async markRead(conversationId: string): Promise<MarkReadResult> {
     const response = await apiClient.patch(`/conversations/${conversationId}/read`);
 
-    return unwrapData<MarkReadResult>(response.data);
+    return unwrapApiData<MarkReadResult>(response.data);
   },
 
   async recallMessage(conversationId: string, messageId: string): Promise<ChatMessage> {
@@ -98,7 +85,7 @@ export const chatService = {
       `/conversations/${conversationId}/messages/${messageId}`
     );
 
-    return unwrapData<ChatMessage>(response.data);
+    return unwrapApiData<ChatMessage>(response.data);
   },
 
   async deleteConversation(conversationId: string): Promise<void> {

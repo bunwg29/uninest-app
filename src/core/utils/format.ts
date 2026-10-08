@@ -24,3 +24,5 @@ export const formatVND = (value: string | number | undefined | null): string => 
 
   return `${num.toLocaleString('vi-VN')} ₫`;
 };
+
+export const formatFullPrice = (price: number): string => `${price.toLocaleString('vi-VN')}đ`;

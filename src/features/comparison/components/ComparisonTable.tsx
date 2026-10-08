@@ -6,7 +6,6 @@ import { GradientView, MediaThumbnail, Typography } from '@ui';
 import { AvailabilityBadge } from '@features/listings/components/AvailabilityBadge';
 import { useOpenListingChat } from '@features/chat/hooks/useOpenListingChat';
 import {
-  formatFullPrice,
   formatListingDistance,
   formatTravelEstimate,
   getPlaceholderGradient,
@@ -19,6 +18,7 @@ import {
   getInitials,
   getItemDistance,
 } from '../utils';
+import { formatFullPrice } from '@core';
 
 interface ComparisonTableProps {
   items: ComparisonItem[];

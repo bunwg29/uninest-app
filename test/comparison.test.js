@@ -37,6 +37,7 @@ jest.mock('../src/core', () => {
     AppError,
     HTTP_STATUS_CODES: { CONFLICT: 409 },
     registerStoreResetter: () => () => undefined,
+    formatFullPrice: (value) => `${value}đ`,
   };
 });
 jest.mock('@react-native-async-storage/async-storage', () => ({
@@ -48,7 +49,6 @@ jest.mock('@react-native-async-storage/async-storage', () => ({
   },
 }));
 jest.mock('../src/features/search', () => ({
-  formatFullPrice: (value) => `${value}đ`,
   formatListingDistance: (value) => `${value} m`,
   formatTravelEstimate: () => '5 phút',
   getPlaceholderGradient: () => ['#ccc', '#eee'],

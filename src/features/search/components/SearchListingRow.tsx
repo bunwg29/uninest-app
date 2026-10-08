@@ -2,13 +2,9 @@ import { StyleSheet, TouchableOpacity, View, type StyleProp, type ViewStyle } fr
 import { BORDER_RADIUS_TOKENS, OVERLAY_COLORS, THEME_COLORS } from '@theme';
 import { MediaThumbnail, PriceText, SaveButton, Typography } from '@ui';
 import type { SearchListingItem } from '../types';
-import {
-  formatFullPrice,
-  formatListingSpecs,
-  getCardStatus,
-  getPlaceholderGradient,
-} from '../utils';
+import { formatListingSpecs, getCardStatus, getPlaceholderGradient } from '../utils';
 import { StatusPill } from './StatusPill';
+import { formatFullPrice } from '@core';
 
 interface SearchListingRowProps {
   listing: SearchListingItem;
