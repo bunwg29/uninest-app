@@ -31,7 +31,7 @@ export const SearchSortSheet = ({
   }, [isVisible, value]);
 
   const handleChoose = async (sortBy: SearchSortBy) => {
-    if (sortBy === 'distance' && !hasLocation) {
+    if (sortBy === 'nearest' && !hasLocation) {
       const isGranted = await onRequestLocation();
 
       if (isGranted) setPendingValue(sortBy);

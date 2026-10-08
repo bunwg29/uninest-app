@@ -40,13 +40,13 @@ test('chỉ gửi bán kính khi có toạ độ tham chiếu', () => {
   assert.equal(buildSearchParams(createFilters({ radius: 3 })).radius, undefined);
 
   const params = buildSearchParams(
-    createFilters({ latitude: 16.07, longitude: 108.15, radius: 3, sortBy: 'distance' })
+    createFilters({ latitude: 16.07, longitude: 108.15, radius: 3, sortBy: 'nearest' })
   );
 
   assert.equal(params.latitude, 16.07);
   assert.equal(params.longitude, 108.15);
   assert.equal(params.radius, 3);
-  assert.equal(params.sortBy, 'distance');
+  assert.equal(params.sortBy, 'nearest');
 });
 
 test('không giới hạn bán kính thì dùng bán kính tối đa của API', () => {

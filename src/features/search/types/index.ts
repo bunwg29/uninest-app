@@ -1,5 +1,5 @@
 export type SearchSortBy =
-  'relevance' | 'newest' | 'price_asc' | 'price_desc' | 'area_asc' | 'area_desc' | 'distance';
+  'relevance' | 'newest' | 'price_asc' | 'price_desc' | 'area_asc' | 'area_desc' | 'nearest';
 
 export type SearchViewMode = 'list' | 'grid' | 'map';
 
@@ -70,7 +70,7 @@ export interface SearchSuggestion {
 export interface SearchListingsPage {
   items: SearchListingItem[];
   pagination: SearchPagination;
-  hasResults: boolean;
+  has_results: boolean;
   suggestion?: SearchSuggestion;
 }
 
@@ -94,7 +94,7 @@ export const SEARCH_SORT_OPTIONS: ReadonlyArray<{
   value: SearchSortBy;
 }> = [
   { label: 'Phù hợp nhất', compactLabel: 'Phù hợp', value: 'relevance' },
-  { label: 'Gần trường nhất', compactLabel: 'Gần nhất', value: 'distance' },
+  { label: 'Gần trường nhất', compactLabel: 'Gần nhất', value: 'nearest' },
   { label: 'Giá thấp đến cao', compactLabel: 'Giá thấp', value: 'price_asc' },
   { label: 'Giá cao đến thấp', compactLabel: 'Giá cao', value: 'price_desc' },
   { label: 'Mới đăng nhất', compactLabel: 'Mới nhất', value: 'newest' },

@@ -74,7 +74,7 @@ export const useSearchStore = create<SearchState>((set) => ({
         appliedFilters: {
           ...state.draftFilters,
           sortBy:
-            state.draftFilters.sortBy === 'distance' && !hasReference
+            state.draftFilters.sortBy === 'nearest' && !hasReference
               ? 'relevance'
               : state.draftFilters.sortBy,
           roomTypes: [...state.draftFilters.roomTypes],

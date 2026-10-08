@@ -319,7 +319,7 @@ export const SearchScreen = () => {
 
   const handleEnableNearby = async () => {
     if (hasLocation) {
-      setSortBy('distance');
+      setSortBy('nearest');
 
       return;
     }
@@ -330,7 +330,7 @@ export const SearchScreen = () => {
 
     setMyLocation(coordinates);
     setLocation(coordinates.latitude, coordinates.longitude);
-    setSortBy('distance');
+    setSortBy('nearest');
     toast.success('Đã ưu tiên các phòng gần vị trí của bạn.');
   };
 
