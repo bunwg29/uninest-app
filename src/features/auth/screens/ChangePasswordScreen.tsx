@@ -22,12 +22,12 @@ export const ChangePasswordScreen = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const hasMinLength = newPassword.length >= 8;
   const hasDigit = /\d/.test(newPassword);
-  const hasUppercase = /[A-Z]/.test(newPassword);
-  const strengthScore = [hasMinLength, hasDigit, hasUppercase].filter(Boolean).length;
+  const hasLetter = /[A-Za-z]/.test(newPassword);
+  const strengthScore = [hasMinLength, hasDigit, hasLetter].filter(Boolean).length;
   const isDifferent = Boolean(newPassword) && newPassword !== currentPassword;
   const isMatch = Boolean(confirmPassword) && newPassword === confirmPassword;
   const isValid =
-    hasMinLength && hasDigit && hasUppercase && isDifferent && isMatch && Boolean(currentPassword);
+    hasMinLength && hasDigit && hasLetter && isDifferent && isMatch && Boolean(currentPassword);
   const [isSendingOtp, setIsSendingOtp] = useState(false);
   const [isForgotModalVisible, setIsForgotModalVisible] = useState(false);
 
@@ -79,7 +79,7 @@ export const ChangePasswordScreen = () => {
   const checks = [
     ['Tối thiểu 8 ký tự', hasMinLength],
     ['Có ít nhất một chữ số', hasDigit],
-    ['Có ít nhất một chữ in hoa', hasUppercase],
+    ['Có ít nhất một chữ cái', hasLetter],
     ['Khác mật khẩu cũ', isDifferent],
   ] as const;
 

@@ -30,11 +30,11 @@ export const ResetPasswordScreen = () => {
 
   const hasMinLength = newPassword.length >= 8;
   const hasDigit = /\d/.test(newPassword);
-  const hasUppercase = /[A-Z]/.test(newPassword);
+  const hasLetter = /[A-Za-z]/.test(newPassword);
   const isMatch = Boolean(confirmPassword && newPassword === confirmPassword);
 
-  const passedCount = [hasMinLength, hasDigit, hasUppercase].filter(Boolean).length;
-  const isAllValid = hasMinLength && hasDigit && hasUppercase && isMatch;
+  const passedCount = [hasMinLength, hasDigit, hasLetter].filter(Boolean).length;
+  const isAllValid = hasMinLength && hasDigit && hasLetter && isMatch;
 
   const handleSubmit = async () => {
     const result = resetPasswordSchema.safeParse({ newPassword, confirmPassword });
@@ -177,7 +177,7 @@ export const ResetPasswordScreen = () => {
           </View>
 
           <View style={styles.checkItem}>
-            {hasUppercase ? (
+            {hasLetter ? (
               <Check size={16} color={THEME_COLORS.SUCCESS} />
             ) : (
               <Circle size={16} color={THEME_COLORS.BORDER} />
@@ -185,10 +185,10 @@ export const ResetPasswordScreen = () => {
 
             <Typography
               variant="caption"
-              color={hasUppercase ? THEME_COLORS.SUCCESS : THEME_COLORS.TEXT_MUTED}
+              color={hasLetter ? THEME_COLORS.SUCCESS : THEME_COLORS.TEXT_MUTED}
               style={styles.checkText}
             >
-              Có ít nhất một chữ in hoa
+              Có ít nhất một chữ cái
             </Typography>
           </View>
         </View>
