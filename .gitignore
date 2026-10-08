@@ -38,11 +38,6 @@ yarn-error.*
 # typescript
 *.tsbuildinfo
 
-# test coverage
-coverage/
-playwright-report/
-test-results/
-
 # generated native folders
 /ios
 /android

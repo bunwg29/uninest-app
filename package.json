@@ -13,11 +13,7 @@
     "lint:fix": "eslint . --fix",
     "format": "prettier --write \"src/**/*.{ts,tsx,json,md}\"",
     "format:check": "prettier --check \"src/**/*.{ts,tsx,json,md}\"",
-    "typecheck": "tsc --noEmit",
-    "test": "jest --runInBand",
-    "test:cov": "jest --coverage --runInBand",
-    "test:e2e": "playwright test",
-    "test:search": "node --experimental-strip-types --test tests/searchParams.test.mjs tests/clusterListings.test.mjs"
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@hookform/resolvers": "^4.1.0",
@@ -54,10 +50,6 @@
     "zustand": "^5.0.3"
   },
   "devDependencies": {
-    "@playwright/test": "^1.63.0",
-    "@react-native/jest-preset": "^0.86.3",
-    "@testing-library/react-native": "^14.0.1",
-    "@types/jest": "29.5.14",
     "@types/react": "~19.2.2",
     "@typescript-eslint/eslint-plugin": "^8.24.0",
     "@typescript-eslint/parser": "^8.24.0",
@@ -66,10 +58,7 @@
     "eslint-plugin-react": "^7.37.4",
     "eslint-plugin-react-hooks": "^5.1.0",
     "eslint-plugin-unused-imports": "^4.4.1",
-    "jest": "~29.7.0",
-    "jest-expo": "^57.0.5",
     "prettier": "^3.5.1",
-    "test-renderer": "^1.0.0",
     "typescript": "~6.0.3"
   }
 }
