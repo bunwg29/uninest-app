@@ -217,7 +217,7 @@ export const ChatRoomScreen = ({ navigation, route }: ChatRoomScreenProps) => {
   const renderEmpty = () => {
     if (room.isLoading) {
       return (
-        <View style={[styles.centered, styles.flipped]}>
+        <View style={styles.centered}>
           <ActivityIndicator color={THEME_COLORS.PRIMARY} />
         </View>
       );
@@ -225,7 +225,7 @@ export const ChatRoomScreen = ({ navigation, route }: ChatRoomScreenProps) => {
 
     if (room.isError) {
       return (
-        <View style={styles.flipped}>
+        <View style={styles.centered}>
           <EmptyState
             title="Không tải được tin nhắn"
             description="Vui lòng kiểm tra kết nối mạng và thử lại."
@@ -237,7 +237,7 @@ export const ChatRoomScreen = ({ navigation, route }: ChatRoomScreenProps) => {
     }
 
     return (
-      <View style={[styles.centered, styles.flipped]}>
+      <View style={styles.centered}>
         <Typography variant="body2" colorKey="TEXT_MUTED" align="center">
           {`Hãy gửi lời chào đầu tiên tới ${conversation?.counterpart.fullName ?? 'chủ trọ'}.`}
         </Typography>
@@ -263,28 +263,31 @@ export const ChatRoomScreen = ({ navigation, route }: ChatRoomScreenProps) => {
       ) : null}
 
       <View style={[styles.body, { paddingBottom: keyboardHeight }]}>
-        <FlatList
-          style={styles.list}
-          data={room.messages}
-          inverted
-          keyExtractor={(item) => item.key}
-          renderItem={renderMessage}
-          ListEmptyComponent={renderEmpty()}
-          ListFooterComponent={
-            room.isFetchingNextPage ? (
-              <ActivityIndicator color={THEME_COLORS.PRIMARY} style={styles.footerLoader} />
-            ) : null
-          }
-          contentContainerStyle={styles.listContent}
-          initialNumToRender={15}
-          maxToRenderPerBatch={10}
-          windowSize={9}
-          removeClippedSubviews={Platform.OS === 'android'}
-          onEndReached={handleEndReached}
-          onEndReachedThreshold={0.4}
-          keyboardShouldPersistTaps="handled"
-          keyboardDismissMode="interactive"
-        />
+        {room.messages.length === 0 ? (
+          <View style={styles.list}>{renderEmpty()}</View>
+        ) : (
+          <FlatList
+            style={styles.list}
+            data={room.messages}
+            inverted
+            keyExtractor={(item) => item.key}
+            renderItem={renderMessage}
+            ListFooterComponent={
+              room.isFetchingNextPage ? (
+                <ActivityIndicator color={THEME_COLORS.PRIMARY} style={styles.footerLoader} />
+              ) : null
+            }
+            contentContainerStyle={styles.listContent}
+            initialNumToRender={15}
+            maxToRenderPerBatch={10}
+            windowSize={9}
+            removeClippedSubviews={Platform.OS === 'android'}
+            onEndReached={handleEndReached}
+            onEndReachedThreshold={0.4}
+            keyboardShouldPersistTaps="handled"
+            keyboardDismissMode="interactive"
+          />
+        )}
 
         <View
           style={[
@@ -352,9 +355,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: SPACING_TOKENS.XXL,
-  },
-  flipped: {
-    transform: [{ scaleY: -1 }],
   },
   footerLoader: {
     paddingVertical: SPACING_TOKENS.MD,
