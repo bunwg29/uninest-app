@@ -1,38 +1,49 @@
 # UniNest Mobile App
 
+Expo (React Native, TypeScript) · React Navigation · TanStack Query · Zustand · Socket.IO client.
+
 ## Chạy ứng dụng
 
 1. Sao chép `.env.example` thành `.env`.
-2. Đặt `EXPO_PUBLIC_API_URL` theo thiết bị: Android emulator dùng `http://10.0.2.2:3000/api/v1`; thiết bị thật dùng IP LAN của máy chạy backend.
-3. Chạy `npm install` rồi `npm start`.
+2. Đặt `EXPO_PUBLIC_API_URL` theo thiết bị: Android emulator dùng `http://10.0.2.2:<PORT>/api/v1`; thiết bị thật dùng IP LAN của máy chạy backend.
+3. `npm install` rồi `npm start`.
 
-## Tìm trọ
+Một số thư viện có mã native (`expo-video`, `react-native-maps`); khi dùng development build cần build lại sau khi cài thêm.
 
-Từ tab **Tìm trọ**, mở một phòng để vào màn **Chi tiết phòng**. Nút **Đặt lịch xem phòng** (chỉ hiện với Sinh viên và tin đang hiển thị) truyền `resourceId` sang luồng booking; màn đặt lịch tự tải chi tiết bằng `GET /api/v1/rooms/:id`.
+## Cấu trúc thư mục
 
-Trước khi kiểm thử thủ công, chạy `npm run seed -- rooms` trong repository backend. Tài khoản mẫu `0900000001` có mật khẩu mặc định khai báo trong seeder của backend (`rooms.seeder.ts`); đặt mật khẩu đó vào biến môi trường `E2E_LOGIN_PASSWORD` (và `E2E_LOGIN_PHONE` nếu đổi tài khoản) trước khi chạy `npm run test:e2e`.
+```
+src/
+  core/         cấu hình, HTTP client (làm mới token tự động), lưu token, React Query client, tiện ích dùng chung
+  hooks/        hook dùng chung (toast, debounce, bàn phím, bố cục responsive)
+  navigation/   Root/Auth/Main/ListingPost navigator và kiểu tham số route
+  theme/        token màu, khoảng cách, bo góc, chữ (không hard-code trong màn hình)
+  ui/           component dùng chung: atoms, molecules (Input, Modal, DatePickerField…), layout, feedback
+  features/<tên>/
+    screens/    màn hình
+    components/ component riêng của tính năng
+    hooks/      React Query hooks
+    services/   gọi API
+    store/      Zustand (chỉ trạng thái phía client)
+    types/      kiểu dữ liệu và hằng số
+```
 
-## Luồng Booking
+Các tính năng: `auth`, `listings`, `search`, `comparison`, `booking`, `chat`, `forum`, `recommendations`.
 
-Luồng bắt đầu từ nút **Đặt lịch xem phòng** trong màn chi tiết phòng:
+## Ghi chú hành vi
 
-1. Chọn ngày và slot tải từ API.
-2. Xác nhận số điện thoại, ghi chú và gửi yêu cầu.
-3. Xem kết quả, danh sách lịch hẹn và countdown.
-4. Xem timeline, thêm lịch Google Calendar, hủy hoặc giữ chỗ.
-
-TanStack Query quản lý API/cache/polling 30 giây. Zustand giữ ngày và slot khi chuyển qua lại giữa các màn hình. Trạng thái loading, lỗi, rỗng và lỗi trùng slot HTTP 409 đều có giao diện tương ứng.
+- Trạng thái đặt lịch và tình trạng phòng cập nhật realtime qua Socket.IO; React Query polling 15–30 giây chỉ là dự phòng khi mất kết nối.
+- Nháp tin đăng, danh sách so sánh, hàng đợi tin nhắn được lưu trên máy và bị xoá khi đăng xuất; lịch sử "Đã xem gần đây" lưu theo từng tài khoản.
 
 ## Kiểm tra chất lượng
 
 ```bash
-npm run test
-npm run test:cov
-npm run test:e2e
 npm run typecheck
 npm run lint
 npm run format:check
-npm run build
+npm run test
+npm run test:search
+npm run test:e2e
 ```
 
-Playwright cháº¡y toÃ n bá»™ luá»“ng Ä‘Äƒng nháº­p â†’ chá»n phÃ²ng â†’ Ä‘áº·t lá»‹ch â†’ xem chi tiáº¿t â†’ giá»¯ chá»— â†’ há»§y trÃªn Expo Web vÃ  backend/PostgreSQL tháº­t. Cáº¥u hÃ¬nh sáº½ tá»± khá»Ÿi Ä‘á»™ng hai server náº¿u chÆ°a cháº¡y.
+`test:e2e` (Playwright) chạy luồng đăng nhập → chọn phòng → đặt lịch → giữ chỗ → huỷ trên Expo Web với backend và PostgreSQL thật. Đặt `E2E_LOGIN_PHONE` và `E2E_LOGIN_PASSWORD` trước khi chạy.
