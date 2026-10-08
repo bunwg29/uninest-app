@@ -185,6 +185,8 @@ export const authService = {
 
   async submitLandlordVerification(payload: {
     identityNumber: string;
+    provinceCode?: string;
+    wardCode?: string;
     streetAddress?: string;
   }): Promise<Profile> {
     const response = await apiClient.post('/profile/landlord-verification', payload);

@@ -10,6 +10,7 @@ import { THEME_COLORS, SPACING_TOKENS, BORDER_RADIUS_TOKENS } from '@theme';
 import { Avatar, Badge, Button, Input, ScreenContainer, Typography, BackButton } from '@ui';
 import { useToast } from '@hooks';
 import type { RootStackParamList } from '@navigation';
+import { AddressFields, EMPTY_ADDRESS, type AddressValue } from '../components/AddressFields';
 import { authService } from '../services';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'ProfileEdit'>;
@@ -24,6 +25,7 @@ export const ProfileEditScreen = () => {
   const [email, setEmail] = useState('');
   const [school, setSchool] = useState('');
   const [bio, setBio] = useState('');
+  const [address, setAddress] = useState<AddressValue>(EMPTY_ADDRESS);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
 
   useEffect(() => {
@@ -32,11 +34,43 @@ export const ProfileEditScreen = () => {
       setEmail(profile.email || '');
       setSchool(profile.school || '');
       setBio(profile.bio || '');
+      setAddress({
+        province: profile.provinceCode
+          ? {
+              code: profile.provinceCode,
+              name: profile.provinceName ?? '',
+              fullName: profile.provinceName ?? '',
+              codeName: '',
+            }
+          : null,
+        ward: profile.wardCode
+          ? {
+              code: profile.wardCode,
+              name: profile.wardName ?? '',
+              fullName: profile.wardName ?? '',
+              codeName: '',
+              provinceCode: profile.provinceCode ?? '',
+            }
+          : null,
+        streetAddress: profile.streetAddress ?? '',
+      });
     }
   }, [profile]);
 
   const mutation = useMutation({
-    mutationFn: () => authService.updateProfile({ name, school, bio }),
+    mutationFn: () =>
+      authService.updateProfile({
+        name,
+        school,
+        bio,
+        ...(address.province && address.ward
+          ? {
+              provinceCode: address.province.code,
+              wardCode: address.ward.code,
+              streetAddress: address.streetAddress.trim(),
+            }
+          : {}),
+      }),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['profile'] });
       toast.success('Đã lưu thay đổi hồ sơ');
@@ -46,7 +80,12 @@ export const ProfileEditScreen = () => {
   });
 
   const isDirty = profile
-    ? name !== profile.name || school !== (profile.school || '') || bio !== (profile.bio || '')
+    ? name !== profile.name ||
+      school !== (profile.school || '') ||
+      bio !== (profile.bio || '') ||
+      address.province?.code !== (profile.provinceCode ?? undefined) ||
+      address.ward?.code !== (profile.wardCode ?? undefined) ||
+      address.streetAddress.trim() !== (profile.streetAddress ?? '')
     : false;
 
   const handlePickAvatar = async () => {
@@ -178,6 +217,10 @@ export const ProfileEditScreen = () => {
         onChangeText={setSchool}
         leftIcon={<GraduationCap size={18} color={THEME_COLORS.TEXT_PLACEHOLDER} />}
       />
+      <Typography variant="body1" weight="BOLD" style={styles.sectionTitle}>
+        Địa chỉ
+      </Typography>
+      <AddressFields value={address} onChange={setAddress} isRequired={false} />
       <Input
         label="Giới thiệu ngắn"
         value={bio}
@@ -190,7 +233,7 @@ export const ProfileEditScreen = () => {
       <Button
         fullWidth
         isLoading={mutation.isPending}
-        disabled={!isDirty}
+        disabled={!isDirty || Boolean(address.province && !address.ward)}
         onPress={() => mutation.mutate()}
       >
         Lưu thay đổi
@@ -200,6 +243,7 @@ export const ProfileEditScreen = () => {
 };
 
 const styles = StyleSheet.create({
+  sectionTitle: { marginTop: SPACING_TOKENS.SM, marginBottom: SPACING_TOKENS.SM },
   container: { paddingHorizontal: SPACING_TOKENS.LG, paddingVertical: SPACING_TOKENS.MD },
   header: {
     flexDirection: 'row',

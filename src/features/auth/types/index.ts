@@ -23,6 +23,12 @@ export interface Profile {
   email?: string | null;
   school?: string | null;
   bio?: string | null;
+  provinceCode?: string | null;
+  provinceName?: string | null;
+  wardCode?: string | null;
+  wardName?: string | null;
+  streetAddress?: string | null;
+  fullAddress?: string | null;
   interestedAreas: string[];
   role: UserRole;
   verificationStatus?: 'pending_verification' | 'verified' | null;
@@ -40,6 +46,9 @@ export interface UpdateProfilePayload {
   school?: string;
   bio?: string;
   interestedAreas?: string[];
+  provinceCode?: string;
+  wardCode?: string;
+  streetAddress?: string;
 }
 
 export interface ChangePasswordPayload {

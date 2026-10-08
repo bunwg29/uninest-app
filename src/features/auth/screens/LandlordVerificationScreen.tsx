@@ -13,6 +13,7 @@ import {
   Typography,
   KeyboardAwareScrollView,
 } from '@ui';
+import { AddressFields, EMPTY_ADDRESS, type AddressValue } from '../components/AddressFields';
 import { authService } from '../services';
 
 const IDENTITY_PATTERN = /^(\d{9}|\d{12})$/;
@@ -26,13 +27,19 @@ export const LandlordVerificationScreen = ({ onVerified }: LandlordVerificationS
   const queryClient = useQueryClient();
   const toast = useToast();
   const [identityNumber, setIdentityNumber] = useState('');
-  const [streetAddress, setStreetAddress] = useState('');
+  const [address, setAddress] = useState<AddressValue>(EMPTY_ADDRESS);
   const [errorMessage, setErrorMessage] = useState<string>();
   const verification = useMutation({
     mutationFn: () =>
       authService.submitLandlordVerification({
         identityNumber: identityNumber.trim(),
-        streetAddress: streetAddress.trim() || undefined,
+        ...(address.province && address.ward
+          ? {
+              provinceCode: address.province.code,
+              wardCode: address.ward.code,
+              streetAddress: address.streetAddress.trim() || undefined,
+            }
+          : {}),
       }),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['profile'] });
@@ -46,6 +53,12 @@ export const LandlordVerificationScreen = ({ onVerified }: LandlordVerificationS
   const handleSubmit = () => {
     if (!IDENTITY_PATTERN.test(identityNumber.trim())) {
       setErrorMessage('Số CCCD/CMND phải gồm 9 hoặc 12 chữ số');
+
+      return;
+    }
+
+    if (address.province && !address.ward) {
+      toast.error('Vui lòng chọn Phường/Xã');
 
       return;
     }
@@ -82,12 +95,11 @@ export const LandlordVerificationScreen = ({ onVerified }: LandlordVerificationS
           placeholder="Nhập 9 hoặc 12 chữ số"
           errorMessage={errorMessage}
         />
-        <Input
-          label="Địa chỉ liên hệ (không bắt buộc)"
-          value={streetAddress}
-          onChangeText={setStreetAddress}
-          placeholder="Số nhà, tên đường"
-          maxLength={255}
+        <AddressFields
+          value={address}
+          onChange={setAddress}
+          isRequired={false}
+          streetHelperText="Địa chỉ liên hệ (không bắt buộc)"
         />
 
         <Button
