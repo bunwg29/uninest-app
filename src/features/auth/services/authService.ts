@@ -224,11 +224,7 @@ export const authService = {
   },
 
   async changePassword(payload: ChangePasswordPayload): Promise<void> {
-    const deviceId = await tokenStorage.getDeviceId();
-
-    await apiClient.patch('/auth/change-password', payload, {
-      headers: deviceId ? { 'x-device-id': deviceId } : undefined,
-    });
+    await apiClient.post('/users/me/change-password', payload);
   },
 
   async logout(): Promise<void> {

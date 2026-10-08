@@ -70,7 +70,7 @@ export const ChangePasswordScreen = () => {
     mutationFn: () => authService.changePassword({ currentPassword, newPassword, confirmPassword }),
     onSuccess: async () => {
       await logout();
-      toast.success('Đổi mật khẩu thành công');
+      toast.success('Vui lòng đăng nhập lại trên mọi thiết bị', 'Đổi mật khẩu thành công');
     },
     onError: (error) =>
       toast.error(error instanceof Error ? error.message : 'Không thể đổi mật khẩu'),
