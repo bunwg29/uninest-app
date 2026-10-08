@@ -36,7 +36,7 @@ export const ProfileEditScreen = () => {
   }, [profile]);
 
   const mutation = useMutation({
-    mutationFn: () => authService.updateProfile({ name, email: email || undefined, school, bio }),
+    mutationFn: () => authService.updateProfile({ name, school, bio }),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['profile'] });
       toast.success('Đã lưu thay đổi hồ sơ');
@@ -46,10 +46,7 @@ export const ProfileEditScreen = () => {
   });
 
   const isDirty = profile
-    ? name !== profile.name ||
-      email !== (profile.email || '') ||
-      school !== (profile.school || '') ||
-      bio !== (profile.bio || '')
+    ? name !== profile.name || school !== (profile.school || '') || bio !== (profile.bio || '')
     : false;
 
   const handlePickAvatar = async () => {
@@ -172,9 +169,7 @@ export const ProfileEditScreen = () => {
       <Input
         label="Email"
         value={email}
-        onChangeText={setEmail}
-        keyboardType="email-address"
-        autoCapitalize="none"
+        editable={false}
         leftIcon={<Mail size={18} color={THEME_COLORS.TEXT_PLACEHOLDER} />}
       />
       <Input
