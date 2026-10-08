@@ -6,3 +6,4 @@ export * from './Toast';
 export * from './DatePickerField';
 export * from './BottomSheet';
 export * from './PriceText';
+export * from './NoticeBanner';

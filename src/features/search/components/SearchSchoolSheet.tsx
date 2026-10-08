@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Modal, ScrollView, StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
 import { Search } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { removeDiacritics } from '@core';
 import { BORDER_RADIUS_TOKENS, THEME_COLORS } from '@theme';
 import { Button, Typography, BackButton } from '@ui';
 import { SEARCH_SCHOOLS } from '../types';
@@ -17,9 +18,6 @@ interface SearchSchoolSheetProps {
   onUseCurrentLocation: () => Promise<boolean>;
   onClose: () => void;
 }
-
-const removeDiacritics = (value: string) =>
-  value.normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/đ/g, 'd').toLowerCase();
 
 export const SearchSchoolSheet = ({
   isVisible,

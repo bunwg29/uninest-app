@@ -1,9 +1,8 @@
 import { Image, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { Check, Clock3, Info, MessageSquare } from 'lucide-react-native';
 import { BORDER_RADIUS_TOKENS, OVERLAY_COLORS, THEME_COLORS } from '@theme';
-import { GradientAvatar, GradientView, Typography } from '@ui';
+import { GradientAvatar, GradientView, NoticeBanner, Typography } from '@ui';
 import { LandlordStatusPill } from '@features/listings/components/landlord/LandlordStatusPill';
-import { NoticeBanner } from './NoticeBanner';
 import { StatusBadge } from './StatusBadge';
 import type { Booking, BookingStatus } from '../types';
 import { formatDayMonth, formatFullDate, formatTimelineStamp, formatViewingSlot } from '../utils';

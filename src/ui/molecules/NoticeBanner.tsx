@@ -1,10 +1,10 @@
 import type { ReactNode } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 import type { LucideIcon } from 'lucide-react-native';
 import { BORDER_RADIUS_TOKENS, OVERLAY_COLORS, THEME_COLORS } from '@theme';
-import { Typography } from '@ui';
+import { Typography } from '../atoms/Typography';
 
-type NoticeTone = 'info' | 'warning' | 'success';
+export type NoticeTone = 'info' | 'warning' | 'success' | 'error';
 
 const TONES = {
   info: {
@@ -22,22 +22,30 @@ const TONES = {
     border: OVERLAY_COLORS.SUCCESS_BORDER,
     color: THEME_COLORS.SUCCESS,
   },
+  error: {
+    background: THEME_COLORS.ERROR_LIGHT,
+    border: OVERLAY_COLORS.NOTICE_ERROR_BORDER,
+    color: THEME_COLORS.ERROR,
+  },
 } as const;
 
-export const NoticeBanner = ({
-  tone,
-  icon: Icon,
-  children,
-}: {
+export interface NoticeBannerProps {
   tone: NoticeTone;
   icon: LucideIcon;
   children: ReactNode;
-}) => {
+  style?: StyleProp<ViewStyle>;
+}
+
+export const NoticeBanner = ({ tone, icon: Icon, children, style }: NoticeBannerProps) => {
   const palette = TONES[tone];
 
   return (
     <View
-      style={[styles.banner, { backgroundColor: palette.background, borderColor: palette.border }]}
+      style={[
+        styles.banner,
+        { backgroundColor: palette.background, borderColor: palette.border },
+        style,
+      ]}
     >
       <Icon size={18} color={palette.color} style={styles.icon} />
       <Typography variant="label" weight="REGULAR" color={palette.color} style={styles.text}>

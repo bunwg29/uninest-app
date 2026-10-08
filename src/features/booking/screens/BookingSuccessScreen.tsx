@@ -4,14 +4,8 @@ import { useNavigation, useRoute, type RouteProp } from '@react-navigation/nativ
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '@navigation';
 import { BORDER_RADIUS_TOKENS, SPACING_TOKENS, THEME_COLORS } from '@theme';
-import { Button, ScreenContainer, Typography } from '@ui';
-import {
-  BookingFooter,
-  FooterButton,
-  NoticeBanner,
-  ResourceCard,
-  StatusBadge,
-} from '../components';
+import { Button, NoticeBanner, ScreenContainer, Typography } from '@ui';
+import { BookingFooter, FooterButton, ResourceCard, StatusBadge } from '../components';
 import { useBookingDetail } from '../hooks';
 import { formatViewingSlot } from '../utils';
 

@@ -15,14 +15,9 @@ import {
   ScreenContainer,
   Typography,
   KeyboardAwareScrollView,
-} from '@ui';
-import {
-  BookingFooter,
-  BookingStepper,
-  FooterButton,
   NoticeBanner,
-  ResourceCard,
-} from '../components';
+} from '@ui';
+import { BookingFooter, BookingStepper, FooterButton, ResourceCard } from '../components';
 import { useCreateBooking } from '../hooks';
 import { useBookingStore } from '../store';
 import { formatViewingLong } from '../utils';

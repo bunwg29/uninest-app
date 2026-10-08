@@ -1,8 +1,7 @@
 import { Image, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { Check, ChevronRight, Clock3, X } from 'lucide-react-native';
 import { BORDER_RADIUS_TOKENS, OVERLAY_COLORS, THEME_COLORS } from '@theme';
-import { Avatar, Typography } from '@ui';
-import { NoticeBanner } from './NoticeBanner';
+import { Avatar, NoticeBanner, Typography } from '@ui';
 import { StatusBadge } from './StatusBadge';
 import type { Booking } from '../types';
 import {

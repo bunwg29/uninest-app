@@ -26,3 +26,10 @@ export const formatVND = (value: string | number | undefined | null): string => 
 };
 
 export const formatFullPrice = (price: number): string => `${price.toLocaleString('vi-VN')}đ`;
+
+export const removeDiacritics = (value: string): string =>
+  value
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/đ/g, 'd');
