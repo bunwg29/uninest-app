@@ -1,4 +1,6 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
+import { createJSONStorage, persist } from 'zustand/middleware';
 import type {
   ListingStep1State,
   ListingStep3State,
@@ -115,122 +117,145 @@ const getDraftSnapshot = ({
     viewingSchedule,
   });
 
-export const useListingPostStore = create<ListingPostState>((set, get) => ({
-  ...INITIAL_STATE,
+export const LISTING_POST_DRAFT_STORAGE_KEY = 'uninest-listing-post-draft';
 
-  setEditingListingId: (editingListingId) => set({ editingListingId }),
-
-  setStep1: (data) => set((state) => ({ step1: { ...state.step1, ...data } })),
-
-  setLocalImages: (localImages) => set({ localImages }),
-
-  setUploadedImages: (uploadedImages) => set({ uploadedImages }),
-
-  setStep3: (data) => set((state) => ({ step3: { ...state.step3, ...data } })),
-
-  setSelectedAmenityIds: (selectedAmenityIds) => set({ selectedAmenityIds }),
-
-  setViewingSchedule: (viewingSchedule) => set({ viewingSchedule }),
-
-  initCreate: () => {
-    set({
+export const useListingPostStore = create<ListingPostState>()(
+  persist(
+    (set, get) => ({
       ...INITIAL_STATE,
-      viewingSchedule: buildInitialSchedule(),
-    });
-  },
 
-  initEdit: (listing: LandlordListing) => {
-    const basicInfo: ListingStep1State = {
-      title: listing.title || '',
-      roomType: listing.roomType || '',
-      price: listing.price ? String(listing.price) : '',
-      area: listing.area ? String(listing.area) : '',
-      maxOccupants: listing.maxOccupants ? String(listing.maxOccupants) : '',
-      description: listing.description || '',
-      electricPrice: listing.electricPrice ? String(listing.electricPrice) : '',
-      waterPrice: listing.waterPrice ? String(listing.waterPrice) : '',
-      deposit: listing.deposit ? String(listing.deposit) : '',
-    };
+      setEditingListingId: (editingListingId) => set({ editingListingId }),
 
-    const imageUrls = listing.imageUrls?.length
-      ? listing.imageUrls
-      : listing.imageUrl
-        ? [listing.imageUrl]
-        : [];
+      setStep1: (data) => set((state) => ({ step1: { ...state.step1, ...data } })),
 
-    const localImages: LocalImageItem[] = imageUrls.map((uri, index) => ({
-      uri,
-      uploadedUrl: uri,
-      uploadedKey: listing.imageKeys?.[index] ?? listing.imageKey,
-      isCover: index === 0,
-      sortOrder: index,
-      fileName: `listing-${listing.id}-${index}.jpg`,
-      contentType: 'image/jpeg',
-    }));
+      setLocalImages: (localImages) => set({ localImages }),
 
-    const uploadedImages: UploadedImageItem[] = imageUrls.map((publicUrl, index) => ({
-      publicUrl,
-      key: listing.imageKeys?.[index] ?? listing.imageKey ?? publicUrl,
-      isCover: index === 0,
-      sortOrder: index,
-    }));
+      setUploadedImages: (uploadedImages) => set({ uploadedImages }),
 
-    const step3: ListingStep3State = {
-      streetAddress: listing.streetAddress || '',
-      provinceCode: listing.provinceCode || '',
-      provinceName: listing.provinceName || '',
-      wardCode: listing.wardCode || '',
-      wardName: listing.wardName || '',
-      latitude: listing.latitude ?? null,
-      longitude: listing.longitude ?? null,
-    };
+      setStep3: (data) => set((state) => ({ step3: { ...state.step3, ...data } })),
 
-    const schedule = buildInitialSchedule();
-    const existingSchedule = listing.viewingSchedule;
+      setSelectedAmenityIds: (selectedAmenityIds) => set({ selectedAmenityIds }),
 
-    if (existingSchedule && typeof existingSchedule === 'object') {
-      const days: DayKey[] = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
+      setViewingSchedule: (viewingSchedule) => set({ viewingSchedule }),
 
-      days.forEach((day) => {
-        const daySlots = existingSchedule[day];
+      initCreate: () => {
+        if (get().editingListingId === null) return;
 
-        if (daySlots) {
-          schedule[day] = {
-            morning: Boolean(daySlots.morning),
-            afternoon: Boolean(daySlots.afternoon),
-            evening: Boolean(daySlots.evening),
-          };
+        set({
+          ...INITIAL_STATE,
+          viewingSchedule: buildInitialSchedule(),
+        });
+      },
+
+      initEdit: (listing: LandlordListing) => {
+        const basicInfo: ListingStep1State = {
+          title: listing.title || '',
+          roomType: listing.roomType || '',
+          price: listing.price ? String(listing.price) : '',
+          area: listing.area ? String(listing.area) : '',
+          maxOccupants: listing.maxOccupants ? String(listing.maxOccupants) : '',
+          description: listing.description || '',
+          electricPrice: listing.electricPrice ? String(listing.electricPrice) : '',
+          waterPrice: listing.waterPrice ? String(listing.waterPrice) : '',
+          deposit: listing.deposit ? String(listing.deposit) : '',
+        };
+
+        const imageUrls = listing.imageUrls?.length
+          ? listing.imageUrls
+          : listing.imageUrl
+            ? [listing.imageUrl]
+            : [];
+
+        const localImages: LocalImageItem[] = imageUrls.map((uri, index) => ({
+          uri,
+          uploadedUrl: uri,
+          uploadedKey: listing.imageKeys?.[index] ?? listing.imageKey,
+          isCover: index === 0,
+          sortOrder: index,
+          fileName: `listing-${listing.id}-${index}.jpg`,
+          contentType: 'image/jpeg',
+        }));
+
+        const uploadedImages: UploadedImageItem[] = imageUrls.map((publicUrl, index) => ({
+          publicUrl,
+          key: listing.imageKeys?.[index] ?? listing.imageKey ?? publicUrl,
+          isCover: index === 0,
+          sortOrder: index,
+        }));
+
+        const step3: ListingStep3State = {
+          streetAddress: listing.streetAddress || '',
+          provinceCode: listing.provinceCode || '',
+          provinceName: listing.provinceName || '',
+          wardCode: listing.wardCode || '',
+          wardName: listing.wardName || '',
+          latitude: listing.latitude ?? null,
+          longitude: listing.longitude ?? null,
+        };
+
+        const schedule = buildInitialSchedule();
+        const existingSchedule = listing.viewingSchedule;
+
+        if (existingSchedule && typeof existingSchedule === 'object') {
+          const days: DayKey[] = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
+
+          days.forEach((day) => {
+            const daySlots = existingSchedule[day];
+
+            if (daySlots) {
+              schedule[day] = {
+                morning: Boolean(daySlots.morning),
+                afternoon: Boolean(daySlots.afternoon),
+                evening: Boolean(daySlots.evening),
+              };
+            }
+          });
         }
-      });
+
+        const editBaseline = getDraftSnapshot({
+          step1: basicInfo,
+          localImages,
+          step3,
+          selectedAmenityIds: listing.amenityIds || [],
+          viewingSchedule: schedule,
+        });
+
+        set({
+          editingListingId: listing.id,
+          editBaseline,
+          step1: basicInfo,
+          localImages,
+          uploadedImages,
+          step3,
+          selectedAmenityIds: listing.amenityIds || [],
+          viewingSchedule: schedule,
+        });
+      },
+
+      hasEditChanges: () => {
+        const state = get();
+
+        if (!state.editBaseline) return true;
+
+        return getDraftSnapshot(state) !== state.editBaseline;
+      },
+
+      reset: () => set({ ...INITIAL_STATE, viewingSchedule: buildInitialSchedule() }),
+    }),
+    {
+      name: LISTING_POST_DRAFT_STORAGE_KEY,
+      storage: createJSONStorage(() => AsyncStorage),
+      partialize: (state) =>
+        state.editingListingId
+          ? {}
+          : {
+              step1: state.step1,
+              step3: state.step3,
+              selectedAmenityIds: state.selectedAmenityIds,
+              viewingSchedule: state.viewingSchedule,
+              localImages: state.localImages.filter((image) => Boolean(image.uploadedKey)),
+              uploadedImages: state.uploadedImages,
+            },
     }
-
-    const editBaseline = getDraftSnapshot({
-      step1: basicInfo,
-      localImages,
-      step3,
-      selectedAmenityIds: listing.amenityIds || [],
-      viewingSchedule: schedule,
-    });
-
-    set({
-      editingListingId: listing.id,
-      editBaseline,
-      step1: basicInfo,
-      localImages,
-      uploadedImages,
-      step3,
-      selectedAmenityIds: listing.amenityIds || [],
-      viewingSchedule: schedule,
-    });
-  },
-
-  hasEditChanges: () => {
-    const state = get();
-
-    if (!state.editBaseline) return true;
-
-    return getDraftSnapshot(state) !== state.editBaseline;
-  },
-
-  reset: () => set({ ...INITIAL_STATE, viewingSchedule: buildInitialSchedule() }),
-}));
+  )
+);
