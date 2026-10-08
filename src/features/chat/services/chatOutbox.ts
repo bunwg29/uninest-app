@@ -50,13 +50,25 @@ const sendPayload = async (payload: SendMessagePayload): Promise<ChatMessage> =>
 const uploadPendingImages = async (item: OutboxMessage): Promise<string[]> => {
   const { updateOutbox } = useChatStore.getState();
   const imageKeys = [...item.imageKeys];
+  const pendingUris = item.imageUris.slice(imageKeys.length);
+  const results = await Promise.allSettled(pendingUris.map((uri) => chatService.uploadImage(uri)));
+  let firstFailure: unknown;
 
-  for (let index = imageKeys.length; index < item.imageUris.length; index += 1) {
-    const key = await chatService.uploadImage(item.imageUris[index]);
+  for (const result of results) {
+    if (result.status === 'rejected') {
+      firstFailure ??= result.reason;
 
-    imageKeys.push(key);
+      break;
+    }
+
+    imageKeys.push(result.value);
+  }
+
+  if (imageKeys.length > item.imageKeys.length) {
     updateOutbox(item.clientMessageId, { imageKeys: [...imageKeys] });
   }
+
+  if (firstFailure !== undefined) throw firstFailure;
 
   return imageKeys;
 };
