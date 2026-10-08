@@ -30,7 +30,23 @@ export interface ForumAuthor {
   roleId: number | null;
 }
 
-export interface RoommateCriteria {
+export type RoommateSmoking = 'no' | 'outside' | 'ok';
+export type RoommateTidiness = 'very_tidy' | 'tidy' | 'relaxed';
+export type RoommateBedtime = 'before_23' | 'before_01' | 'flexible';
+export type RoommatePets = 'no' | 'ok';
+export type RoommateCooking = 'often' | 'sometimes' | 'no';
+
+export interface RoommateLifestyle {
+  smoking?: RoommateSmoking | null;
+  tidiness?: RoommateTidiness | null;
+  bedtime?: RoommateBedtime | null;
+  pets?: RoommatePets | null;
+  cooking?: RoommateCooking | null;
+}
+
+export type RoommateLifestyleKey = keyof RoommateLifestyle;
+
+export interface RoommateCriteria extends RoommateLifestyle {
   provinceCode?: string | null;
   wardCode?: string | null;
   provinceName?: string | null;
@@ -94,7 +110,7 @@ export interface ForumFeedFilters {
   roommateStatus?: RoommateStatus;
 }
 
-export interface RoommateCriteriaPayload {
+export interface RoommateCriteriaPayload extends RoommateLifestyle {
   provinceCode?: string;
   wardCode?: string;
   streetAddress?: string;

@@ -31,12 +31,14 @@ import type {
   ForumPost,
   ModeratedField,
   ModerationResult,
+  RoommateLifestyle,
   SaveForumPostPayload,
 } from '../types';
 import {
   FORUM_COMPOSER_CATEGORY_LABELS,
   FORUM_MAX_IMAGES,
   ROOMMATE_GENDER_OPTIONS,
+  ROOMMATE_LIFESTYLE_FIELDS,
   ROOMMATE_STATUS_OPTIONS,
 } from '../types';
 import {
@@ -64,6 +66,11 @@ const toFormValues = (post: ForumPost): ForumPostFormValues => ({
   minStayMonths: post.roommate?.minStayMonths ? String(post.roommate.minStayMonths) : '',
   costNote: post.roommate?.costNote ?? '',
   lifestyle: post.roommate?.lifestyle ?? '',
+  smoking: post.roommate?.smoking ?? '',
+  tidiness: post.roommate?.tidiness ?? '',
+  bedtime: post.roommate?.bedtime ?? '',
+  pets: post.roommate?.pets ?? '',
+  cooking: post.roommate?.cooking ?? '',
   area:
     post.roommate?.streetAddress ??
     (post.roommate?.provinceCode ? '' : (post.roommate?.area ?? '')),
@@ -112,6 +119,11 @@ const toPayload = (values: ForumPostFormValues, address: AddressValue): SaveForu
             moveInDate: values.moveInDate || undefined,
             minStayMonths: values.minStayMonths.trim() ? minStayMonths : undefined,
             lifestyle: values.lifestyle?.trim() || undefined,
+            smoking: (values.smoking || undefined) as RoommateLifestyle['smoking'],
+            tidiness: (values.tidiness || undefined) as RoommateLifestyle['tidiness'],
+            bedtime: (values.bedtime || undefined) as RoommateLifestyle['bedtime'],
+            pets: (values.pets || undefined) as RoommateLifestyle['pets'],
+            cooking: (values.cooking || undefined) as RoommateLifestyle['cooking'],
             provinceCode: address.province?.code,
             wardCode: address.ward?.code,
             streetAddress: values.area?.trim() || undefined,
@@ -568,8 +580,34 @@ export const ForumPostComposerScreen = () => {
                 />
               </ForumFormField>
 
+              {ROOMMATE_LIFESTYLE_FIELDS.map((field) => (
+                <ForumFormField
+                  key={field.key}
+                  label={field.label}
+                  tone="caption"
+                  style={styles.subGroup}
+                >
+                  <Controller
+                    control={control}
+                    name={field.key}
+                    render={({ field: { value, onChange } }) => (
+                      <View style={styles.chipWrap}>
+                        {field.options.map((option) => (
+                          <FilterChip
+                            key={option.value}
+                            label={option.label}
+                            isSelected={value === option.value}
+                            onPress={() => onChange(value === option.value ? '' : option.value)}
+                          />
+                        ))}
+                      </View>
+                    )}
+                  />
+                </ForumFormField>
+              ))}
+
               <ForumFormField
-                label="TIÊU CHÍ BẠN CÙNG PHÒNG"
+                label="GHI CHÚ THÊM VỀ BẠN CÙNG PHÒNG"
                 tone="caption"
                 style={styles.subGroup}
               >
@@ -583,7 +621,7 @@ export const ForumPostComposerScreen = () => {
                         clearFlag('roommate.lifestyle');
                         onChange(text);
                       }}
-                      placeholder="Không hút thuốc · Gọn gàng · Ngủ trước 12h"
+                      placeholder="Ví dụ: ưu tiên sinh viên năm nhất, thích yên tĩnh"
                       errorMessage={errors.lifestyle?.message}
                       multiline
                       idleBorderColor={OVERLAY_COLORS.FIELD_BORDER}

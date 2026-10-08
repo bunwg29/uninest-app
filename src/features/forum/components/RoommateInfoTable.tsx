@@ -2,7 +2,7 @@ import { StyleSheet, View } from 'react-native';
 import { BORDER_RADIUS_TOKENS, SPACING_TOKENS, THEME_COLORS } from '@theme';
 import { Typography } from '@ui';
 import type { RoommateCriteria } from '../types';
-import { ROOMMATE_GENDER_OPTIONS } from '../types';
+import { getRoommateLifestyleLabels, ROOMMATE_GENDER_OPTIONS } from '../types';
 import { formatCostPerPerson, formatDisplayDate } from '../utils';
 
 export interface RoommateInfoTableProps {
@@ -34,6 +34,7 @@ const buildRows = (roommate: RoommateCriteria, mode: RoommateInfoTableProps['mod
     '';
   const criteriaText = [
     roommate.gender !== 'any' && !isDetail ? genderLabel : '',
+    ...getRoommateLifestyleLabels(roommate),
     roommate.lifestyle,
   ]
     .filter(Boolean)

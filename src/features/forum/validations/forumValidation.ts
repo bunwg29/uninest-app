@@ -25,6 +25,11 @@ export const forumPostSchema = z
     minStayMonths: z.string(),
     costNote: optionalText(200, 'Ghi chú chi phí không được vượt quá 200 ký tự'),
     lifestyle: optionalText(500, 'Tiêu chí ở ghép không được vượt quá 500 ký tự'),
+    smoking: z.string(),
+    tidiness: z.string(),
+    bedtime: z.string(),
+    pets: z.string(),
+    cooking: z.string(),
     area: optionalText(255, 'Khu vực không được vượt quá 255 ký tự'),
     roommateStatus: z.enum(['open', 'full']),
   })
@@ -73,6 +78,11 @@ export const FORUM_POST_FORM_DEFAULTS: ForumPostFormValues = {
   minStayMonths: '',
   costNote: '',
   lifestyle: '',
+  smoking: '',
+  tidiness: '',
+  bedtime: '',
+  pets: '',
+  cooking: '',
   area: '',
   roommateStatus: 'open',
 };
