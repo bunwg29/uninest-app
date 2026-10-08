@@ -1,5 +1,4 @@
 export * from './Input';
-export * from './Card';
 export * from './FilterChip';
 export * from './Modal';
 export * from './Toast';
