@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { bookingService } from '../services';
 import type { Booking, BookingStatus, CreateBookingPayload } from '../types';
 
-const BOOKING_KEYS = {
+export const BOOKING_KEYS = {
   all: ['bookings'] as const,
   detail: (id: string) => ['bookings', id] as const,
   slots: (listingId: string, date: string) => ['bookings', 'slots', listingId, date] as const,
