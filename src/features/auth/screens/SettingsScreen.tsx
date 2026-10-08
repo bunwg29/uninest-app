@@ -1,7 +1,16 @@
 import { StyleSheet, TouchableOpacity, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { Bell, ChevronRight, FileText, LockKeyhole, Shield, Sun, Type } from 'lucide-react-native';
+import {
+  Bell,
+  ChevronRight,
+  CircleHelp,
+  FileText,
+  LockKeyhole,
+  Shield,
+  Sun,
+  Type,
+} from 'lucide-react-native';
 import { THEME_COLORS, SPACING_TOKENS, BORDER_RADIUS_TOKENS } from '@theme';
 import { ScreenContainer, Typography, BackButton } from '@ui';
 import { useToast } from '@hooks';
@@ -72,16 +81,22 @@ export const SettingsScreen = () => {
       label: 'Quyền riêng tư & dữ liệu',
       icon: Shield,
       tone: SETTING_TONES.SLATE,
-      onPress: () => showComingSoon('Quyền riêng tư & dữ liệu'),
+      onPress: () => navigation.navigate('Terms', { tab: 'privacy' }),
     },
   ];
 
   const aboutItems: SettingItem[] = [
     {
+      label: 'Trung tâm trợ giúp',
+      icon: CircleHelp,
+      tone: SETTING_TONES.BLUE,
+      onPress: () => navigation.navigate('HelpCenter'),
+    },
+    {
       label: 'Điều khoản sử dụng',
       icon: FileText,
       tone: SETTING_TONES.SLATE,
-      onPress: () => showComingSoon('Điều khoản sử dụng'),
+      onPress: () => navigation.navigate('Terms', { tab: 'terms' }),
     },
   ];
 

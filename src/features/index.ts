@@ -10,3 +10,4 @@ export * as notifications from './notifications';
 export * as payment from './payment';
 export * as ai_chat from './ai-chat';
 export * as recommendations from './recommendations';
+export * as support from './support';

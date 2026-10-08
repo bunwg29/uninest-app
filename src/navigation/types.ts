@@ -2,6 +2,7 @@ import type { NavigatorScreenParams } from '@react-navigation/native';
 import type { UserRole } from '@features/auth';
 import type { ForumCategory } from '@features/forum';
 import type { LandlordListing } from '@features/listings';
+import type { HelpTopicId, LegalTab } from '@features/support';
 
 export type ListingPostStackParamList = {
   ListingPostBasicInfo: { listingId?: string; listing?: LandlordListing } | undefined;
@@ -39,6 +40,7 @@ export type AuthStackParamList = {
   };
   ForgotPassword: undefined;
   ResetPassword: { target: string; otpCode: string };
+  Terms: { tab?: LegalTab } | undefined;
 };
 
 export type MainTabParamList = {
@@ -95,4 +97,6 @@ export type RootStackParamList = {
   Community: { category?: ForumCategory } | undefined;
   ForumPostDetail: { postId: string };
   ForumPostComposer: { postId?: string; category?: ForumCategory } | undefined;
+  Terms: { tab?: LegalTab } | undefined;
+  HelpCenter: { topicId?: HelpTopicId } | undefined;
 };

@@ -11,6 +11,7 @@ import {
   ResetPasswordScreen,
   useAuth,
 } from '@features/auth';
+import { TermsScreen } from '@features/support';
 
 const Stack = createNativeStackNavigator<AuthStackParamList>();
 
@@ -82,6 +83,8 @@ export const AuthNavigator = () => {
           headerBackTitle: 'Quên mật khẩu',
         }}
       />
+
+      <Stack.Screen name="Terms" component={TermsScreen} />
     </Stack.Navigator>
   );
 };

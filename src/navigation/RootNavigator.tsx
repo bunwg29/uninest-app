@@ -21,6 +21,7 @@ import {
 } from '@features/listings';
 import { ComparisonScreen } from '@features/comparison';
 import { SavedRoomsScreen } from '@features/search';
+import { HelpCenterScreen, TermsScreen } from '@features/support';
 import {
   BookingConfirmScreen,
   BookingDetailScreen,
@@ -98,6 +99,8 @@ export const RootNavigator = () => {
               component={ForumPostComposerScreen}
               options={{ animation: 'slide_from_bottom' }}
             />
+            <Stack.Screen name="Terms" component={TermsScreen} />
+            <Stack.Screen name="HelpCenter" component={HelpCenterScreen} />
           </>
         ) : (
           <Stack.Screen name="Auth" component={AuthNavigator} />
