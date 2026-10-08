@@ -1,3 +1,4 @@
+import { registerStoreResetter } from '@core';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
@@ -279,3 +280,5 @@ export const useListingPostStore = create<ListingPostState>()(
     }
   )
 );
+
+registerStoreResetter(() => useListingPostStore.getState().reset());

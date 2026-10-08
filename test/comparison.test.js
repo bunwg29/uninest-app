@@ -36,6 +36,7 @@ jest.mock('../src/core', () => {
     },
     AppError,
     HTTP_STATUS_CODES: { CONFLICT: 409 },
+    registerStoreResetter: () => () => undefined,
   };
 });
 jest.mock('@react-native-async-storage/async-storage', () => ({

@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { QUERY_CLIENT, setOnUnauthorizedCallback, tokenStorage } from '@core';
+import { QUERY_CLIENT, resetAllStores, setOnUnauthorizedCallback, tokenStorage } from '@core';
 import type { AuthUser, LoginPayload, RegisterPayload, UserRole, VerifyOtpPayload } from '../types';
 import { authService } from '../services';
 
@@ -175,6 +175,7 @@ export const useAuthStore = create<AuthState>((set, get) => {
       } finally {
         await tokenStorage.clearTokens();
         QUERY_CLIENT.clear();
+        resetAllStores();
 
         set({
           user: null,

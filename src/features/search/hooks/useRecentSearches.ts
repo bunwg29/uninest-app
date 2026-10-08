@@ -1,3 +1,4 @@
+import { registerStoreResetter } from '@core';
 import { useCallback, useEffect, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -67,3 +68,7 @@ export const useRecentSearches = () => {
 
   return { terms, addTerm, removeTerm, clearTerms };
 };
+
+registerStoreResetter(() => {
+  void AsyncStorage.removeItem(STORAGE_KEY).catch(() => undefined);
+});

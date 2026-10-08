@@ -1,3 +1,4 @@
+import { registerStoreResetter } from '@core';
 import { create } from 'zustand';
 import {
   DEFAULT_SEARCH_FILTERS,
@@ -124,3 +125,14 @@ export const useSearchStore = create<SearchState>((set) => ({
       return { appliedFilters: next, draftFilters: next, selectedListingId: null };
     }),
 }));
+
+registerStoreResetter(() =>
+  useSearchStore.setState({
+    appliedFilters: createDefaultFilters(),
+    draftFilters: createDefaultFilters(),
+    viewMode: 'list',
+    selectedListingId: null,
+    isFilterVisible: false,
+    isSortVisible: false,
+  })
+);
