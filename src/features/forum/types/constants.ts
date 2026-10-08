@@ -2,7 +2,9 @@ import type { ForumCategory, ForumReportReason, RoommateGender, RoommateStatus }
 
 export const FORUM_PAGE_SIZE = 10;
 
-export const FORUM_COMMENTS_PAGE_SIZE = 20;
+export const FORUM_COMMENTS_PAGE_SIZE = 10;
+
+export const FORUM_REPLIES_PAGE_SIZE = 5;
 
 export const FORUM_MAX_IMAGES = 10;
 
@@ -55,4 +57,6 @@ export const FORUM_QUERY_KEYS = {
   FEEDS: (viewerId: string) => ['forum', viewerId, 'feed'] as const,
   POST: (viewerId: string, postId: string) => ['forum', viewerId, 'post', postId] as const,
   COMMENTS: (viewerId: string, postId: string) => ['forum', viewerId, 'comments', postId] as const,
+  REPLIES: (viewerId: string, postId: string, commentId: string) =>
+    ['forum', viewerId, 'comments', postId, 'replies', commentId] as const,
 };

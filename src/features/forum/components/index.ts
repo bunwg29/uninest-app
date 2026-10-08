@@ -3,6 +3,7 @@ export * from './ForumAvatar';
 export * from './ForumBadge';
 export * from './ForumBottomSheet';
 export * from './ForumCommentItem';
+export * from './ForumCommentThread';
 export * from './ForumEmptyFeed';
 export * from './ForumFormField';
 export * from './ForumHeader';

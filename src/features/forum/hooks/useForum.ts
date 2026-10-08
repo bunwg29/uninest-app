@@ -64,6 +64,19 @@ export const useForumComments = (postId: string) => {
   });
 };
 
+export const useForumReplies = (postId: string, commentId: string, enabled: boolean) => {
+  const viewerId = useForumViewerId();
+
+  return useInfiniteQuery({
+    queryKey: FORUM_QUERY_KEYS.REPLIES(viewerId, postId, commentId),
+    queryFn: ({ pageParam }) => forumService.getReplies(commentId, pageParam),
+    initialPageParam: 1,
+    getNextPageParam: getNextPage,
+    enabled,
+    staleTime: FORUM_FEED_STALE_TIME_MS,
+  });
+};
+
 const useForumCache = () => {
   const queryClient = useQueryClient();
   const viewerId = useForumViewerId();

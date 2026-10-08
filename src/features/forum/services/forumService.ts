@@ -15,7 +15,12 @@ import type {
   ModerationResult,
   SaveForumPostPayload,
 } from '../types';
-import { FORUM_COMMENTS_PAGE_SIZE, FORUM_IMAGE_FOLDER, FORUM_PAGE_SIZE } from '../types';
+import {
+  FORUM_COMMENTS_PAGE_SIZE,
+  FORUM_IMAGE_FOLDER,
+  FORUM_PAGE_SIZE,
+  FORUM_REPLIES_PAGE_SIZE,
+} from '../types';
 
 const REPORT_ENDPOINTS: Record<ForumReportEntityType, (entityId: string) => string> = {
   forum_post: (entityId) => `/forum/posts/${entityId}/reports`,
@@ -71,6 +76,15 @@ export const forumService = {
     const response = await apiClient.get<ApiResponse<PaginatedResponse<ForumComment>>>(
       `/forum/posts/${postId}/comments`,
       { params: { page, limit: FORUM_COMMENTS_PAGE_SIZE } }
+    );
+
+    return unwrap(response);
+  },
+
+  async getReplies(commentId: string, page: number): Promise<PaginatedResponse<ForumComment>> {
+    const response = await apiClient.get<ApiResponse<PaginatedResponse<ForumComment>>>(
+      `/forum/comments/${commentId}/replies`,
+      { params: { page, limit: FORUM_REPLIES_PAGE_SIZE } }
     );
 
     return unwrap(response);

@@ -76,6 +76,8 @@ export interface ForumComment {
   author: ForumAuthor;
   createdAt: string;
   updatedAt: string;
+  replyCount?: number;
+  replies?: ForumComment[];
 }
 
 export interface ForumFeedFilters {

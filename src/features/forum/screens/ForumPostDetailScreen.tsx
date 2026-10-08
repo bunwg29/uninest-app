@@ -31,7 +31,7 @@ import type { RootStackParamList } from '@navigation';
 import {
   ForumActionSheet,
   ForumAvatar,
-  ForumCommentItem,
+  ForumCommentThread,
   ForumHeader,
   ForumPostHeaderBadge,
   ForumPostSkeleton,
@@ -60,31 +60,6 @@ const AUTHOR_AVATAR_SIZE = 44;
 const COMPOSER_AVATAR_SIZE = 36;
 const COMPOSER_CONTROL_SIZE = 42;
 
-const orderCommentThreads = (comments: ForumComment[]) => {
-  const repliesByParent = new Map<string, ForumComment[]>();
-
-  for (const comment of comments) {
-    if (!comment.parentId) continue;
-
-    repliesByParent.set(comment.parentId, [
-      ...(repliesByParent.get(comment.parentId) ?? []),
-      comment,
-    ]);
-  }
-
-  const rootIds = new Set(comments.filter((comment) => !comment.parentId).map((c) => c.id));
-  const orphanReplies = comments.filter(
-    (comment) => comment.parentId && !rootIds.has(comment.parentId)
-  );
-
-  return [
-    ...comments
-      .filter((comment) => !comment.parentId)
-      .flatMap((root) => [root, ...(repliesByParent.get(root.id) ?? [])]),
-    ...orphanReplies,
-  ];
-};
-
 export const ForumPostDetailScreen = () => {
   const navigation = useNavigation<NavigationProp>();
   const { params } = useRoute<DetailRouteProp>();
@@ -108,7 +83,7 @@ export const ForumPostDetailScreen = () => {
   const viewerId = user?.id;
   const isAdmin = user?.role === USER_ROLES.ADMIN;
   const comments = useMemo(
-    () => orderCommentThreads(commentsQuery.data?.pages.flatMap((page) => page.items) ?? []),
+    () => commentsQuery.data?.pages.flatMap((page) => page.items) ?? [],
     [commentsQuery.data]
   );
 
@@ -392,7 +367,7 @@ export const ForumPostDetailScreen = () => {
         data={comments}
         keyExtractor={(comment) => comment.id}
         renderItem={({ item }) => (
-          <ForumCommentItem
+          <ForumCommentThread
             comment={item}
             onReply={handleReply}
             onOpenMenu={handleOpenCommentMenu}
