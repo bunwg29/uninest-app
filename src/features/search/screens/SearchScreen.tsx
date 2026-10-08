@@ -155,6 +155,7 @@ export const SearchScreen = () => {
     appliedFilters.minArea !== undefined || appliedFilters.maxArea !== undefined,
     appliedFilters.roomTypes.length > 0,
     appliedFilters.amenities.length > 0,
+    appliedFilters.universities.length > 0,
     appliedFilters.radius !== undefined && appliedFilters.radius !== 5,
     appliedFilters.schoolId !== undefined,
   ].filter(Boolean).length;

@@ -7,6 +7,7 @@ const createFilters = (overrides = {}) => ({
   ...DEFAULT_SEARCH_FILTERS,
   roomTypes: [],
   amenities: [],
+  universities: [],
   ...overrides,
 });
 
@@ -55,4 +56,17 @@ test('không giới hạn bán kính thì dùng bán kính tối đa của API',
   );
 
   assert.equal(params.radius, 50);
+});
+
+test('gửi danh sách mã trường đã chọn để lọc', () => {
+  const params = buildSearchParams(
+    createFilters({
+      universities: [
+        { code: 'DDK', name: 'Bách Khoa Đà Nẵng' },
+        { code: 'VKU', name: 'Việt - Hàn' },
+      ],
+    })
+  );
+
+  assert.equal(params.universityCodes, 'DDK,VKU');
 });

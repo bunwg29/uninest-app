@@ -24,6 +24,10 @@ export const buildSearchParams = (filters: SearchFilters) => {
 
   if (filters.amenities.length > 0) params.amenities = filters.amenities.join(',');
 
+  if (filters.universities.length > 0) {
+    params.universityCodes = filters.universities.map((university) => university.code).join(',');
+  }
+
   if (filters.ownerId) params.ownerId = filters.ownerId;
 
   if (filters.latitude !== undefined && filters.longitude !== undefined) {

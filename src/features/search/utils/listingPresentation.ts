@@ -86,6 +86,9 @@ export const getQuerySummary = (filters: SearchFilters) => {
 
   return [
     filters.keyword.trim() || school?.shortName,
+    filters.universities.length > 0
+      ? `Gần ${filters.universities.map((university) => university.code).join(', ')}`
+      : undefined,
     getPriceRangeSummary(filters.minPrice, filters.maxPrice),
   ]
     .filter(Boolean)

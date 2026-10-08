@@ -5,7 +5,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AMENITY_DISPLAY_LIST, ROOM_TYPE_OPTIONS } from '@features/listings/types/constants';
 import { BORDER_RADIUS_TOKENS, OVERLAY_COLORS, THEME_COLORS } from '@theme';
 import { Button, KeyboardAvoidingContainer, KeyboardAwareScrollView, Typography } from '@ui';
-import { SEARCH_SCHOOLS, type SearchFilters } from '../types';
+import { UniversityPicker } from '@features/auth';
+import { MAX_SEARCH_UNIVERSITIES, SEARCH_SCHOOLS, type SearchFilters } from '../types';
 import { formatMillions } from '../utils';
 import { PriceRangeSlider } from './PriceRangeSlider';
 import { SearchSchoolSheet } from './SearchSchoolSheet';
@@ -221,6 +222,23 @@ export const SearchFilterSheet = ({
                 Chọn trường hoặc dùng vị trí hiện tại để lọc theo khoảng cách.
               </Typography>
             )}
+          </FilterSection>
+
+          <FilterSection
+            title="Gần trường đại học"
+            summary={
+              filters.universities.length > 0
+                ? `${filters.universities.length}/${MAX_SEARCH_UNIVERSITIES}`
+                : undefined
+            }
+          >
+            <UniversityPicker
+              sheetTitle="Lọc theo trường đại học"
+              value={filters.universities}
+              maxSelection={MAX_SEARCH_UNIVERSITIES}
+              helperText="Chỉ hiện phòng mà chủ trọ đã gắn với ít nhất một trường đã chọn"
+              onChange={(universities) => onChange({ universities })}
+            />
           </FilterSection>
 
           <FilterSection title="Tiện ích">

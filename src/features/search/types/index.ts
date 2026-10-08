@@ -7,6 +7,13 @@ export type ListingAvailability = 'available' | 'holding' | 'rented' | 'paused';
 
 export type PublicListingStatus = 'active' | 'pending' | 'rejected' | 'hidden' | 'deleted';
 
+export interface SearchUniversity {
+  code: string;
+  name: string;
+}
+
+export const MAX_SEARCH_UNIVERSITIES = 5;
+
 export interface SearchFilters {
   keyword: string;
   minPrice?: number;
@@ -20,6 +27,7 @@ export interface SearchFilters {
   radius?: number;
   schoolId?: string;
   ownerId?: string;
+  universities: SearchUniversity[];
   sortBy: SearchSortBy;
   page: number;
   limit: number;
@@ -82,6 +90,7 @@ export const DEFAULT_SEARCH_FILTERS: SearchFilters = {
   keyword: '',
   roomTypes: [],
   amenities: [],
+  universities: [],
   radius: 5,
   sortBy: 'relevance',
   page: 1,

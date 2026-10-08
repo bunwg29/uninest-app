@@ -19,7 +19,8 @@ import { universitiesService, type University } from '../services/universitiesSe
 const SEARCH_DEBOUNCE_MS = 300;
 
 interface UniversityPickerProps {
-  label: string;
+  label?: string;
+  sheetTitle?: string;
   value: University[];
   maxSelection: number;
   helperText?: string;
@@ -28,6 +29,7 @@ interface UniversityPickerProps {
 
 export const UniversityPicker = ({
   label,
+  sheetTitle,
   value,
   maxSelection,
   helperText,
@@ -86,9 +88,11 @@ export const UniversityPicker = ({
 
   return (
     <View style={styles.container}>
-      <Typography variant="label" weight="MEDIUM" colorKey="TEXT_PRIMARY">
-        {label}
-      </Typography>
+      {label ? (
+        <Typography variant="label" weight="MEDIUM" colorKey="TEXT_PRIMARY">
+          {label}
+        </Typography>
+      ) : null}
 
       {value.map((university) => (
         <View key={university.code} style={styles.selectedRow}>
@@ -140,7 +144,7 @@ export const UniversityPicker = ({
             >
               <View style={styles.handle} />
               <Typography variant="h3" weight="BOLD">
-                {label}
+                {sheetTitle ?? label ?? 'Chọn trường đại học'}
               </Typography>
 
               <Input

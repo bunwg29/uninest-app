@@ -35,6 +35,7 @@ const createDefaultFilters = (): SearchFilters => ({
   ...DEFAULT_SEARCH_FILTERS,
   roomTypes: [],
   amenities: [],
+  universities: [],
 });
 
 export const useSearchStore = create<SearchState>((set) => ({
@@ -55,6 +56,7 @@ export const useSearchStore = create<SearchState>((set) => ({
         ...state.appliedFilters,
         roomTypes: [...state.appliedFilters.roomTypes],
         amenities: [...state.appliedFilters.amenities],
+        universities: [...state.appliedFilters.universities],
       },
       isFilterVisible: true,
     })),
@@ -79,6 +81,7 @@ export const useSearchStore = create<SearchState>((set) => ({
               : state.draftFilters.sortBy,
           roomTypes: [...state.draftFilters.roomTypes],
           amenities: [...state.draftFilters.amenities],
+          universities: [...state.draftFilters.universities],
           page: 1,
         },
         isFilterVisible: false,
