@@ -78,7 +78,25 @@ const mapBackendTokens = (result: BackendAuthResult): AuthTokens => ({
   expiresIn: result.expiresIn,
 });
 
+export type ContactKind = 'phone' | 'email';
+
 export const authService = {
+  async requestContactOtp(
+    kind: ContactKind,
+    value: string
+  ): Promise<{ requestId: string; expiresIn: number }> {
+    const response = await apiClient.post(
+      `/users/me/${kind}/request-otp`,
+      kind === 'phone' ? { newPhone: value } : { newEmail: value }
+    );
+
+    return unwrapData<{ requestId: string; expiresIn: number }>(response.data);
+  },
+
+  async verifyContactOtp(kind: ContactKind, requestId: string, otp: string): Promise<void> {
+    await apiClient.post(`/users/me/${kind}/verify-otp`, { requestId, otp });
+  },
+
   async login(payload: LoginPayload): Promise<AuthResponse> {
     const { deviceName, deviceId } = await getDeviceInfo();
 

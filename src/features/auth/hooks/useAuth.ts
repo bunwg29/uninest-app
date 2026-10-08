@@ -15,6 +15,7 @@ export const useAuth = () => {
   const register = useAuthStore((state) => state.register);
   const verifyOtp = useAuthStore((state) => state.verifyOtp);
   const logout = useAuthStore((state) => state.logout);
+  const updateUser = useAuthStore((state) => state.updateUser);
   const clearError = useAuthStore((state) => state.clearError);
 
   return {
@@ -32,6 +33,7 @@ export const useAuth = () => {
     register,
     verifyOtp,
     logout,
+    updateUser,
     clearError,
   };
 };

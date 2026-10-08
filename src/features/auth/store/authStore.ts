@@ -18,6 +18,7 @@ interface AuthState {
   register: (payload: RegisterPayload) => Promise<void>;
   verifyOtp: (payload: VerifyOtpPayload) => Promise<void>;
   logout: () => Promise<void>;
+  updateUser: (patch: Partial<AuthUser>) => Promise<void>;
   clearError: () => void;
 }
 
@@ -184,6 +185,17 @@ export const useAuthStore = create<AuthState>((set, get) => {
           error: null,
         });
       }
+    },
+
+    async updateUser(patch) {
+      const current = get().user;
+
+      if (!current) return;
+
+      const user = { ...current, ...patch };
+
+      set({ user });
+      await tokenStorage.setUser(user);
     },
 
     clearError() {

@@ -11,6 +11,9 @@ import { Avatar, Badge, Button, Input, ScreenContainer, Typography, BackButton }
 import { useToast } from '@hooks';
 import type { RootStackParamList } from '@navigation';
 import { AddressFields, EMPTY_ADDRESS, type AddressValue } from '../components/AddressFields';
+import { ChangeContactSheet } from '../components/ChangeContactSheet';
+import { useAuth } from '../hooks';
+import type { ContactKind } from '../services';
 import { authService } from '../services';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'ProfileEdit'>;
@@ -26,6 +29,8 @@ export const ProfileEditScreen = () => {
   const [school, setSchool] = useState('');
   const [bio, setBio] = useState('');
   const [address, setAddress] = useState<AddressValue>(EMPTY_ADDRESS);
+  const [contactKind, setContactKind] = useState<ContactKind | null>(null);
+  const { updateUser } = useAuth();
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
 
   useEffect(() => {
@@ -200,16 +205,21 @@ export const ProfileEditScreen = () => {
         editable={false}
         leftIcon={<Phone size={18} color={THEME_COLORS.TEXT_PLACEHOLDER} />}
         rightIcon={
-          profile?.phoneVerified ? (
-            <Badge variant="available" size="sm" label="ĐÃ XÁC MINH" />
-          ) : undefined
+          <View style={styles.contactActions}>
+            {profile?.phoneVerified ? (
+              <Badge variant="available" size="sm" label="ĐÃ XÁC MINH" />
+            ) : null}
+            <ChangeContactLink onPress={() => setContactKind('phone')} />
+          </View>
         }
       />
       <Input
         label="Email"
         value={email}
         editable={false}
+        placeholder="Chưa có email"
         leftIcon={<Mail size={18} color={THEME_COLORS.TEXT_PLACEHOLDER} />}
+        rightIcon={<ChangeContactLink onPress={() => setContactKind('email')} />}
       />
       <Input
         label="Trường đang học"
@@ -238,11 +248,33 @@ export const ProfileEditScreen = () => {
       >
         Lưu thay đổi
       </Button>
+      <ChangeContactSheet
+        kind={contactKind}
+        currentValue={contactKind === 'phone' ? profile?.phone : profile?.email}
+        onClose={() => setContactKind(null)}
+        onChanged={(kind, value) => {
+          void queryClient.invalidateQueries({ queryKey: ['profile'] });
+          void updateUser(kind === 'phone' ? { phoneNumber: value } : { email: value });
+        }}
+      />
     </ScreenContainer>
   );
 };
 
+const ChangeContactLink = ({ onPress }: { onPress: () => void }) => (
+  <TouchableOpacity
+    onPress={onPress}
+    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+    accessibilityRole="button"
+  >
+    <Typography variant="body2" weight="SEMIBOLD" colorKey="PRIMARY">
+      Đổi
+    </Typography>
+  </TouchableOpacity>
+);
+
 const styles = StyleSheet.create({
+  contactActions: { flexDirection: 'row', alignItems: 'center', gap: SPACING_TOKENS.SM },
   sectionTitle: { marginTop: SPACING_TOKENS.SM, marginBottom: SPACING_TOKENS.SM },
   container: { paddingHorizontal: SPACING_TOKENS.LG, paddingVertical: SPACING_TOKENS.MD },
   header: {
