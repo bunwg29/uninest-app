@@ -1,9 +1,8 @@
 import { useEffect, useState } from 'react';
-import { Modal, Pressable, StyleSheet, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { StyleSheet, View } from 'react-native';
 import { Mail, Phone } from 'lucide-react-native';
-import { BORDER_RADIUS_TOKENS, OVERLAY_COLORS, SPACING_TOKENS, THEME_COLORS } from '@theme';
-import { Button, Input, KeyboardAvoidingContainer, Typography } from '@ui';
+import { SPACING_TOKENS, THEME_COLORS } from '@theme';
+import { BottomSheet, Button, Input, Typography } from '@ui';
 import { useToast } from '@hooks';
 import { authService, type ContactKind } from '../services';
 import { OtpInput } from './OtpInput';
@@ -31,7 +30,6 @@ export const ChangeContactSheet = ({
   onClose,
   onChanged,
 }: ChangeContactSheetProps) => {
-  const insets = useSafeAreaInsets();
   const toast = useToast();
   const [value, setValue] = useState('');
   const [requestId, setRequestId] = useState<string | null>(null);
@@ -124,94 +122,77 @@ export const ChangeContactSheet = ({
   const Icon = kind === 'phone' ? Phone : Mail;
 
   return (
-    <Modal visible transparent animationType="slide" onRequestClose={onClose}>
-      <KeyboardAvoidingContainer style={styles.flex}>
-        <Pressable style={styles.backdrop} onPress={onClose}>
-          <Pressable
-            style={[styles.sheet, { paddingBottom: Math.max(insets.bottom, SPACING_TOKENS.MD) }]}
-            onPress={(event) => event.stopPropagation()}
-          >
-            <View style={styles.handle} />
-            <Typography variant="h3" weight="BOLD">
-              {copy.title}
-            </Typography>
+    <BottomSheet
+      isVisible
+      onClose={onClose}
+      keyboardAvoiding
+      sheetStyle={styles.sheet}
+      handleStyle={styles.handle}
+    >
+      <Typography variant="h3" weight="BOLD">
+        {copy.title}
+      </Typography>
 
-            {requestId ? (
-              <View style={styles.body}>
-                <Typography variant="body2" colorKey="TEXT_SECONDARY">
-                  {`Nhập mã gồm ${OTP_LENGTH} chữ số đã gửi tới ${normalizedValue}`}
-                </Typography>
-                <OtpInput code={otp} onCodeChange={setOtp} hasError={Boolean(errorMessage)} />
-                {errorMessage ? (
-                  <Typography variant="caption" colorKey="ERROR">
-                    {errorMessage}
-                  </Typography>
-                ) : null}
-                <Button
-                  title={secondsLeft > 0 ? `Gửi lại mã sau ${secondsLeft}s` : 'Gửi lại mã'}
-                  variant="ghost"
-                  disabled={secondsLeft > 0 || isSubmitting}
-                  onPress={() => void handleRequestOtp()}
-                />
-                <Button
-                  title="Xác nhận"
-                  fullWidth
-                  isLoading={isSubmitting}
-                  disabled={otp.length !== OTP_LENGTH}
-                  onPress={() => void handleVerify()}
-                />
-              </View>
-            ) : (
-              <View style={styles.body}>
-                <Input
-                  label={copy.label}
-                  value={value}
-                  onChangeText={(text) => {
-                    setValue(text);
-                    setErrorMessage(undefined);
-                  }}
-                  placeholder={copy.placeholder}
-                  keyboardType={kind === 'phone' ? 'phone-pad' : 'email-address'}
-                  autoCapitalize="none"
-                  errorMessage={errorMessage}
-                  leftIcon={<Icon size={18} color={THEME_COLORS.TEXT_PLACEHOLDER} />}
-                />
-                <Button
-                  title="Gửi mã OTP"
-                  fullWidth
-                  isLoading={isSubmitting}
-                  disabled={!value.trim()}
-                  onPress={() => void handleRequestOtp()}
-                />
-              </View>
-            )}
-          </Pressable>
-        </Pressable>
-      </KeyboardAvoidingContainer>
-    </Modal>
+      {requestId ? (
+        <View style={styles.body}>
+          <Typography variant="body2" colorKey="TEXT_SECONDARY">
+            {`Nhập mã gồm ${OTP_LENGTH} chữ số đã gửi tới ${normalizedValue}`}
+          </Typography>
+          <OtpInput code={otp} onCodeChange={setOtp} hasError={Boolean(errorMessage)} />
+          {errorMessage ? (
+            <Typography variant="caption" colorKey="ERROR">
+              {errorMessage}
+            </Typography>
+          ) : null}
+          <Button
+            title={secondsLeft > 0 ? `Gửi lại mã sau ${secondsLeft}s` : 'Gửi lại mã'}
+            variant="ghost"
+            disabled={secondsLeft > 0 || isSubmitting}
+            onPress={() => void handleRequestOtp()}
+          />
+          <Button
+            title="Xác nhận"
+            fullWidth
+            isLoading={isSubmitting}
+            disabled={otp.length !== OTP_LENGTH}
+            onPress={() => void handleVerify()}
+          />
+        </View>
+      ) : (
+        <View style={styles.body}>
+          <Input
+            label={copy.label}
+            value={value}
+            onChangeText={(text) => {
+              setValue(text);
+              setErrorMessage(undefined);
+            }}
+            placeholder={copy.placeholder}
+            keyboardType={kind === 'phone' ? 'phone-pad' : 'email-address'}
+            autoCapitalize="none"
+            errorMessage={errorMessage}
+            leftIcon={<Icon size={18} color={THEME_COLORS.TEXT_PLACEHOLDER} />}
+          />
+          <Button
+            title="Gửi mã OTP"
+            fullWidth
+            isLoading={isSubmitting}
+            disabled={!value.trim()}
+            onPress={() => void handleRequestOtp()}
+          />
+        </View>
+      )}
+    </BottomSheet>
   );
 };
 
 const styles = StyleSheet.create({
-  flex: { flex: 1 },
-  backdrop: {
-    flex: 1,
-    justifyContent: 'flex-end',
-    backgroundColor: OVERLAY_COLORS.SHEET_BACKDROP,
-  },
   sheet: {
     paddingHorizontal: SPACING_TOKENS.MD,
     paddingTop: SPACING_TOKENS.SM + 2,
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    backgroundColor: THEME_COLORS.SURFACE,
   },
   handle: {
-    alignSelf: 'center',
-    width: 40,
-    height: 4,
     marginBottom: SPACING_TOKENS.MD,
-    borderRadius: BORDER_RADIUS_TOKENS.FULL,
     backgroundColor: THEME_COLORS.BORDER,
   },
   body: { gap: SPACING_TOKENS.MD, marginTop: SPACING_TOKENS.MD },

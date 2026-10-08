@@ -54,12 +54,6 @@ const styles = StyleSheet.create({
   rightSlot: {
     alignItems: 'flex-end',
   },
-  sideButton: {
-    width: 40,
-    height: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
   title: {
     flex: 1,
   },

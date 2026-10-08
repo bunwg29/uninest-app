@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { View, StyleSheet, ViewStyle, StyleProp } from 'react-native';
-import { THEME_COLORS, SPACING_TOKENS, BORDER_RADIUS_TOKENS } from '@theme';
+import { THEME_COLORS, SPACING_TOKENS } from '@theme';
 import { BackButton } from '../atoms/BackButton';
 import { Typography } from '../atoms/Typography';
 
@@ -75,16 +75,6 @@ const styles = StyleSheet.create({
     width: 44,
     alignItems: 'flex-start',
     justifyContent: 'center',
-  },
-  backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: BORDER_RADIUS_TOKENS.MD,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: THEME_COLORS.SURFACE,
-    borderWidth: 1,
-    borderColor: THEME_COLORS.BORDER,
   },
   titleSlot: {
     flex: 1,

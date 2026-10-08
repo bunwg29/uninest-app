@@ -1,9 +1,8 @@
 import type { ComponentType } from 'react';
-import { Modal, Pressable, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { StyleSheet, TouchableOpacity, View } from 'react-native';
 import { Eye, KeyRound, LogOut, Settings2, UserRound } from 'lucide-react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BORDER_RADIUS_TOKENS, OVERLAY_COLORS, SPACING_TOKENS, THEME_COLORS } from '@theme';
-import { GradientAvatar, Typography } from '@ui';
+import { BottomSheet, GradientAvatar, Typography } from '@ui';
 
 interface LandlordAccountSheetProps {
   isVisible: boolean;
@@ -59,68 +58,51 @@ export const LandlordAccountSheet = ({
   onLogout,
   onClose,
 }: LandlordAccountSheetProps) => {
-  const insets = useSafeAreaInsets();
-
   return (
-    <Modal visible={isVisible} transparent animationType="slide" onRequestClose={onClose}>
-      <Pressable
-        style={styles.backdrop}
-        onPress={onClose}
-        accessibilityRole="button"
-        accessibilityLabel="Đóng menu tài khoản"
-      >
-        <Pressable
-          style={[styles.sheet, { paddingBottom: Math.max(insets.bottom, SPACING_TOKENS.MD) }]}
-          onPress={(event) => event.stopPropagation()}
-        >
-          <View style={styles.handle} />
+    <BottomSheet
+      isVisible={isVisible}
+      onClose={onClose}
+      backdropColor={OVERLAY_COLORS.MODAL_BACKDROP}
+      backdropAccessibilityLabel="Đóng menu tài khoản"
+      sheetStyle={styles.sheet}
+      handleStyle={styles.handle}
+    >
+      <View style={styles.profile}>
+        <GradientAvatar name={fullName} uri={avatarUrl} size={48} />
 
-          <View style={styles.profile}>
-            <GradientAvatar name={fullName} uri={avatarUrl} size={48} />
+        <View style={styles.profileBody}>
+          <Typography variant="body1" weight="BOLD" numberOfLines={1}>
+            {fullName ?? 'Chủ trọ'}
+          </Typography>
+          {contact ? (
+            <Typography variant="caption" weight="MEDIUM" colorKey="TEXT_PLACEHOLDER">
+              {contact}
+            </Typography>
+          ) : null}
+        </View>
+      </View>
 
-            <View style={styles.profileBody}>
-              <Typography variant="body1" weight="BOLD" numberOfLines={1}>
-                {fullName ?? 'Chủ trọ'}
-              </Typography>
-              {contact ? (
-                <Typography variant="caption" weight="MEDIUM" colorKey="TEXT_PLACEHOLDER">
-                  {contact}
-                </Typography>
-              ) : null}
-            </View>
-          </View>
+      <View style={styles.divider} />
 
-          <View style={styles.divider} />
+      <MenuItem icon={Eye} label="Hồ sơ công khai" onPress={onViewPublicProfile} />
+      <MenuItem icon={UserRound} label="Chỉnh sửa hồ sơ" onPress={onEditProfile} />
+      <MenuItem icon={KeyRound} label="Đổi mật khẩu" onPress={onChangePassword} />
+      <MenuItem icon={Settings2} label="Cài đặt ứng dụng" onPress={onOpenSettings} />
 
-          <MenuItem icon={Eye} label="Hồ sơ công khai" onPress={onViewPublicProfile} />
-          <MenuItem icon={UserRound} label="Chỉnh sửa hồ sơ" onPress={onEditProfile} />
-          <MenuItem icon={KeyRound} label="Đổi mật khẩu" onPress={onChangePassword} />
-          <MenuItem icon={Settings2} label="Cài đặt ứng dụng" onPress={onOpenSettings} />
+      <View style={styles.divider} />
 
-          <View style={styles.divider} />
-
-          <MenuItem icon={LogOut} label="Đăng xuất" isDanger onPress={onLogout} />
-        </Pressable>
-      </Pressable>
-    </Modal>
+      <MenuItem icon={LogOut} label="Đăng xuất" isDanger onPress={onLogout} />
+    </BottomSheet>
   );
 };
 
 const styles = StyleSheet.create({
-  backdrop: { flex: 1, justifyContent: 'flex-end', backgroundColor: OVERLAY_COLORS.MODAL_BACKDROP },
   sheet: {
     paddingHorizontal: SPACING_TOKENS.MD,
     paddingTop: SPACING_TOKENS.SM + 2,
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    backgroundColor: THEME_COLORS.SURFACE,
   },
   handle: {
-    alignSelf: 'center',
-    width: 40,
-    height: 4,
     marginBottom: SPACING_TOKENS.MD,
-    borderRadius: BORDER_RADIUS_TOKENS.FULL,
     backgroundColor: THEME_COLORS.BORDER,
   },
   profile: { flexDirection: 'row', alignItems: 'center', gap: 12 },

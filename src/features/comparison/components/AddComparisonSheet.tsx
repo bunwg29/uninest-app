@@ -1,18 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
-import {
-  Modal,
-  ScrollView,
-  StyleSheet,
-  TouchableOpacity,
-  TouchableWithoutFeedback,
-  View,
-} from 'react-native';
+import { ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { Check, X } from 'lucide-react-native';
 import { useQuery } from '@tanstack/react-query';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useToast } from '@hooks';
 import { BORDER_RADIUS_TOKENS, OVERLAY_COLORS, SPACING_TOKENS, THEME_COLORS } from '@theme';
-import { Button, MediaThumbnail, Typography } from '@ui';
+import { BottomSheet, Button, MediaThumbnail, Typography } from '@ui';
 import { listingService } from '@features/listings/services';
 import type { ListingAvailability } from '@features/listings/types';
 import { useRecentListingIds } from '@features/recommendations';
@@ -47,7 +40,6 @@ interface Candidate {
 const RECENT_LIMIT = 10;
 const SHEET_HEIGHT = '66%';
 const MAX_SHEET_WIDTH = 560;
-const SHEET_RADIUS = 24;
 const CARD_HEIGHT = 96;
 const THUMBNAIL_SIZE = 72;
 const CHECKBOX_SIZE = 22;
@@ -195,93 +187,87 @@ export const AddComparisonSheet = ({
   };
 
   return (
-    <Modal visible={isVisible} transparent animationType="slide" onRequestClose={onClose}>
-      <TouchableWithoutFeedback onPress={onClose} accessibilityLabel="Đóng danh sách chọn phòng">
-        <View style={styles.backdrop} />
-      </TouchableWithoutFeedback>
-
-      <View style={styles.sheetWrapper} pointerEvents="box-none">
-        <View style={styles.sheet}>
-          <View style={styles.handle} />
-
-          <View style={styles.header}>
-            <View>
-              <Typography variant="h3" weight="SEMIBOLD">
-                Thêm phòng vào so sánh
-              </Typography>
-              <Typography variant="caption" weight="MEDIUM" colorKey="TEXT_PLACEHOLDER">
-                {`Còn ${remainingSlots} chỗ trống`}
-              </Typography>
-            </View>
-            <TouchableOpacity
-              onPress={onClose}
-              style={styles.close}
-              accessibilityRole="button"
-              accessibilityLabel="Đóng"
-            >
-              <X size={19} color={THEME_COLORS.TEXT_PRIMARY} />
-            </TouchableOpacity>
-          </View>
-
-          <View style={styles.tabs}>
-            {(Object.keys(TAB_LABELS) as SheetTab[]).map((tab) => {
-              const isActive = tab === activeTab;
-              const label =
-                tab === 'saved' ? `${TAB_LABELS[tab]} (${savedTotal})` : TAB_LABELS[tab];
-
-              return (
-                <TouchableOpacity
-                  key={tab}
-                  onPress={() => setActiveTab(tab)}
-                  accessibilityRole="tab"
-                  accessibilityState={{ selected: isActive }}
-                  style={[styles.tab, isActive && styles.tabActive]}
-                >
-                  <Typography
-                    variant="label"
-                    weight={isActive ? 'SEMIBOLD' : 'MEDIUM'}
-                    colorKey={isActive ? 'PRIMARY_DARK' : 'TEXT_SECONDARY'}
-                  >
-                    {label}
-                  </Typography>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
-
-          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.list}>
-            {candidates.length === 0 ? (
-              <Typography variant="body2" colorKey="TEXT_MUTED" align="center" style={styles.empty}>
-                {isLoadingCandidates ? 'Đang tải danh sách phòng...' : 'Chưa có phòng nào để thêm.'}
-              </Typography>
-            ) : (
-              candidates.map((candidate) => (
-                <CandidateCard
-                  key={candidate.id}
-                  candidate={candidate}
-                  referenceLabel={referenceLabel}
-                  isSelected={selectedIds.includes(candidate.id)}
-                  onPress={() => handleToggle(candidate)}
-                />
-              ))
-            )}
-          </ScrollView>
-
-          <View
-            style={[styles.footer, { paddingBottom: Math.max(insets.bottom, SPACING_TOKENS.MD) }]}
-          >
-            <Button
-              title={selectedIds.length > 0 ? `Thêm ${selectedIds.length} phòng` : 'Thêm phòng'}
-              size="lg"
-              fullWidth
-              disabled={selectedIds.length === 0}
-              isLoading={isAdding}
-              onPress={() => void handleConfirm()}
-            />
-          </View>
+    <BottomSheet
+      isVisible={isVisible}
+      onClose={onClose}
+      backdropAccessibilityLabel="Đóng danh sách chọn phòng"
+      applyBottomInset={false}
+      sheetStyle={styles.sheet}
+      handleStyle={styles.handle}
+    >
+      <View style={styles.header}>
+        <View>
+          <Typography variant="h3" weight="SEMIBOLD">
+            Thêm phòng vào so sánh
+          </Typography>
+          <Typography variant="caption" weight="MEDIUM" colorKey="TEXT_PLACEHOLDER">
+            {`Còn ${remainingSlots} chỗ trống`}
+          </Typography>
         </View>
+        <TouchableOpacity
+          onPress={onClose}
+          style={styles.close}
+          accessibilityRole="button"
+          accessibilityLabel="Đóng"
+        >
+          <X size={19} color={THEME_COLORS.TEXT_PRIMARY} />
+        </TouchableOpacity>
       </View>
-    </Modal>
+
+      <View style={styles.tabs}>
+        {(Object.keys(TAB_LABELS) as SheetTab[]).map((tab) => {
+          const isActive = tab === activeTab;
+          const label = tab === 'saved' ? `${TAB_LABELS[tab]} (${savedTotal})` : TAB_LABELS[tab];
+
+          return (
+            <TouchableOpacity
+              key={tab}
+              onPress={() => setActiveTab(tab)}
+              accessibilityRole="tab"
+              accessibilityState={{ selected: isActive }}
+              style={[styles.tab, isActive && styles.tabActive]}
+            >
+              <Typography
+                variant="label"
+                weight={isActive ? 'SEMIBOLD' : 'MEDIUM'}
+                colorKey={isActive ? 'PRIMARY_DARK' : 'TEXT_SECONDARY'}
+              >
+                {label}
+              </Typography>
+            </TouchableOpacity>
+          );
+        })}
+      </View>
+
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.list}>
+        {candidates.length === 0 ? (
+          <Typography variant="body2" colorKey="TEXT_MUTED" align="center" style={styles.empty}>
+            {isLoadingCandidates ? 'Đang tải danh sách phòng...' : 'Chưa có phòng nào để thêm.'}
+          </Typography>
+        ) : (
+          candidates.map((candidate) => (
+            <CandidateCard
+              key={candidate.id}
+              candidate={candidate}
+              referenceLabel={referenceLabel}
+              isSelected={selectedIds.includes(candidate.id)}
+              onPress={() => handleToggle(candidate)}
+            />
+          ))
+        )}
+      </ScrollView>
+
+      <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, SPACING_TOKENS.MD) }]}>
+        <Button
+          title={selectedIds.length > 0 ? `Thêm ${selectedIds.length} phòng` : 'Thêm phòng'}
+          size="lg"
+          fullWidth
+          disabled={selectedIds.length === 0}
+          isLoading={isAdding}
+          onPress={() => void handleConfirm()}
+        />
+      </View>
+    </BottomSheet>
   );
 };
 
@@ -372,16 +358,11 @@ const CandidateCard = ({
 };
 
 const styles = StyleSheet.create({
-  backdrop: { ...StyleSheet.absoluteFill, backgroundColor: OVERLAY_COLORS.SHEET_BACKDROP },
-  sheetWrapper: { flex: 1, justifyContent: 'flex-end' },
   sheet: {
     width: '100%',
     maxWidth: MAX_SHEET_WIDTH,
     height: SHEET_HEIGHT,
     alignSelf: 'center',
-    borderTopLeftRadius: SHEET_RADIUS,
-    borderTopRightRadius: SHEET_RADIUS,
-    backgroundColor: THEME_COLORS.SURFACE,
     shadowColor: OVERLAY_COLORS.SHADOW,
     shadowOpacity: 0.16,
     shadowRadius: 10,
@@ -389,12 +370,7 @@ const styles = StyleSheet.create({
     elevation: 12,
   },
   handle: {
-    alignSelf: 'center',
-    width: 40,
-    height: 4,
     marginTop: 10,
-    borderRadius: BORDER_RADIUS_TOKENS.FULL,
-    backgroundColor: OVERLAY_COLORS.FIELD_BORDER,
   },
   header: {
     flexDirection: 'row',

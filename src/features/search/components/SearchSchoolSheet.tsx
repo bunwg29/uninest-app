@@ -197,7 +197,6 @@ const styles = StyleSheet.create({
     gap: 12,
     paddingHorizontal: 16,
   },
-  backButton: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
   headerTitle: { flex: 1, fontSize: 18, lineHeight: 26 },
   searchField: {
     height: 48,

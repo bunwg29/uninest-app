@@ -1,14 +1,7 @@
 import { useEffect, useState } from 'react';
-import {
-  Modal,
-  StyleSheet,
-  TextInput,
-  TouchableOpacity,
-  TouchableWithoutFeedback,
-  View,
-} from 'react-native';
+import { StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
 import { BORDER_RADIUS_TOKENS, OVERLAY_COLORS, THEME_COLORS } from '@theme';
-import { Button, Typography, KeyboardAvoidingContainer, KeyboardAwareScrollView } from '@ui';
+import { BottomSheet, Button, KeyboardAwareScrollView, Typography } from '@ui';
 
 interface ReasonModalProps {
   isVisible: boolean;
@@ -80,115 +73,104 @@ export const ReasonModal = ({
   };
 
   return (
-    <Modal visible={isVisible} transparent animationType="slide" onRequestClose={onClose}>
-      <View style={styles.backdrop}>
-        <TouchableWithoutFeedback onPress={onClose} accessibilityLabel="Đóng">
-          <View style={styles.dismissArea} />
-        </TouchableWithoutFeedback>
+    <BottomSheet
+      isVisible={isVisible}
+      onClose={onClose}
+      backdropColor={OVERLAY_COLORS.MODAL_BACKDROP}
+      keyboardAvoiding
+      applyBottomInset={false}
+      sheetStyle={styles.sheet}
+      handleStyle={styles.handle}
+    >
+      <KeyboardAwareScrollView
+        bounces={false}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={styles.header}>
+          <Typography variant="h3" weight="SEMIBOLD">
+            {title}
+          </Typography>
+          {description ? (
+            <Typography variant="caption" weight="MEDIUM" colorKey="TEXT_PLACEHOLDER">
+              {description}
+            </Typography>
+          ) : null}
+        </View>
 
-        <KeyboardAvoidingContainer>
-          <View style={styles.sheet}>
-            <View style={styles.handle} />
+        <View style={styles.options}>
+          {options.map((option, index) => {
+            const isSelected = option === selected;
 
-            <KeyboardAwareScrollView
-              bounces={false}
-              keyboardShouldPersistTaps="handled"
-              showsVerticalScrollIndicator={false}
-            >
-              <View style={styles.header}>
-                <Typography variant="h3" weight="SEMIBOLD">
-                  {title}
-                </Typography>
-                {description ? (
-                  <Typography variant="caption" weight="MEDIUM" colorKey="TEXT_PLACEHOLDER">
-                    {description}
-                  </Typography>
-                ) : null}
-              </View>
-
-              <View style={styles.options}>
-                {options.map((option, index) => {
-                  const isSelected = option === selected;
-
-                  return (
-                    <View key={option}>
-                      {index > 0 ? <View style={styles.separator} /> : null}
-                      <TouchableOpacity
-                        style={[styles.option, isSelected && styles.optionSelected]}
-                        onPress={() => setSelected(option)}
-                        activeOpacity={0.7}
-                        accessibilityRole="radio"
-                        accessibilityState={{ selected: isSelected }}
-                        accessibilityLabel={option}
-                      >
-                        <Typography
-                          variant="body1"
-                          weight={isSelected ? 'SEMIBOLD' : 'REGULAR'}
-                          color={
-                            isSelected ? THEME_COLORS.TEXT_PRIMARY : THEME_COLORS.TEXT_SECONDARY
-                          }
-                          style={styles.optionLabel}
-                        >
-                          {option}
-                        </Typography>
-                        <View style={[styles.radio, isSelected && styles.radioSelected]} />
-                      </TouchableOpacity>
-                    </View>
-                  );
-                })}
-              </View>
-
-              <View style={styles.messageBlock}>
-                <Typography
-                  variant="body2"
-                  weight="SEMIBOLD"
-                  colorKey="TEXT_SECONDARY"
-                  style={styles.label}
+            return (
+              <View key={option}>
+                {index > 0 ? <View style={styles.separator} /> : null}
+                <TouchableOpacity
+                  style={[styles.option, isSelected && styles.optionSelected]}
+                  onPress={() => setSelected(option)}
+                  activeOpacity={0.7}
+                  accessibilityRole="radio"
+                  accessibilityState={{ selected: isSelected }}
+                  accessibilityLabel={option}
                 >
-                  {isOther ? 'Nội dung ' : 'Nhắn thêm '}
-                  <Typography variant="body2" colorKey="TEXT_PLACEHOLDER" style={styles.label}>
-                    {isOther ? '(bắt buộc)' : '(không bắt buộc)'}
+                  <Typography
+                    variant="body1"
+                    weight={isSelected ? 'SEMIBOLD' : 'REGULAR'}
+                    color={isSelected ? THEME_COLORS.TEXT_PRIMARY : THEME_COLORS.TEXT_SECONDARY}
+                    style={styles.optionLabel}
+                  >
+                    {option}
                   </Typography>
-                </Typography>
-                <TextInput
-                  style={styles.input}
-                  value={message}
-                  onChangeText={setMessage}
-                  placeholder="Nhập lời nhắn cho sinh viên..."
-                  placeholderTextColor={THEME_COLORS.TEXT_PLACEHOLDER}
-                  multiline
-                  maxLength={MAX_REASON_LENGTH}
-                  accessibilityLabel="Lời nhắn thêm"
-                />
+                  <View style={[styles.radio, isSelected && styles.radioSelected]} />
+                </TouchableOpacity>
               </View>
+            );
+          })}
+        </View>
 
-              <View style={styles.footer}>
-                <Button
-                  title={confirmTitle}
-                  size="lg"
-                  variant={confirmTone === 'danger' ? 'danger' : 'primary'}
-                  disabled={!canSubmit}
-                  isLoading={isLoading}
-                  onPress={handleSubmit}
-                  textStyle={styles.confirmText}
-                />
-              </View>
-            </KeyboardAwareScrollView>
-          </View>
-        </KeyboardAvoidingContainer>
-      </View>
-    </Modal>
+        <View style={styles.messageBlock}>
+          <Typography
+            variant="body2"
+            weight="SEMIBOLD"
+            colorKey="TEXT_SECONDARY"
+            style={styles.label}
+          >
+            {isOther ? 'Nội dung ' : 'Nhắn thêm '}
+            <Typography variant="body2" colorKey="TEXT_PLACEHOLDER" style={styles.label}>
+              {isOther ? '(bắt buộc)' : '(không bắt buộc)'}
+            </Typography>
+          </Typography>
+          <TextInput
+            style={styles.input}
+            value={message}
+            onChangeText={setMessage}
+            placeholder="Nhập lời nhắn cho sinh viên..."
+            placeholderTextColor={THEME_COLORS.TEXT_PLACEHOLDER}
+            multiline
+            maxLength={MAX_REASON_LENGTH}
+            accessibilityLabel="Lời nhắn thêm"
+          />
+        </View>
+
+        <View style={styles.footer}>
+          <Button
+            title={confirmTitle}
+            size="lg"
+            variant={confirmTone === 'danger' ? 'danger' : 'primary'}
+            disabled={!canSubmit}
+            isLoading={isLoading}
+            onPress={handleSubmit}
+            textStyle={styles.confirmText}
+          />
+        </View>
+      </KeyboardAwareScrollView>
+    </BottomSheet>
   );
 };
 
 const styles = StyleSheet.create({
-  backdrop: { flex: 1, justifyContent: 'flex-end', backgroundColor: OVERLAY_COLORS.MODAL_BACKDROP },
-  dismissArea: { flex: 1 },
   sheet: {
     maxHeight: '92%',
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    backgroundColor: THEME_COLORS.SURFACE,
     shadowColor: OVERLAY_COLORS.SHADOW,
     shadowOpacity: 0.16,
     shadowRadius: 10,
@@ -196,12 +178,7 @@ const styles = StyleSheet.create({
     elevation: 16,
   },
   handle: {
-    alignSelf: 'center',
-    width: 40,
-    height: 4,
     marginTop: 10,
-    borderRadius: BORDER_RADIUS_TOKENS.FULL,
-    backgroundColor: OVERLAY_COLORS.FIELD_BORDER,
   },
   header: { gap: 4, paddingHorizontal: 16, paddingTop: 28, paddingBottom: 4 },
   options: { paddingTop: 10 },

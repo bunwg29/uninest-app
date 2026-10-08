@@ -102,7 +102,6 @@ const styles = StyleSheet.create({
     paddingBottom: SPACING_TOKENS.SM,
     backgroundColor: THEME_COLORS.SURFACE,
   },
-  backButton: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
   filterButton: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
   outlinedButton: {
     borderWidth: 1,

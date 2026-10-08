@@ -61,13 +61,6 @@ const styles = StyleSheet.create({
     backgroundColor: THEME_COLORS.SURFACE,
     gap: SPACING_TOKENS.SM + 2,
   },
-  backButton: {
-    width: 40,
-    height: 40,
-    marginRight: -SPACING_TOKENS.XS,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
   info: {
     flex: 1,
     gap: SPACING_TOKENS.XXS,

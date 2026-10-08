@@ -55,7 +55,6 @@ const styles = StyleSheet.create({
     gap: 12,
     paddingHorizontal: 16,
   },
-  backButton: { width: 24, height: 24, alignItems: 'center', justifyContent: 'center' },
   title: { flex: 1 },
   bars: { flexDirection: 'row', gap: 6, paddingHorizontal: 16 },
   bar: {

@@ -1,8 +1,8 @@
+import { BottomSheet } from './BottomSheet';
 import { useMemo, useState } from 'react';
-import { Modal as RNModal, Pressable, StyleSheet, TouchableOpacity, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { StyleSheet, TouchableOpacity, View } from 'react-native';
 import { CalendarDays, ChevronLeft, ChevronRight, XCircle } from 'lucide-react-native';
-import { BORDER_RADIUS_TOKENS, OVERLAY_COLORS, SPACING_TOKENS, THEME_COLORS } from '@theme';
+import { BORDER_RADIUS_TOKENS, SPACING_TOKENS, THEME_COLORS } from '@theme';
 import { Typography } from '../atoms/Typography';
 import { Button } from '../atoms/Button';
 import { Input, type InputProps } from './Input';
@@ -77,7 +77,6 @@ export const DatePickerField = ({
   placeholder = 'Chọn ngày',
   ...inputProps
 }: DatePickerFieldProps) => {
-  const insets = useSafeAreaInsets();
   const [isVisible, setIsVisible] = useState(false);
   const [visibleMonth, setVisibleMonth] = useState(() => startOfMonth(new Date()));
   const [pendingDate, setPendingDate] = useState<Date | null>(null);
@@ -147,118 +146,109 @@ export const DatePickerField = ({
         accessibilityLabel={inputProps.label ?? title ?? placeholder}
       />
 
-      <RNModal
-        visible={isVisible}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setIsVisible(false)}
+      <BottomSheet
+        isVisible={isVisible}
+        onClose={() => setIsVisible(false)}
+        sheetStyle={styles.sheet}
+        handleStyle={styles.handle}
       >
-        <Pressable style={styles.backdrop} onPress={() => setIsVisible(false)}>
-          <Pressable
-            style={[styles.sheet, { paddingBottom: Math.max(insets.bottom, SPACING_TOKENS.MD) }]}
-            onPress={(event) => event.stopPropagation()}
+        <Typography variant="h3" weight="BOLD" style={styles.title}>
+          {title ?? inputProps.label ?? placeholder}
+        </Typography>
+
+        <View style={styles.monthRow}>
+          <TouchableOpacity
+            style={[styles.navButton, !canGoBack && styles.navButtonDisabled]}
+            onPress={() => shiftMonth(-1)}
+            disabled={!canGoBack}
+            accessibilityRole="button"
+            accessibilityLabel="Tháng trước"
           >
-            <View style={styles.handle} />
+            <ChevronLeft size={20} color={THEME_COLORS.TEXT_PRIMARY} />
+          </TouchableOpacity>
 
-            <Typography variant="h3" weight="BOLD" style={styles.title}>
-              {title ?? inputProps.label ?? placeholder}
-            </Typography>
+          <Typography variant="body1" weight="BOLD">
+            {`Tháng ${visibleMonth.getMonth() + 1}, ${visibleMonth.getFullYear()}`}
+          </Typography>
 
-            <View style={styles.monthRow}>
-              <TouchableOpacity
-                style={[styles.navButton, !canGoBack && styles.navButtonDisabled]}
-                onPress={() => shiftMonth(-1)}
-                disabled={!canGoBack}
-                accessibilityRole="button"
-                accessibilityLabel="Tháng trước"
-              >
-                <ChevronLeft size={20} color={THEME_COLORS.TEXT_PRIMARY} />
-              </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.navButton, !canGoForward && styles.navButtonDisabled]}
+            onPress={() => shiftMonth(1)}
+            disabled={!canGoForward}
+            accessibilityRole="button"
+            accessibilityLabel="Tháng sau"
+          >
+            <ChevronRight size={20} color={THEME_COLORS.TEXT_PRIMARY} />
+          </TouchableOpacity>
+        </View>
 
-              <Typography variant="body1" weight="BOLD">
-                {`Tháng ${visibleMonth.getMonth() + 1}, ${visibleMonth.getFullYear()}`}
+        <View style={styles.grid}>
+          {WEEKDAYS.map((weekday) => (
+            <View key={weekday} style={styles.cell}>
+              <Typography variant="caption" weight="SEMIBOLD" colorKey="TEXT_MUTED">
+                {weekday}
               </Typography>
-
-              <TouchableOpacity
-                style={[styles.navButton, !canGoForward && styles.navButtonDisabled]}
-                onPress={() => shiftMonth(1)}
-                disabled={!canGoForward}
-                accessibilityRole="button"
-                accessibilityLabel="Tháng sau"
-              >
-                <ChevronRight size={20} color={THEME_COLORS.TEXT_PRIMARY} />
-              </TouchableOpacity>
             </View>
+          ))}
 
-            <View style={styles.grid}>
-              {WEEKDAYS.map((weekday) => (
-                <View key={weekday} style={styles.cell}>
-                  <Typography variant="caption" weight="SEMIBOLD" colorKey="TEXT_MUTED">
-                    {weekday}
+          {cells.map((date, index) => {
+            if (!date) return <View key={`empty-${index}`} style={styles.cell} />;
+
+            const key = toIsoDate(date);
+            const isSelected = pendingDate ? toIsoDate(pendingDate) === key : false;
+            const disabled = isDisabled(date);
+            const isToday = key === todayKey;
+
+            return (
+              <View key={key} style={styles.cell}>
+                <TouchableOpacity
+                  style={[
+                    styles.day,
+                    isToday && !isSelected && styles.dayToday,
+                    isSelected && styles.daySelected,
+                  ]}
+                  onPress={() => setPendingDate(date)}
+                  disabled={disabled}
+                  accessibilityRole="button"
+                  accessibilityState={{ selected: isSelected, disabled }}
+                  accessibilityLabel={`Ngày ${formatDateForDisplay(key)}`}
+                >
+                  <Typography
+                    variant="body2"
+                    weight={isSelected || isToday ? 'BOLD' : 'MEDIUM'}
+                    color={
+                      isSelected
+                        ? THEME_COLORS.WHITE
+                        : disabled
+                          ? THEME_COLORS.TEXT_PLACEHOLDER
+                          : isToday
+                            ? THEME_COLORS.PRIMARY
+                            : THEME_COLORS.TEXT_PRIMARY
+                    }
+                  >
+                    {date.getDate()}
                   </Typography>
-                </View>
-              ))}
+                </TouchableOpacity>
+              </View>
+            );
+          })}
+        </View>
 
-              {cells.map((date, index) => {
-                if (!date) return <View key={`empty-${index}`} style={styles.cell} />;
-
-                const key = toIsoDate(date);
-                const isSelected = pendingDate ? toIsoDate(pendingDate) === key : false;
-                const disabled = isDisabled(date);
-                const isToday = key === todayKey;
-
-                return (
-                  <View key={key} style={styles.cell}>
-                    <TouchableOpacity
-                      style={[
-                        styles.day,
-                        isToday && !isSelected && styles.dayToday,
-                        isSelected && styles.daySelected,
-                      ]}
-                      onPress={() => setPendingDate(date)}
-                      disabled={disabled}
-                      accessibilityRole="button"
-                      accessibilityState={{ selected: isSelected, disabled }}
-                      accessibilityLabel={`Ngày ${formatDateForDisplay(key)}`}
-                    >
-                      <Typography
-                        variant="body2"
-                        weight={isSelected || isToday ? 'BOLD' : 'MEDIUM'}
-                        color={
-                          isSelected
-                            ? THEME_COLORS.WHITE
-                            : disabled
-                              ? THEME_COLORS.TEXT_PLACEHOLDER
-                              : isToday
-                                ? THEME_COLORS.PRIMARY
-                                : THEME_COLORS.TEXT_PRIMARY
-                        }
-                      >
-                        {date.getDate()}
-                      </Typography>
-                    </TouchableOpacity>
-                  </View>
-                );
-              })}
-            </View>
-
-            <View style={styles.actions}>
-              <Button
-                title="Hủy"
-                variant="outline"
-                onPress={() => setIsVisible(false)}
-                style={styles.actionButton}
-              />
-              <Button
-                title="Chọn"
-                onPress={handleConfirm}
-                disabled={!pendingDate}
-                style={styles.actionButton}
-              />
-            </View>
-          </Pressable>
-        </Pressable>
-      </RNModal>
+        <View style={styles.actions}>
+          <Button
+            title="Hủy"
+            variant="outline"
+            onPress={() => setIsVisible(false)}
+            style={styles.actionButton}
+          />
+          <Button
+            title="Chọn"
+            onPress={handleConfirm}
+            disabled={!pendingDate}
+            style={styles.actionButton}
+          />
+        </View>
+      </BottomSheet>
     </View>
   );
 };
@@ -266,24 +256,12 @@ export const DatePickerField = ({
 const styles = StyleSheet.create({
   overlay: { position: 'absolute', top: 0, bottom: 0, left: 0, right: 0 },
   overlayWithClear: { right: 48 },
-  backdrop: {
-    flex: 1,
-    justifyContent: 'flex-end',
-    backgroundColor: OVERLAY_COLORS.SHEET_BACKDROP,
-  },
   sheet: {
     paddingHorizontal: SPACING_TOKENS.MD,
     paddingTop: SPACING_TOKENS.SM + 2,
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    backgroundColor: THEME_COLORS.SURFACE,
   },
   handle: {
-    alignSelf: 'center',
-    width: 40,
-    height: 4,
     marginBottom: SPACING_TOKENS.MD,
-    borderRadius: BORDER_RADIUS_TOKENS.FULL,
     backgroundColor: THEME_COLORS.BORDER,
   },
   title: { marginBottom: SPACING_TOKENS.SM },

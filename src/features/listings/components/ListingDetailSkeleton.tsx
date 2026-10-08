@@ -1,6 +1,6 @@
 import { StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { BORDER_RADIUS_TOKENS, OVERLAY_COLORS, SPACING_TOKENS, THEME_COLORS } from '@theme';
+import { BORDER_RADIUS_TOKENS, SPACING_TOKENS, THEME_COLORS } from '@theme';
 import { SkeletonBox, BackButton } from '@ui';
 
 interface ListingDetailSkeletonProps {
@@ -89,19 +89,6 @@ const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: THEME_COLORS.SURFACE },
   hero: { height: HERO_HEIGHT, backgroundColor: THEME_COLORS.BORDER },
   backWrapper: { position: 'absolute', left: SPACING_TOKENS.MD },
-  backButton: {
-    width: 40,
-    height: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: BORDER_RADIUS_TOKENS.FULL,
-    backgroundColor: OVERLAY_COLORS.FLOATING_BUTTON,
-    shadowColor: OVERLAY_COLORS.SHADOW,
-    shadowOpacity: 0.12,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 3,
-  },
   content: {
     flex: 1,
     marginTop: -SPACING_TOKENS.MD,

@@ -1027,11 +1027,6 @@ const styles = StyleSheet.create({
   galleryImageWrapper: { backgroundColor: THEME_COLORS.SURFACE_MUTED },
   galleryImage: { width: '100%', height: '100%' },
   imageLoader: { ...StyleSheet.absoluteFill },
-  imageFallback: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: THEME_COLORS.SURFACE_MUTED,
-  },
   topScrim: {
     position: 'absolute',
     top: 0,

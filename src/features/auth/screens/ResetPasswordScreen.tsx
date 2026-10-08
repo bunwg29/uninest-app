@@ -243,17 +243,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: SPACING_TOKENS.LG,
     paddingVertical: SPACING_TOKENS.MD,
   },
-  backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: BORDER_RADIUS_TOKENS.MD,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: THEME_COLORS.SURFACE,
-    borderWidth: 1,
-    borderColor: THEME_COLORS.BORDER,
-    marginBottom: SPACING_TOKENS.MD,
-  },
   header: {
     marginBottom: SPACING_TOKENS.LG,
   },

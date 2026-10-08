@@ -85,16 +85,6 @@ const styles = StyleSheet.create({
     paddingTop: SPACING_TOKENS.XS,
     marginBottom: SPACING_TOKENS.SM,
   },
-  backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: BORDER_RADIUS_TOKENS.MD,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: THEME_COLORS.SURFACE,
-    borderWidth: 1,
-    borderColor: THEME_COLORS.BORDER,
-  },
   header: {
     marginTop: SPACING_TOKENS.SM,
     marginBottom: SPACING_TOKENS.XL,

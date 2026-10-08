@@ -1,18 +1,9 @@
 import { useState } from 'react';
-import {
-  ActivityIndicator,
-  FlatList,
-  Modal as RNModal,
-  Pressable,
-  StyleSheet,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+import { ActivityIndicator, FlatList, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Check, GraduationCap, Plus, Search, X } from 'lucide-react-native';
 import { BORDER_RADIUS_TOKENS, OVERLAY_COLORS, SPACING_TOKENS, THEME_COLORS } from '@theme';
-import { Button, Input, KeyboardAvoidingContainer, Typography } from '@ui';
+import { BottomSheet, Button, Input, Typography } from '@ui';
 import { useDebouncedValue, useToast } from '@hooks';
 import { universitiesService, type University } from '../services/universitiesService';
 
@@ -35,7 +26,6 @@ export const UniversityPicker = ({
   helperText,
   onChange,
 }: UniversityPickerProps) => {
-  const insets = useSafeAreaInsets();
   const toast = useToast();
   const [isVisible, setIsVisible] = useState(false);
   const [keyword, setKeyword] = useState('');
@@ -135,98 +125,88 @@ export const UniversityPicker = ({
         </Typography>
       ) : null}
 
-      <RNModal visible={isVisible} transparent animationType="slide" onRequestClose={close}>
-        <KeyboardAvoidingContainer style={styles.flex}>
-          <Pressable style={styles.backdrop} onPress={close}>
-            <Pressable
-              style={[styles.sheet, { paddingBottom: Math.max(insets.bottom, SPACING_TOKENS.MD) }]}
-              onPress={(event) => event.stopPropagation()}
-            >
-              <View style={styles.handle} />
-              <Typography variant="h3" weight="BOLD">
-                {sheetTitle ?? label ?? 'Chọn trường đại học'}
-              </Typography>
+      <BottomSheet
+        isVisible={isVisible}
+        onClose={close}
+        keyboardAvoiding
+        sheetStyle={styles.sheet}
+        handleStyle={styles.handle}
+      >
+        <Typography variant="h3" weight="BOLD">
+          {sheetTitle ?? label ?? 'Chọn trường đại học'}
+        </Typography>
 
-              <Input
-                value={keyword}
-                onChangeText={setKeyword}
-                placeholder="Tìm theo tên hoặc mã trường"
-                autoCorrect={false}
-                leftIcon={<Search size={18} color={THEME_COLORS.TEXT_PLACEHOLDER} />}
-                containerStyle={styles.searchInput}
-              />
+        <Input
+          value={keyword}
+          onChangeText={setKeyword}
+          placeholder="Tìm theo tên hoặc mã trường"
+          autoCorrect={false}
+          leftIcon={<Search size={18} color={THEME_COLORS.TEXT_PLACEHOLDER} />}
+          containerStyle={styles.searchInput}
+        />
 
-              {searchQuery.isLoading ? (
-                <ActivityIndicator color={THEME_COLORS.PRIMARY} style={styles.loader} />
-              ) : (
-                <FlatList
-                  data={searchQuery.data ?? []}
-                  keyExtractor={(item) => item.code}
-                  keyboardShouldPersistTaps="handled"
-                  style={styles.list}
-                  renderItem={({ item }) => {
-                    const isSelected = (isSingle ? value : pending).some(
-                      (selected) => selected.code === item.code
-                    );
+        {searchQuery.isLoading ? (
+          <ActivityIndicator color={THEME_COLORS.PRIMARY} style={styles.loader} />
+        ) : (
+          <FlatList
+            data={searchQuery.data ?? []}
+            keyExtractor={(item) => item.code}
+            keyboardShouldPersistTaps="handled"
+            style={styles.list}
+            renderItem={({ item }) => {
+              const isSelected = (isSingle ? value : pending).some(
+                (selected) => selected.code === item.code
+              );
 
-                    return (
-                      <TouchableOpacity
-                        style={[styles.option, isSelected && styles.optionSelected]}
-                        onPress={() => handleSelect(item)}
-                        accessibilityRole="button"
-                        accessibilityState={{ selected: isSelected }}
-                      >
-                        <View style={styles.optionText}>
-                          <Typography
-                            variant="body2"
-                            weight={isSelected ? 'SEMIBOLD' : 'REGULAR'}
-                            colorKey={isSelected ? 'PRIMARY' : 'TEXT_PRIMARY'}
-                          >
-                            {item.name}
-                          </Typography>
-                          <Typography variant="caption" colorKey="TEXT_MUTED">
-                            {item.code}
-                          </Typography>
-                        </View>
-                        {isSelected ? <Check size={18} color={THEME_COLORS.PRIMARY} /> : null}
-                      </TouchableOpacity>
-                    );
-                  }}
-                  ListEmptyComponent={
+              return (
+                <TouchableOpacity
+                  style={[styles.option, isSelected && styles.optionSelected]}
+                  onPress={() => handleSelect(item)}
+                  accessibilityRole="button"
+                  accessibilityState={{ selected: isSelected }}
+                >
+                  <View style={styles.optionText}>
                     <Typography
                       variant="body2"
-                      colorKey="TEXT_MUTED"
-                      align="center"
-                      style={styles.empty}
+                      weight={isSelected ? 'SEMIBOLD' : 'REGULAR'}
+                      colorKey={isSelected ? 'PRIMARY' : 'TEXT_PRIMARY'}
                     >
-                      {searchQuery.isError
-                        ? 'Không tải được danh sách trường'
-                        : 'Không tìm thấy trường phù hợp'}
+                      {item.name}
                     </Typography>
-                  }
-                />
-              )}
+                    <Typography variant="caption" colorKey="TEXT_MUTED">
+                      {item.code}
+                    </Typography>
+                  </View>
+                  {isSelected ? <Check size={18} color={THEME_COLORS.PRIMARY} /> : null}
+                </TouchableOpacity>
+              );
+            }}
+            ListEmptyComponent={
+              <Typography variant="body2" colorKey="TEXT_MUTED" align="center" style={styles.empty}>
+                {searchQuery.isError
+                  ? 'Không tải được danh sách trường'
+                  : 'Không tìm thấy trường phù hợp'}
+              </Typography>
+            }
+          />
+        )}
 
-              {isSingle ? null : (
-                <Button
-                  title={`Xong (${pending.length}/${maxSelection})`}
-                  fullWidth
-                  onPress={() => {
-                    onChange(pending);
-                    close();
-                  }}
-                />
-              )}
-            </Pressable>
-          </Pressable>
-        </KeyboardAvoidingContainer>
-      </RNModal>
+        {isSingle ? null : (
+          <Button
+            title={`Xong (${pending.length}/${maxSelection})`}
+            fullWidth
+            onPress={() => {
+              onChange(pending);
+              close();
+            }}
+          />
+        )}
+      </BottomSheet>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  flex: { flex: 1 },
   container: { gap: SPACING_TOKENS.SM, marginBottom: SPACING_TOKENS.MD },
   selectedRow: {
     flexDirection: 'row',
@@ -251,26 +231,14 @@ const styles = StyleSheet.create({
     borderColor: OVERLAY_COLORS.FIELD_BORDER,
     backgroundColor: THEME_COLORS.SURFACE,
   },
-  backdrop: {
-    flex: 1,
-    justifyContent: 'flex-end',
-    backgroundColor: OVERLAY_COLORS.SHEET_BACKDROP,
-  },
   sheet: {
     maxHeight: '85%',
     gap: SPACING_TOKENS.SM,
     paddingHorizontal: SPACING_TOKENS.MD,
     paddingTop: SPACING_TOKENS.SM + 2,
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    backgroundColor: THEME_COLORS.SURFACE,
   },
   handle: {
-    alignSelf: 'center',
-    width: 40,
-    height: 4,
     marginBottom: SPACING_TOKENS.SM,
-    borderRadius: BORDER_RADIUS_TOKENS.FULL,
     backgroundColor: THEME_COLORS.BORDER,
   },
   searchInput: { marginBottom: 0 },

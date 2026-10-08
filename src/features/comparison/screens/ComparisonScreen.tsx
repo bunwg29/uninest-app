@@ -137,13 +137,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: SPACING_TOKENS.MD,
   },
-  back: {
-    width: 40,
-    height: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: SPACING_TOKENS.SM,
-  },
   title: { flex: 1 },
   body: { flex: 1 },
   footer: {

@@ -123,7 +123,6 @@ const styles = StyleSheet.create({
     borderBottomColor: THEME_COLORS.BORDER,
     backgroundColor: THEME_COLORS.SURFACE,
   },
-  backButton: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
   title: { flex: 1, fontSize: 18, lineHeight: 26 },
   summary: {
     height: 47,

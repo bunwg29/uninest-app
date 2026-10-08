@@ -1,10 +1,7 @@
 import type { ReactNode } from 'react';
-import { Modal, Pressable, StyleSheet, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { BORDER_RADIUS_TOKENS, OVERLAY_COLORS, SPACING_TOKENS, THEME_COLORS } from '@theme';
-import { KeyboardAvoidingContainer, Typography } from '@ui';
-
-const SHEET_RADIUS = 24;
+import { StyleSheet } from 'react-native';
+import { OVERLAY_COLORS, SPACING_TOKENS } from '@theme';
+import { BottomSheet, Typography } from '@ui';
 
 export interface ForumBottomSheetProps {
   isVisible: boolean;
@@ -21,53 +18,39 @@ export const ForumBottomSheet = ({
   description,
   children,
 }: ForumBottomSheetProps) => {
-  const insets = useSafeAreaInsets();
-
   return (
-    <Modal visible={isVisible} transparent animationType="slide" onRequestClose={onClose}>
-      <KeyboardAvoidingContainer style={styles.root}>
-        <Pressable style={styles.backdrop} onPress={onClose} accessibilityLabel="Đóng" />
+    <BottomSheet
+      isVisible={isVisible}
+      onClose={onClose}
+      backdropColor={OVERLAY_COLORS.MODAL_BACKDROP}
+      keyboardAvoiding
+      sheetStyle={styles.sheet}
+      handleStyle={styles.handle}
+    >
+      {title ? (
+        <Typography variant="h3" weight="SEMIBOLD" style={styles.title}>
+          {title}
+        </Typography>
+      ) : null}
 
-        <View style={[styles.sheet, { paddingBottom: Math.max(insets.bottom, SPACING_TOKENS.MD) }]}>
-          <View style={styles.handle} />
+      {description ? (
+        <Typography
+          variant="caption"
+          weight="MEDIUM"
+          colorKey="TEXT_PLACEHOLDER"
+          style={styles.description}
+        >
+          {description}
+        </Typography>
+      ) : null}
 
-          {title ? (
-            <Typography variant="h3" weight="SEMIBOLD" style={styles.title}>
-              {title}
-            </Typography>
-          ) : null}
-
-          {description ? (
-            <Typography
-              variant="caption"
-              weight="MEDIUM"
-              colorKey="TEXT_PLACEHOLDER"
-              style={styles.description}
-            >
-              {description}
-            </Typography>
-          ) : null}
-
-          {children}
-        </View>
-      </KeyboardAvoidingContainer>
-    </Modal>
+      {children}
+    </BottomSheet>
   );
 };
 
 const styles = StyleSheet.create({
-  root: {
-    flex: 1,
-    justifyContent: 'flex-end',
-  },
-  backdrop: {
-    ...StyleSheet.absoluteFill,
-    backgroundColor: OVERLAY_COLORS.MODAL_BACKDROP,
-  },
   sheet: {
-    backgroundColor: THEME_COLORS.SURFACE,
-    borderTopLeftRadius: SHEET_RADIUS,
-    borderTopRightRadius: SHEET_RADIUS,
     paddingTop: SPACING_TOKENS.SM + 2,
     maxHeight: '90%',
     shadowColor: OVERLAY_COLORS.SHADOW,
@@ -77,11 +60,6 @@ const styles = StyleSheet.create({
     elevation: 16,
   },
   handle: {
-    alignSelf: 'center',
-    width: 40,
-    height: 4,
-    borderRadius: BORDER_RADIUS_TOKENS.FULL,
-    backgroundColor: OVERLAY_COLORS.FIELD_BORDER,
     marginBottom: SPACING_TOKENS.MD - 2,
   },
   title: {

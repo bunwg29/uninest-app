@@ -1,11 +1,4 @@
-import {
-  Modal,
-  ScrollView,
-  StyleSheet,
-  TouchableOpacity,
-  TouchableWithoutFeedback,
-  View,
-} from 'react-native';
+import { ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { Check, X } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
@@ -15,7 +8,7 @@ import {
   THEME_COLORS,
   TYPOGRAPHY_TOKENS,
 } from '@theme';
-import { Button, Typography } from '@ui';
+import { BottomSheet, Button, Typography } from '@ui';
 import type { ListingDetailAmenity } from '../types';
 import { getAmenityIcon } from './amenityIcons';
 
@@ -48,85 +41,75 @@ export const AmenitiesModal = ({ isVisible, amenities, onClose }: AmenitiesModal
   const groupEntries = Object.entries(groups);
 
   return (
-    <Modal visible={isVisible} transparent animationType="slide" onRequestClose={onClose}>
-      <TouchableWithoutFeedback onPress={onClose} accessibilityLabel="Đóng danh sách tiện ích">
-        <View style={styles.backdrop} />
-      </TouchableWithoutFeedback>
-
-      <View style={styles.sheetWrapper} pointerEvents="box-none">
-        <View style={styles.sheet}>
-          <View style={styles.handle} />
-
-          <View style={styles.header}>
-            <Typography variant="h3" weight="SEMIBOLD">
-              {`${amenities.length} tiện ích`}
-            </Typography>
-            <TouchableOpacity
-              onPress={onClose}
-              accessibilityRole="button"
-              accessibilityLabel="Đóng"
-              style={styles.close}
-            >
-              <X size={19} color={THEME_COLORS.TEXT_PRIMARY} />
-            </TouchableOpacity>
-          </View>
-
-          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
-            {groupEntries.map(([group, items], index) => (
-              <View key={group} style={index > 0 ? styles.groupDivided : undefined}>
-                <Typography
-                  variant="caption"
-                  weight="MEDIUM"
-                  colorKey="TEXT_PLACEHOLDER"
-                  style={styles.groupLabel}
-                >
-                  {(GROUP_LABELS[Number(group)] ?? 'Khác').toUpperCase()}
-                </Typography>
-
-                {items.map((amenity) => {
-                  const Icon = getAmenityIcon(amenity.id);
-
-                  return (
-                    <View key={amenity.id} style={styles.row}>
-                      <Icon size={20} color={THEME_COLORS.TEXT_SECONDARY} />
-                      <Typography
-                        variant="body1"
-                        colorKey="TEXT_SECONDARY"
-                        style={styles.rowLabel}
-                        numberOfLines={1}
-                      >
-                        {amenity.name}
-                      </Typography>
-                      <Check size={18} color={THEME_COLORS.SUCCESS} />
-                    </View>
-                  );
-                })}
-              </View>
-            ))}
-          </ScrollView>
-
-          <View
-            style={[styles.footer, { paddingBottom: Math.max(insets.bottom, SPACING_TOKENS.MD) }]}
-          >
-            <Button title="Đóng" size="lg" fullWidth onPress={onClose} />
-          </View>
-        </View>
+    <BottomSheet
+      isVisible={isVisible}
+      onClose={onClose}
+      backdropAccessibilityLabel="Đóng danh sách tiện ích"
+      applyBottomInset={false}
+      sheetStyle={styles.sheet}
+      handleStyle={styles.handle}
+    >
+      <View style={styles.header}>
+        <Typography variant="h3" weight="SEMIBOLD">
+          {`${amenities.length} tiện ích`}
+        </Typography>
+        <TouchableOpacity
+          onPress={onClose}
+          accessibilityRole="button"
+          accessibilityLabel="Đóng"
+          style={styles.close}
+        >
+          <X size={19} color={THEME_COLORS.TEXT_PRIMARY} />
+        </TouchableOpacity>
       </View>
-    </Modal>
+
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
+        {groupEntries.map(([group, items], index) => (
+          <View key={group} style={index > 0 ? styles.groupDivided : undefined}>
+            <Typography
+              variant="caption"
+              weight="MEDIUM"
+              colorKey="TEXT_PLACEHOLDER"
+              style={styles.groupLabel}
+            >
+              {(GROUP_LABELS[Number(group)] ?? 'Khác').toUpperCase()}
+            </Typography>
+
+            {items.map((amenity) => {
+              const Icon = getAmenityIcon(amenity.id);
+
+              return (
+                <View key={amenity.id} style={styles.row}>
+                  <Icon size={20} color={THEME_COLORS.TEXT_SECONDARY} />
+                  <Typography
+                    variant="body1"
+                    colorKey="TEXT_SECONDARY"
+                    style={styles.rowLabel}
+                    numberOfLines={1}
+                  >
+                    {amenity.name}
+                  </Typography>
+                  <Check size={18} color={THEME_COLORS.SUCCESS} />
+                </View>
+              );
+            })}
+          </View>
+        ))}
+      </ScrollView>
+
+      <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, SPACING_TOKENS.MD) }]}>
+        <Button title="Đóng" size="lg" fullWidth onPress={onClose} />
+      </View>
+    </BottomSheet>
   );
 };
 
 const styles = StyleSheet.create({
-  backdrop: { ...StyleSheet.absoluteFill, backgroundColor: OVERLAY_COLORS.SHEET_BACKDROP },
-  sheetWrapper: { flex: 1, justifyContent: 'flex-end' },
   sheet: {
     width: '100%',
     maxWidth: MAX_SHEET_WIDTH,
     maxHeight: SHEET_MAX_HEIGHT,
     alignSelf: 'center',
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    backgroundColor: THEME_COLORS.SURFACE,
     shadowColor: OVERLAY_COLORS.SHADOW,
     shadowOpacity: 0.16,
     shadowRadius: 10,
@@ -134,12 +117,7 @@ const styles = StyleSheet.create({
     elevation: 12,
   },
   handle: {
-    alignSelf: 'center',
-    width: 40,
-    height: 4,
     marginTop: 10,
-    borderRadius: BORDER_RADIUS_TOKENS.FULL,
-    backgroundColor: OVERLAY_COLORS.FIELD_BORDER,
   },
   header: {
     flexDirection: 'row',

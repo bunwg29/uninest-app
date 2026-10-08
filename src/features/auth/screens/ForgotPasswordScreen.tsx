@@ -132,16 +132,4 @@ const styles = StyleSheet.create({
     marginTop: SPACING_TOKENS.MD,
     marginBottom: SPACING_TOKENS.MD,
   },
-  screenBackButton: {
-    width: 40,
-    height: 40,
-    borderRadius: BORDER_RADIUS_TOKENS.MD,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: THEME_COLORS.SURFACE,
-    borderWidth: 1,
-    borderColor: THEME_COLORS.BORDER,
-    marginTop: SPACING_TOKENS.XS,
-    marginBottom: SPACING_TOKENS.MD,
-  },
 });
