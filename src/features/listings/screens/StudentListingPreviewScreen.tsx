@@ -151,7 +151,11 @@ export const StudentListingPreviewScreen = () => {
           <CostRow
             icon={Droplets}
             label="Tiền nước"
-            value={formatOptionalCurrency(listing.waterPrice, ' / m³')}
+            value={
+              listing.waterPrice === 0
+                ? 'Miễn phí'
+                : formatOptionalCurrency(listing.waterPrice, ' / m³')
+            }
           />
           <CostRow
             icon={CalendarDays}
@@ -223,11 +227,8 @@ export const StudentListingPreviewScreen = () => {
         />
         <Button
           title="Đặt lịch xem phòng"
-          onPress={() =>
-            navigation.navigate('BookingNew', {
-              resourceId: listing.id,
-            })
-          }
+          onPress={() => undefined}
+          disabled
           style={styles.primaryButton}
         />
       </View>

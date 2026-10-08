@@ -155,9 +155,9 @@ export const useListingPostStore = create<ListingPostState>()(
           area: listing.area ? String(listing.area) : '',
           maxOccupants: listing.maxOccupants ? String(listing.maxOccupants) : '',
           description: listing.description || '',
-          electricPrice: listing.electricPrice ? String(listing.electricPrice) : '',
-          waterPrice: listing.waterPrice ? String(listing.waterPrice) : '',
-          deposit: listing.deposit ? String(listing.deposit) : '',
+          electricPrice: listing.electricPrice != null ? String(listing.electricPrice) : '',
+          waterPrice: listing.waterPrice != null ? String(listing.waterPrice) : '',
+          deposit: listing.deposit != null ? String(listing.deposit) : '',
         };
 
         const imageUrls = listing.imageUrls?.length

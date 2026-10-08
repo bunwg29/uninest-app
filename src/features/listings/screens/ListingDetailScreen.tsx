@@ -469,7 +469,11 @@ export const ListingDetailScreen = () => {
               />
               <DetailRow
                 label="Giá nước"
-                value={formatNullablePrice(listing.waterPrice, ' / m³')}
+                value={
+                  listing.waterPrice === 0
+                    ? 'Miễn phí'
+                    : formatNullablePrice(listing.waterPrice, ' / m³')
+                }
               />
             </Section>
 

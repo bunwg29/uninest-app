@@ -1,4 +1,4 @@
-import { useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -34,6 +34,9 @@ export const BasicInfoScreen = () => {
   const route = useRoute<ScreenRouteProp>();
   const { step1, setStep1, editingListingId, initEdit, initCreate } = useListingPostStore();
   const isEditing = Boolean(editingListingId);
+  const [depositFollowsRent, setDepositFollowsRent] = useState(
+    step1.deposit !== '' && step1.deposit === step1.price
+  );
 
   const {
     control,
@@ -69,10 +72,13 @@ export const BasicInfoScreen = () => {
         area: listing.area ? String(listing.area) : '',
         maxOccupants: listing.maxOccupants ? String(listing.maxOccupants) : '',
         description: listing.description || '',
-        electricPrice: listing.electricPrice ? String(listing.electricPrice) : '',
-        waterPrice: listing.waterPrice ? String(listing.waterPrice) : '',
-        deposit: listing.deposit ? String(listing.deposit) : '',
+        electricPrice: listing.electricPrice != null ? String(listing.electricPrice) : '',
+        waterPrice: listing.waterPrice != null ? String(listing.waterPrice) : '',
+        deposit: listing.deposit != null ? String(listing.deposit) : '',
       });
+      setDepositFollowsRent(
+        listing.deposit != null && Number(listing.deposit) === Number(listing.price)
+      );
     } else if (!editingListingId) {
       resetForm(INITIAL_STEP1);
     }
@@ -82,6 +88,15 @@ export const BasicInfoScreen = () => {
   const title = watch('title');
   const maxOccupants = watch('maxOccupants');
   const occupantCount = Number(maxOccupants) || 0;
+  const price = watch('price');
+  const waterPrice = watch('waterPrice');
+  const isWaterFree = waterPrice === '0';
+
+  useEffect(() => {
+    if (depositFollowsRent) {
+      setValue('deposit', price ?? '', { shouldValidate: true });
+    }
+  }, [depositFollowsRent, price, setValue]);
 
   const onSubmit = useCallback(
     (values: BasicInfoFormValues) => {
@@ -285,9 +300,10 @@ export const BasicInfoScreen = () => {
                 render={({ field: { onChange, value } }) => (
                   <Input
                     label="Tiền nước"
-                    placeholder="100.000"
-                    value={formatNumberWithDots(value)}
+                    placeholder={isWaterFree ? 'Miễn phí' : '100.000'}
+                    value={isWaterFree ? '' : formatNumberWithDots(value)}
                     onChangeText={(text) => onChange(parseRawNumberString(text))}
+                    editable={!isWaterFree}
                     keyboardType="numeric"
                     errorMessage={errors.waterPrice?.message}
                     rightIcon={renderSuffix('đ/m³')}
@@ -300,6 +316,16 @@ export const BasicInfoScreen = () => {
             </View>
           </View>
 
+          <View style={styles.toggleRow}>
+            <FilterChip
+              label="Nước miễn phí"
+              isSelected={isWaterFree}
+              onPress={() =>
+                setValue('waterPrice', isWaterFree ? '' : '0', { shouldValidate: true })
+              }
+            />
+          </View>
+
           <Controller
             control={control}
             name="deposit"
@@ -309,6 +335,7 @@ export const BasicInfoScreen = () => {
                 placeholder="2.500.000"
                 value={formatNumberWithDots(value)}
                 onChangeText={(text) => onChange(parseRawNumberString(text))}
+                editable={!depositFollowsRent}
                 keyboardType="numeric"
                 errorMessage={errors.deposit?.message}
                 rightIcon={renderSuffix('đ')}
@@ -318,6 +345,20 @@ export const BasicInfoScreen = () => {
               />
             )}
           />
+
+          <View style={styles.toggleRow}>
+            <FilterChip
+              label="Bằng tiền phòng"
+              isSelected={depositFollowsRent}
+              onPress={() => {
+                const next = !depositFollowsRent;
+
+                setDepositFollowsRent(next);
+
+                if (next) setValue('deposit', price ?? '', { shouldValidate: true });
+              }}
+            />
+          </View>
 
           <Controller
             control={control}
@@ -351,6 +392,7 @@ export const BasicInfoScreen = () => {
 };
 
 const styles = StyleSheet.create({
+  toggleRow: { flexDirection: 'row', marginBottom: SPACING_TOKENS.MD },
   flex: { flex: 1 },
   scrollContent: { padding: SPACING_TOKENS.MD, paddingBottom: SPACING_TOKENS.XL },
   field: { marginBottom: 0 },
