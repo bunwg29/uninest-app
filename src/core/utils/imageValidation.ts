@@ -1,4 +1,4 @@
-export const MAX_UPLOAD_IMAGE_BYTES = 5 * 1024 * 1024;
+export const MAX_UPLOAD_IMAGE_BYTES = 100 * 1024 * 1024;
 
 const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png'] as const;
 
@@ -29,7 +29,7 @@ export const validateUploadImage = (asset: PickedImageAsset): string | null => {
   }
 
   if (asset.fileSize && asset.fileSize > MAX_UPLOAD_IMAGE_BYTES) {
-    return 'Mỗi ảnh có dung lượng tối đa 5MB';
+    return 'Mỗi ảnh có dung lượng tối đa 100MB';
   }
 
   return null;

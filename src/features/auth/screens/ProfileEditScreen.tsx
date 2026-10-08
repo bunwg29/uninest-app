@@ -125,8 +125,8 @@ export const ProfileEditScreen = () => {
       const fileInfo = await FileSystem.getInfoAsync(asset.uri);
       const fileSize = fileInfo.exists ? fileInfo.size || 0 : 0;
 
-      if (fileSize <= 0 || fileSize > 5 * 1024 * 1024) {
-        throw new Error('Ảnh đại diện phải lớn hơn 0 và tối đa 5MB');
+      if (fileSize <= 0 || fileSize > 100 * 1024 * 1024) {
+        throw new Error('Ảnh đại diện phải lớn hơn 0 và tối đa 100MB');
       }
 
       const presign = await authService.presignAvatar(fileName, contentType, fileSize);
