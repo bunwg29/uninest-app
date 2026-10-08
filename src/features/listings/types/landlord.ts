@@ -57,3 +57,26 @@ export interface LandlordListingsPage {
   page: number;
   totalPages: number;
 }
+
+export type LandlordStatsPeriod = '7d' | '30d' | '90d' | 'all';
+
+export interface LandlordStats {
+  period: LandlordStatsPeriod;
+  since: string | null;
+  views: number;
+  contacts: number;
+  conversations: number;
+  bookings: number;
+  pendingBookings: number;
+}
+
+export const LANDLORD_STATS_PERIOD_OPTIONS: ReadonlyArray<{
+  value: LandlordStatsPeriod;
+  label: string;
+  title: string;
+}> = [
+  { value: '7d', label: '7 ngày', title: '7 ngày qua' },
+  { value: '30d', label: '30 ngày', title: '30 ngày qua' },
+  { value: '90d', label: '90 ngày', title: '90 ngày qua' },
+  { value: 'all', label: 'Tất cả', title: 'Từ trước đến nay' },
+];

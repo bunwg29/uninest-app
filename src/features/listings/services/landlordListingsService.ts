@@ -1,6 +1,8 @@
 import { apiClient } from '@core';
 import type {
   LandlordListing,
+  LandlordStats,
+  LandlordStatsPeriod,
   LandlordListingStatus,
   LandlordListingsPage,
 } from '../types/landlord';
@@ -75,6 +77,12 @@ export const landlordListingsService = {
     });
 
     return mapPage(unwrapData<ApiLandlordListingsPage>(response.data));
+  },
+
+  async getStats(period: LandlordStatsPeriod): Promise<LandlordStats> {
+    const response = await apiClient.get('/landlord/listings/stats', { params: { period } });
+
+    return unwrapData<LandlordStats>(response.data);
   },
 
   async getListing(id: string): Promise<LandlordListing> {
