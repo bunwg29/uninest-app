@@ -1,7 +1,7 @@
-import { Image, StyleSheet, TouchableOpacity, View } from 'react-native';
-import { Heart, Star } from 'lucide-react-native';
+import { StyleSheet, TouchableOpacity, View } from 'react-native';
+import { Star } from 'lucide-react-native';
 import { BORDER_RADIUS_TOKENS, OVERLAY_COLORS, SPACING_TOKENS, THEME_COLORS } from '@theme';
-import { GradientView, Typography } from '@ui';
+import { MediaThumbnail, PriceText, SaveButton, Typography } from '@ui';
 
 export const RECOMMENDATION_CARD_WIDTH = 280;
 
@@ -115,11 +115,7 @@ export const RecommendationCard = ({
       accessibilityLabel={title}
     >
       <View style={styles.imageWrapper}>
-        {imageUrl ? (
-          <Image source={{ uri: imageUrl }} style={styles.image} resizeMode="cover" />
-        ) : (
-          <GradientView colors={placeholderColors} style={styles.image} />
-        )}
+        <MediaThumbnail uri={imageUrl} placeholderColors={placeholderColors} style={styles.image} />
 
         {matchPercentage ? (
           <View style={styles.overlayPill}>
@@ -146,19 +142,14 @@ export const RecommendationCard = ({
         ) : null}
 
         {onToggleSaved ? (
-          <TouchableOpacity
-            style={styles.heartButton}
+          <SaveButton
+            isSaved={isSaved}
             onPress={onToggleSaved}
+            size={17}
             activeOpacity={0.8}
             hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
-            accessibilityLabel={isSaved ? 'Bỏ lưu phòng' : 'Lưu phòng'}
-          >
-            <Heart
-              size={17}
-              color={isSaved ? THEME_COLORS.ERROR : THEME_COLORS.TEXT_SECONDARY}
-              fill={isSaved ? THEME_COLORS.ERROR : THEME_COLORS.TRANSPARENT}
-            />
-          </TouchableOpacity>
+            style={styles.heartButton}
+          />
         ) : null}
       </View>
 
@@ -192,17 +183,11 @@ export const RecommendationCard = ({
           {title}
         </Typography>
 
-        <View style={styles.priceRow}>
-          <Typography
-            variant="h4"
-            weight="BOLD"
-            color={THEME_COLORS.PRIMARY_DARK}
-          >{`${price.toLocaleString('vi-VN')}đ`}</Typography>
-
-          <Typography variant="caption" colorKey="TEXT_PLACEHOLDER" style={styles.perMonth}>
-            /tháng
-          </Typography>
-        </View>
+        <PriceText
+          price={`${price.toLocaleString('vi-VN')}đ`}
+          variant="h4"
+          style={styles.priceRow}
+        />
 
         {specs ? (
           <Typography
@@ -309,12 +294,7 @@ const styles = StyleSheet.create({
     minHeight: 40,
   },
   priceRow: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
     marginTop: SPACING_TOKENS.XS + 1,
-  },
-  perMonth: {
-    marginLeft: SPACING_TOKENS.XS,
   },
   specs: {
     marginTop: 6,

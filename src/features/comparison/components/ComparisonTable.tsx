@@ -1,8 +1,8 @@
-import { useState, type ReactNode } from 'react';
-import { Image, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { type ReactNode } from 'react';
+import { ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { Check, MessageSquare, Minus, Star, X } from 'lucide-react-native';
 import { BORDER_RADIUS_TOKENS, OVERLAY_COLORS, SPACING_TOKENS, THEME_COLORS } from '@theme';
-import { GradientView, Typography } from '@ui';
+import { GradientView, MediaThumbnail, Typography } from '@ui';
 import { AvailabilityBadge } from '@features/listings/components/AvailabilityBadge';
 import { useOpenListingChat } from '@features/chat/hooks/useOpenListingChat';
 import {
@@ -299,7 +299,6 @@ const ImageCell = ({
   onRemove: () => void;
   onOpenDetail: () => void;
 }) => {
-  const [hasError, setHasError] = useState(false);
   const isAvailable = isItemAvailable(item);
   const coverImage = item.images?.find((image) => image.isCover) ?? item.images?.[0];
   const gradientColors = getPlaceholderGradient({
@@ -316,16 +315,11 @@ const ImageCell = ({
         accessibilityRole="button"
         accessibilityLabel={`Xem chi tiết ${item.title}`}
       >
-        {coverImage?.url && !hasError ? (
-          <Image
-            source={{ uri: coverImage.url }}
-            style={styles.image}
-            resizeMode="cover"
-            onError={() => setHasError(true)}
-          />
-        ) : (
-          <GradientView colors={gradientColors} style={styles.image} />
-        )}
+        <MediaThumbnail
+          uri={coverImage?.url}
+          placeholderColors={gradientColors}
+          style={styles.image}
+        />
       </TouchableOpacity>
 
       <TouchableOpacity

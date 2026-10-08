@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
-  Image,
   Modal,
   ScrollView,
   StyleSheet,
@@ -13,7 +12,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useToast } from '@hooks';
 import { BORDER_RADIUS_TOKENS, OVERLAY_COLORS, SPACING_TOKENS, THEME_COLORS } from '@theme';
-import { Button, GradientView, Typography } from '@ui';
+import { Button, MediaThumbnail, Typography } from '@ui';
 import { listingService } from '@features/listings/services';
 import type { ListingAvailability } from '@features/listings/types';
 import { useRecentListingIds } from '@features/recommendations';
@@ -297,7 +296,6 @@ const CandidateCard = ({
   isSelected: boolean;
   onPress: () => void;
 }) => {
-  const [hasImageError, setHasImageError] = useState(false);
   const isUnavailable = candidate.availability === 'rented' || candidate.availability === 'paused';
   const gradientColors = getPlaceholderGradient({
     id: candidate.id,
@@ -336,22 +334,13 @@ const CandidateCard = ({
         {isSelected ? <Check size={13} color={THEME_COLORS.WHITE} strokeWidth={3} /> : null}
       </View>
 
-      {candidate.thumbnail && !hasImageError ? (
-        <Image
-          source={{ uri: candidate.thumbnail }}
-          style={styles.thumbnail}
-          onError={() => setHasImageError(true)}
-        />
-      ) : (
-        <GradientView
-          colors={
-            isSelected
-              ? [OVERLAY_COLORS.SUCCESS_BORDER, THEME_COLORS.SUCCESS_LIGHT]
-              : gradientColors
-          }
-          style={styles.thumbnail}
-        />
-      )}
+      <MediaThumbnail
+        uri={candidate.thumbnail}
+        placeholderColors={
+          isSelected ? [OVERLAY_COLORS.SUCCESS_BORDER, THEME_COLORS.SUCCESS_LIGHT] : gradientColors
+        }
+        style={styles.thumbnail}
+      />
 
       <View style={styles.cardBody}>
         <Typography variant="label" weight="SEMIBOLD" numberOfLines={2} style={styles.cardTitle}>

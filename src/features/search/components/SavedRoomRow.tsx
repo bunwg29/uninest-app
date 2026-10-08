@@ -1,7 +1,6 @@
-import { Image, StyleSheet, TouchableOpacity, View } from 'react-native';
-import { Heart } from 'lucide-react-native';
+import { StyleSheet, TouchableOpacity, View } from 'react-native';
 import { BORDER_RADIUS_TOKENS, OVERLAY_COLORS, THEME_COLORS } from '@theme';
-import { GradientView, Typography } from '@ui';
+import { MediaThumbnail, PriceText, SaveButton, Typography } from '@ui';
 import type { SearchListingItem } from '../types';
 import { formatFullPrice, getCardStatus, getPlaceholderGradient } from '../utils';
 import { StatusPill } from './StatusPill';
@@ -28,11 +27,11 @@ export const SavedRoomRow = ({ listing, onPress, onRemove }: SavedRoomRowProps) 
       accessibilityLabel={`${listing.title}, ${formatFullPrice(listing.price)} mỗi tháng`}
     >
       <View style={styles.thumbnailWrapper}>
-        {listing.thumbnail ? (
-          <Image source={{ uri: listing.thumbnail }} style={styles.thumbnail} resizeMode="cover" />
-        ) : (
-          <GradientView colors={getPlaceholderGradient(listing)} style={styles.thumbnail} />
-        )}
+        <MediaThumbnail
+          uri={listing.thumbnail}
+          placeholderColors={getPlaceholderGradient(listing)}
+          style={styles.thumbnail}
+        />
 
         {isUnavailable ? (
           <View style={styles.thumbnailOverlay}>
@@ -61,19 +60,13 @@ export const SavedRoomRow = ({ listing, onPress, onRemove }: SavedRoomRowProps) 
           {listing.title}
         </Typography>
 
-        <View style={styles.priceRow}>
-          <Typography
-            variant="h4"
-            weight="BOLD"
-            colorKey={isUnavailable ? 'TEXT_PLACEHOLDER' : 'PRIMARY_DARK'}
-            style={styles.price}
-          >
-            {formatFullPrice(listing.price)}
-          </Typography>
-          <Typography variant="caption" colorKey="TEXT_PLACEHOLDER">
-            /tháng
-          </Typography>
-        </View>
+        <PriceText
+          price={formatFullPrice(listing.price)}
+          variant="h4"
+          priceColorKey={isUnavailable ? 'TEXT_PLACEHOLDER' : 'PRIMARY_DARK'}
+          priceStyle={styles.price}
+          style={styles.priceRow}
+        />
 
         {specs ? (
           <Typography
@@ -88,18 +81,14 @@ export const SavedRoomRow = ({ listing, onPress, onRemove }: SavedRoomRowProps) 
         ) : null}
       </View>
 
-      <TouchableOpacity
+      <SaveButton
+        isSaved
         onPress={onRemove}
+        size={22}
+        activeColor={isUnavailable ? OVERLAY_COLORS.FIELD_BORDER : THEME_COLORS.ERROR}
         hitSlop={{ top: 12, right: 12, bottom: 12, left: 12 }}
-        accessibilityRole="button"
         accessibilityLabel="Bỏ lưu phòng"
-      >
-        <Heart
-          size={22}
-          color={isUnavailable ? OVERLAY_COLORS.FIELD_BORDER : THEME_COLORS.ERROR}
-          fill={isUnavailable ? OVERLAY_COLORS.FIELD_BORDER : THEME_COLORS.ERROR}
-        />
-      </TouchableOpacity>
+      />
     </TouchableOpacity>
   );
 };
@@ -144,7 +133,7 @@ const styles = StyleSheet.create({
   content: { flex: 1, minWidth: 0 },
   badges: { flexDirection: 'row', marginBottom: 4 },
   title: { lineHeight: 20 },
-  priceRow: { flexDirection: 'row', alignItems: 'baseline', gap: 4, marginTop: 4 },
+  priceRow: { marginTop: 4 },
   price: { fontSize: 16, lineHeight: 24 },
   specs: { marginTop: 2, letterSpacing: 0.2 },
 });

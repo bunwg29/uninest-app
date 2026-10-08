@@ -1,14 +1,6 @@
-import {
-  Image,
-  StyleSheet,
-  TouchableOpacity,
-  View,
-  type StyleProp,
-  type ViewStyle,
-} from 'react-native';
-import { Heart } from 'lucide-react-native';
+import { StyleSheet, TouchableOpacity, View, type StyleProp, type ViewStyle } from 'react-native';
 import { BORDER_RADIUS_TOKENS, OVERLAY_COLORS, THEME_COLORS } from '@theme';
-import { GradientView, Typography } from '@ui';
+import { MediaThumbnail, PriceText, SaveButton, Typography } from '@ui';
 import type { SearchListingItem } from '../types';
 import {
   formatFullPrice,
@@ -50,11 +42,11 @@ export const SearchListingRow = ({
       accessibilityRole="button"
       accessibilityLabel={`${listing.title}, ${formatFullPrice(listing.price)} mỗi tháng`}
     >
-      {listing.thumbnail ? (
-        <Image source={{ uri: listing.thumbnail }} style={styles.thumbnail} resizeMode="cover" />
-      ) : (
-        <GradientView colors={getPlaceholderGradient(listing)} style={styles.thumbnail} />
-      )}
+      <MediaThumbnail
+        uri={listing.thumbnail}
+        placeholderColors={getPlaceholderGradient(listing)}
+        style={styles.thumbnail}
+      />
 
       <View style={styles.content}>
         <View style={styles.badges}>
@@ -66,14 +58,12 @@ export const SearchListingRow = ({
           {listing.title}
         </Typography>
 
-        <View style={styles.priceRow}>
-          <Typography variant="h4" weight="BOLD" colorKey="PRIMARY_DARK" style={styles.price}>
-            {formatFullPrice(listing.price)}
-          </Typography>
-          <Typography variant="caption" colorKey="TEXT_PLACEHOLDER">
-            /tháng
-          </Typography>
-        </View>
+        <PriceText
+          price={formatFullPrice(listing.price)}
+          variant="h4"
+          priceStyle={styles.price}
+          style={styles.priceRow}
+        />
 
         <Typography
           variant="caption"
@@ -86,19 +76,14 @@ export const SearchListingRow = ({
         </Typography>
       </View>
 
-      <TouchableOpacity
-        style={styles.heartButton}
+      <SaveButton
+        isSaved={isSaved}
         onPress={onToggleSaved}
+        size={20}
+        inactiveColor={THEME_COLORS.TEXT_PLACEHOLDER}
         hitSlop={{ top: 8, right: 8, bottom: 8, left: 8 }}
-        accessibilityRole="button"
-        accessibilityLabel={isSaved ? 'Bỏ lưu phòng' : 'Lưu phòng'}
-      >
-        <Heart
-          size={20}
-          color={isSaved ? THEME_COLORS.ERROR : THEME_COLORS.TEXT_PLACEHOLDER}
-          fill={isSaved ? THEME_COLORS.ERROR : THEME_COLORS.TRANSPARENT}
-        />
-      </TouchableOpacity>
+        style={styles.heartButton}
+      />
     </TouchableOpacity>
   );
 };
@@ -130,7 +115,7 @@ const styles = StyleSheet.create({
   content: { flex: 1, minWidth: 0 },
   badges: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 4 },
   title: { lineHeight: 20 },
-  priceRow: { flexDirection: 'row', alignItems: 'baseline', gap: 4, marginTop: 4 },
+  priceRow: { marginTop: 4 },
   price: { fontSize: 16, lineHeight: 24 },
   specs: { marginTop: 2, letterSpacing: 0.2 },
   heartButton: { alignSelf: 'flex-start', padding: 2 },
