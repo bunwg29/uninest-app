@@ -51,6 +51,24 @@ export const listingService = {
     return unwrapData<PresignedUploadResponse>(response.data);
   },
 
+  async uploadVideo(video: {
+    uri: string;
+    fileName: string;
+    contentType: string;
+    fileSize?: number;
+  }): Promise<string> {
+    const response = await apiClient.post('/storage/presign-video-upload', {
+      fileName: video.fileName,
+      contentType: video.contentType,
+      fileSize: video.fileSize,
+    });
+    const { uploadUrl, key } = unwrapData<PresignedUploadResponse>(response.data);
+
+    await this.uploadImageToR2(uploadUrl, video.uri, video.contentType);
+
+    return key;
+  },
+
   async uploadImageToR2(uploadUrl: string, fileUri: string, contentType: string): Promise<void> {
     if (Platform.OS !== 'web' && fileUri.startsWith('file://')) {
       const uploadResult = await FileSystem.uploadAsync(uploadUrl, fileUri, {

@@ -19,6 +19,7 @@ export interface CreateListingPayload {
   latitude: number;
   longitude: number;
   images?: CreateListingImagePayload[];
+  videoKey?: string | null;
   amenityIds?: number[];
   viewingSchedule?: ViewingSchedule;
 }
@@ -98,6 +99,7 @@ export interface ListingDetail {
   landlord: ListingDetailLandlord;
   status: string;
   viewingSchedule: Record<string, unknown> | null;
+  videoUrl?: string | null;
   averageRating: number | null;
   reviewCount?: number | null;
   isHighlighted?: boolean;
@@ -139,6 +141,14 @@ export interface LocalImageItem {
   fileName: string;
   contentType: string;
   fileSize?: number;
+}
+
+export interface LocalVideoItem {
+  uri: string;
+  fileName: string;
+  contentType: string;
+  fileSize?: number;
+  uploadedKey?: string;
 }
 
 export interface UploadedImageItem {

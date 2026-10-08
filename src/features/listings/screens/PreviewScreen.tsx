@@ -10,6 +10,7 @@ import type { ListingPostStackParamList, RootStackParamList } from '@navigation'
 import { useListingPostStore } from '../store/listingPostStore';
 import { useCreateListing, useUpdateListing } from '../hooks/useCreateListing';
 import { useUploadImages } from '../hooks/useUploadImages';
+import { listingService } from '../services/listingService';
 import { ROOM_TYPE_OPTIONS, AMENITY_DISPLAY_LIST } from '../types/constants';
 import { LandlordStatusPill } from '../components/landlord/LandlordStatusPill';
 import type { CreateListingPayload, CreateListingImagePayload, UploadedImageItem } from '../types';
@@ -42,6 +43,8 @@ export const PreviewScreen = () => {
     setUploadedImages,
     localImages,
     setLocalImages,
+    video,
+    setVideo,
     selectedAmenityIds,
     viewingSchedule,
     editingListingId,
@@ -127,6 +130,13 @@ export const PreviewScreen = () => {
       return;
     }
 
+    const videoTask: Promise<{ key: string | null } | { error: true }> =
+      video && !video.uploadedKey
+        ? listingService.uploadVideo(video).then(
+            (key) => ({ key }),
+            () => ({ error: true as const })
+          )
+        : Promise.resolve({ key: video?.uploadedKey ?? null });
     const imagesNeedingUpload = localImages.filter((image) => !image.uploadedUrl);
     let uploadedImages: UploadedImageItem[] = [];
 
@@ -144,6 +154,18 @@ export const PreviewScreen = () => {
 
         return;
       }
+    }
+
+    const videoResult = await videoTask;
+
+    if ('error' in videoResult) {
+      toast.error('Tải video lên thất bại. Vui lòng thử lại.');
+
+      return;
+    }
+
+    if (video && videoResult.key && !video.uploadedKey) {
+      setVideo({ ...video, uploadedKey: videoResult.key });
     }
 
     const uploadedBySortOrder = new Map(
@@ -191,6 +213,7 @@ export const PreviewScreen = () => {
       latitude: step3.latitude ?? 0,
       longitude: step3.longitude ?? 0,
       images: finalImages,
+      videoKey: videoResult.key,
       amenityIds: selectedAmenityIds,
       viewingSchedule,
     };
@@ -229,6 +252,8 @@ export const PreviewScreen = () => {
     createListing(payload, { onSuccess, onError });
   }, [
     localImages,
+    video,
+    setVideo,
     uploadAll,
     setUploadedImages,
     setLocalImages,

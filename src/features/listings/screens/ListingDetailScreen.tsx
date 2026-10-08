@@ -78,6 +78,7 @@ import {
   ListingDetailSkeleton,
   ListingGalleryModal,
   ListingLocationMap,
+  ListingVideoPlayer,
   ReportListingModal,
   getAmenityIcon,
   type ListingReportReason,
@@ -476,6 +477,12 @@ export const ListingDetailScreen = () => {
                 }
               />
             </Section>
+
+            {listing.videoUrl ? (
+              <Section title="Video giới thiệu">
+                <ListingVideoPlayer uri={listing.videoUrl} />
+              </Section>
+            ) : null}
 
             <Section title="Vị trí">
               {hasCoordinates ? (

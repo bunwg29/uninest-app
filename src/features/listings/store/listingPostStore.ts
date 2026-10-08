@@ -5,6 +5,7 @@ import type {
   ListingStep1State,
   ListingStep3State,
   LocalImageItem,
+  LocalVideoItem,
   UploadedImageItem,
   ViewingSchedule,
   DayKey,
@@ -50,6 +51,7 @@ interface ListingPostState {
   editBaseline: string | null;
   step1: ListingStep1State;
   localImages: LocalImageItem[];
+  video: LocalVideoItem | null;
   uploadedImages: UploadedImageItem[];
   step3: ListingStep3State;
   selectedAmenityIds: number[];
@@ -58,6 +60,7 @@ interface ListingPostState {
   setStep1: (data: Partial<ListingStep1State>) => void;
   setEditingListingId: (id: string | null) => void;
   setLocalImages: (images: LocalImageItem[]) => void;
+  setVideo: (video: LocalVideoItem | null) => void;
   setUploadedImages: (images: UploadedImageItem[]) => void;
   setStep3: (data: Partial<ListingStep3State>) => void;
   setSelectedAmenityIds: (ids: number[]) => void;
@@ -73,6 +76,7 @@ const INITIAL_STATE = {
   editBaseline: null as string | null,
   step1: INITIAL_STEP1,
   localImages: [] as LocalImageItem[],
+  video: null as LocalVideoItem | null,
   uploadedImages: [] as UploadedImageItem[],
   step3: INITIAL_STEP3,
   selectedAmenityIds: [] as number[],
@@ -82,12 +86,13 @@ const INITIAL_STATE = {
 const getDraftSnapshot = ({
   step1,
   localImages,
+  video,
   step3,
   selectedAmenityIds,
   viewingSchedule,
 }: Pick<
   ListingPostState,
-  'step1' | 'localImages' | 'step3' | 'selectedAmenityIds' | 'viewingSchedule'
+  'step1' | 'localImages' | 'video' | 'step3' | 'selectedAmenityIds' | 'viewingSchedule'
 >): string =>
   JSON.stringify({
     basicInfo: {
@@ -106,6 +111,7 @@ const getDraftSnapshot = ({
       isCover: image.isCover,
       sortOrder: image.sortOrder,
     })),
+    video: video ? (video.uploadedKey ?? video.uri) : null,
     location: {
       streetAddress: step3.streetAddress.trim(),
       provinceCode: step3.provinceCode,
@@ -129,6 +135,8 @@ export const useListingPostStore = create<ListingPostState>()(
       setStep1: (data) => set((state) => ({ step1: { ...state.step1, ...data } })),
 
       setLocalImages: (localImages) => set({ localImages }),
+
+      setVideo: (video) => set({ video }),
 
       setUploadedImages: (uploadedImages) => set({ uploadedImages }),
 
@@ -212,9 +220,19 @@ export const useListingPostStore = create<ListingPostState>()(
           });
         }
 
+        const video: LocalVideoItem | null = listing.videoKey
+          ? {
+              uri: listing.videoUrl ?? listing.videoKey,
+              fileName: listing.videoKey.split('/').pop() ?? 'video.mp4',
+              contentType: listing.videoKey.endsWith('.mov') ? 'video/quicktime' : 'video/mp4',
+              uploadedKey: listing.videoKey,
+            }
+          : null;
+
         const editBaseline = getDraftSnapshot({
           step1: basicInfo,
           localImages,
+          video,
           step3,
           selectedAmenityIds: listing.amenityIds || [],
           viewingSchedule: schedule,
@@ -225,6 +243,7 @@ export const useListingPostStore = create<ListingPostState>()(
           editBaseline,
           step1: basicInfo,
           localImages,
+          video,
           uploadedImages,
           step3,
           selectedAmenityIds: listing.amenityIds || [],
@@ -254,6 +273,7 @@ export const useListingPostStore = create<ListingPostState>()(
               selectedAmenityIds: state.selectedAmenityIds,
               viewingSchedule: state.viewingSchedule,
               localImages: state.localImages,
+              video: state.video,
               uploadedImages: state.uploadedImages,
             },
     }

@@ -21,6 +21,7 @@ import {
   ROOM_TYPE_OPTIONS,
   VIEWING_SLOT_LABELS,
 } from '../types/constants';
+import { ListingVideoPlayer } from '../components/ListingVideoPlayer';
 import type { DayKey, ViewingSlot } from '../types';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
@@ -133,6 +134,15 @@ export const StudentListingPreviewScreen = () => {
             </Typography>
           </View>
         </View>
+
+        {listing.videoUrl ? (
+          <View style={styles.card}>
+            <Typography variant="body1" weight="BOLD" style={styles.sectionTitle}>
+              Video giới thiệu
+            </Typography>
+            <ListingVideoPlayer uri={listing.videoUrl} />
+          </View>
+        ) : null}
 
         <View style={styles.specsRow}>
           <Spec icon={Maximize2} label="Diện tích" value={`${listing.area} m²`} />

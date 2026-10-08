@@ -27,6 +27,8 @@ export interface LandlordListing {
   description?: string;
   electricPrice?: number;
   waterPrice?: number;
+  videoKey?: string;
+  videoUrl?: string;
   deposit?: number;
   streetAddress?: string;
   provinceCode?: string;

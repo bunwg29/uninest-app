@@ -49,3 +49,33 @@ export const filterValidUploadImages = <T extends PickedImageAsset>(
 
   return { valid, firstError };
 };
+
+export const MAX_UPLOAD_VIDEO_BYTES = 100 * 1024 * 1024;
+
+const ALLOWED_VIDEO_TYPES = ['video/mp4', 'video/quicktime'] as const;
+
+export const resolveVideoContentType = (asset: PickedImageAsset): string => {
+  const source = (asset.fileName ?? asset.uri).split('?')[0].toLowerCase();
+
+  if (source.endsWith('.mov')) return 'video/quicktime';
+
+  if (source.endsWith('.mp4')) return 'video/mp4';
+
+  const mimeType = asset.mimeType?.toLowerCase();
+
+  return mimeType && mimeType.startsWith('video/') ? mimeType : 'application/octet-stream';
+};
+
+export const validateUploadVideo = (asset: PickedImageAsset): string | null => {
+  const contentType = resolveVideoContentType(asset);
+
+  if (!(ALLOWED_VIDEO_TYPES as readonly string[]).includes(contentType)) {
+    return 'Chỉ hỗ trợ video định dạng mp4 hoặc mov';
+  }
+
+  if (asset.fileSize && asset.fileSize > MAX_UPLOAD_VIDEO_BYTES) {
+    return 'Video có dung lượng tối đa 100MB';
+  }
+
+  return null;
+};
