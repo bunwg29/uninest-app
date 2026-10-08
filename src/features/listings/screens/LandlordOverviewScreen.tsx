@@ -447,6 +447,14 @@ export const LandlordOverviewScreen = () => {
         fullName={user?.fullName}
         contact={user?.phoneNumber || user?.email}
         avatarUrl={user?.avatarUrl}
+        onViewPublicProfile={() =>
+          openFromAccount(() =>
+            rootNavigation.navigate('LandlordPublicProfile', {
+              landlordId: user?.id ?? '',
+              isPreview: true,
+            })
+          )
+        }
         onEditProfile={() => openFromAccount(() => rootNavigation.navigate('ProfileEdit'))}
         onChangePassword={() => openFromAccount(() => rootNavigation.navigate('ChangePassword'))}
         onOpenSettings={() => openFromAccount(() => rootNavigation.navigate('Settings'))}

@@ -88,6 +88,7 @@ export type RootStackParamList = {
   };
   ResetPassword: { target: string; otpCode: string };
   ListingDetail: { id: string };
+  LandlordPublicProfile: { landlordId: string; isPreview?: boolean };
   Comparison: undefined;
   SavedRooms: undefined;
   LandlordVerification: undefined;

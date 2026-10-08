@@ -492,7 +492,17 @@ export const ListingDetailScreen = () => {
 
             <Section title="Chủ trọ">
               {listing.landlord ? (
-                <View style={styles.landlordRow}>
+                <TouchableOpacity
+                  style={styles.landlordRow}
+                  activeOpacity={0.7}
+                  accessibilityRole="button"
+                  accessibilityLabel="Xem hồ sơ chủ trọ"
+                  onPress={() =>
+                    navigation.navigate('LandlordPublicProfile', {
+                      landlordId: listing.landlord.id,
+                    })
+                  }
+                >
                   <Avatar
                     uri={listing.landlord.avatarUrl}
                     name={listing.landlord.fullName}
@@ -513,7 +523,7 @@ export const ListingDetailScreen = () => {
                       </Typography>
                     ) : null}
                   </View>
-                </View>
+                </TouchableOpacity>
               ) : (
                 <Typography variant="body2" colorKey="TEXT_MUTED">
                   Chưa có thông tin chủ trọ.

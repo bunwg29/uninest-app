@@ -1,6 +1,6 @@
 import type { ComponentType } from 'react';
 import { Modal, Pressable, StyleSheet, TouchableOpacity, View } from 'react-native';
-import { KeyRound, LogOut, Settings2, UserRound } from 'lucide-react-native';
+import { Eye, KeyRound, LogOut, Settings2, UserRound } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BORDER_RADIUS_TOKENS, OVERLAY_COLORS, SPACING_TOKENS, THEME_COLORS } from '@theme';
 import { GradientAvatar, Typography } from '@ui';
@@ -10,6 +10,7 @@ interface LandlordAccountSheetProps {
   fullName?: string;
   contact?: string;
   avatarUrl?: string | null;
+  onViewPublicProfile: () => void;
   onEditProfile: () => void;
   onChangePassword: () => void;
   onOpenSettings: () => void;
@@ -51,6 +52,7 @@ export const LandlordAccountSheet = ({
   fullName,
   contact,
   avatarUrl,
+  onViewPublicProfile,
   onEditProfile,
   onChangePassword,
   onOpenSettings,
@@ -90,6 +92,7 @@ export const LandlordAccountSheet = ({
 
           <View style={styles.divider} />
 
+          <MenuItem icon={Eye} label="Hồ sơ công khai" onPress={onViewPublicProfile} />
           <MenuItem icon={UserRound} label="Chỉnh sửa hồ sơ" onPress={onEditProfile} />
           <MenuItem icon={KeyRound} label="Đổi mật khẩu" onPress={onChangePassword} />
           <MenuItem icon={Settings2} label="Cài đặt ứng dụng" onPress={onOpenSettings} />

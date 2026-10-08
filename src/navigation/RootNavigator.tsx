@@ -15,6 +15,7 @@ import { ChatImagePreviewScreen, ChatRoomScreen, useChatRealtime } from '@featur
 import { CommunityScreen, ForumPostComposerScreen, ForumPostDetailScreen } from '@features/forum';
 import {
   LandlordListingDetailScreen,
+  LandlordPublicProfileScreen,
   ListingDetailScreen,
   StudentListingPreviewScreen,
 } from '@features/listings';
@@ -74,6 +75,7 @@ export const RootNavigator = () => {
             <Stack.Screen name="LandlordListingDetail" component={LandlordListingDetailScreen} />
             <Stack.Screen name="StudentListingPreview" component={StudentListingPreviewScreen} />
             <Stack.Screen name="ListingDetail" component={ListingDetailScreen} />
+            <Stack.Screen name="LandlordPublicProfile" component={LandlordPublicProfileScreen} />
             <Stack.Screen name="Comparison" component={ComparisonScreen} />
             <Stack.Screen name="SavedRooms" component={SavedRoomsScreen} />
             <Stack.Screen name="LandlordVerification" component={LandlordVerificationScreen} />
