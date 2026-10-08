@@ -1,6 +1,6 @@
-import { useCallback, useState } from 'react';
+import { useState } from 'react';
 import { StyleSheet, TouchableOpacity, View } from 'react-native';
-import { useFocusEffect, useNavigation } from '@react-navigation/native';
+import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { RootStackParamList } from '@navigation';
@@ -18,7 +18,7 @@ type ComparisonNavigation = NativeStackNavigationProp<RootStackParamList>;
 export const ComparisonScreen = () => {
   const navigation = useNavigation<ComparisonNavigation>();
   const insets = useSafeAreaInsets();
-  const { items, isFull, isLoading, isServerMode, refetch } = useComparison();
+  const { items, isFull, isLoading } = useComparison();
   const remove = useRemoveComparison();
   const clear = useClearComparison();
   const filters = useSearchStore((state) => state.appliedFilters);
@@ -27,14 +27,6 @@ export const ComparisonScreen = () => {
   const school = SEARCH_SCHOOLS.find((item) => item.id === filters.schoolId);
   const hasReference = filters.latitude !== undefined && filters.longitude !== undefined;
   const referenceLabel = school ? school.shortName : hasReference ? 'bạn' : null;
-
-  useFocusEffect(
-    useCallback(() => {
-      if (isServerMode) {
-        void refetch();
-      }
-    }, [isServerMode, refetch])
-  );
 
   const handleBack = () => {
     if (navigation.canGoBack()) {
