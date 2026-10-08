@@ -18,7 +18,11 @@ import {
   type SearchListingItem,
 } from '@features/search';
 import { useComparison } from '@features/comparison';
-import { RecommendationCard, useRecentlyViewedStore } from '@features/recommendations';
+import {
+  RecommendationCard,
+  useRecentListingIds,
+  useRecentlyViewedStore,
+} from '@features/recommendations';
 import type { MainTabParamList, RootStackParamList } from '@navigation';
 import { useListingPostStore } from '../store/listingPostStore';
 import { useOpenListing } from '../hooks';
@@ -77,7 +81,7 @@ export const HomeScreen = () => {
   const applySearchPreset = useSearchStore((state) => state.applyPreset);
   const openSearchFilters = useSearchStore((state) => state.openFilters);
   const setSearchViewMode = useSearchStore((state) => state.setViewMode);
-  const recentViewCount = useRecentlyViewedStore((state) => state.listingIds.length);
+  const recentViewCount = useRecentListingIds().length;
   const hasHydratedHistory = useRecentlyViewedStore((state) => state.hasHydrated);
   const [selectedChipId, setSelectedChipId] = useState<HomeChipId>('near-university');
 

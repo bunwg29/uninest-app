@@ -9,15 +9,14 @@ import {
   View,
 } from 'react-native';
 import { Check, X } from 'lucide-react-native';
-import { useQueries } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useToast } from '@hooks';
 import { BORDER_RADIUS_TOKENS, OVERLAY_COLORS, SPACING_TOKENS, THEME_COLORS } from '@theme';
 import { Button, GradientView, Typography } from '@ui';
 import { listingService } from '@features/listings/services';
-import { LISTING_DETAIL_QUERY_KEY } from '@features/listings/hooks/useListingDetail';
 import type { ListingAvailability } from '@features/listings/types';
-import { useRecentlyViewedStore } from '@features/recommendations';
+import { useRecentListingIds } from '@features/recommendations';
 import {
   formatListingDistance,
   getPlaceholderGradient,
@@ -80,7 +79,7 @@ export const AddComparisonSheet = ({
   const toast = useToast();
   const { items: comparisonItems } = useComparison();
   const { add: addComparison } = useAddComparison();
-  const recentIds = useRecentlyViewedStore((state) => state.listingIds);
+  const recentIds = useRecentListingIds();
   const favoritesQuery = useFavorites();
   const [activeTab, setActiveTab] = useState<SheetTab>('saved');
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
@@ -91,12 +90,11 @@ export const AddComparisonSheet = ({
     [comparisonItems]
   );
 
-  const recentQueries = useQueries({
-    queries: recentIds.slice(0, RECENT_LIMIT).map((id) => ({
-      queryKey: [...LISTING_DETAIL_QUERY_KEY, id],
-      queryFn: () => listingService.getListingDetail(id),
-      enabled: isVisible && activeTab === 'recent',
-    })),
+  const recentBatchIds = useMemo(() => recentIds.slice(0, RECENT_LIMIT), [recentIds]);
+  const recentQuery = useQuery({
+    queryKey: ['listings-batch', recentBatchIds],
+    queryFn: () => listingService.getListingsByIds(recentBatchIds),
+    enabled: isVisible && activeTab === 'recent' && recentBatchIds.length > 0,
   });
 
   useEffect(() => {
@@ -117,31 +115,28 @@ export const AddComparisonSheet = ({
   const savedTotal = favoritesQuery.data?.pages[0]?.pagination.total ?? savedCandidates.length;
   const recentCandidates = useMemo(
     () =>
-      recentQueries.flatMap((query) =>
-        query.data && !comparedIds.has(query.data.id)
-          ? [
+      (recentQuery.data ?? []).flatMap((detail) =>
+        comparedIds.has(detail.id)
+          ? []
+          : [
               {
-                id: query.data.id,
-                title: query.data.title,
-                price: query.data.price,
-                area: query.data.area,
+                id: detail.id,
+                title: detail.title,
+                price: detail.price,
+                area: detail.area,
                 thumbnail:
-                  (query.data.images.find((image) => image.isCover) ?? query.data.images[0])?.url ??
-                  null,
-                distanceMeters: query.data.distanceMeters ?? null,
-                availability: query.data.availability,
+                  (detail.images.find((image) => image.isCover) ?? detail.images[0])?.url ?? null,
+                distanceMeters: detail.distanceMeters ?? null,
+                availability: detail.availability,
                 isHighlighted: false,
               } satisfies Candidate,
             ]
-          : []
       ),
-    [recentQueries, comparedIds]
+    [recentQuery.data, comparedIds]
   );
   const candidates = activeTab === 'saved' ? savedCandidates : recentCandidates;
   const isLoadingCandidates =
-    activeTab === 'saved'
-      ? favoritesQuery.isLoading
-      : recentQueries.some((query) => query.isLoading);
+    activeTab === 'saved' ? favoritesQuery.isLoading : recentQuery.isLoading;
 
   const handleToggle = (candidate: Candidate) => {
     if (candidate.availability === 'rented' || candidate.availability === 'paused') {
@@ -167,12 +162,7 @@ export const AddComparisonSheet = ({
     setIsAdding(true);
 
     try {
-      const results = await Promise.allSettled(
-        selectedIds.map((id) => listingService.getListingDetail(id))
-      );
-      const details = results.flatMap((result) =>
-        result.status === 'fulfilled' ? [result.value] : []
-      );
+      const details = await listingService.getListingsByIds(selectedIds);
       const comparable = details.filter(
         (detail) =>
           detail.status === 'active' &&

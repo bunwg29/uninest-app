@@ -113,7 +113,7 @@ export const ListingDetailScreen = () => {
   const route = useRoute<DetailRoute>();
   const navigation = useNavigation<DetailNavigation>();
   const insets = useSafeAreaInsets();
-  const { role } = useAuth();
+  const { role, user } = useAuth();
   const toast = useToast();
   const { width } = useWindowDimensions();
   const listingId = route.params.id;
@@ -158,9 +158,9 @@ export const ListingDetailScreen = () => {
     viewMutation.mutate();
 
     if (isStudent) {
-      recordRecentlyViewed(listingId);
+      if (user?.id) recordRecentlyViewed(user.id, listingId);
     }
-  }, [detailQuery.data, isStudent, listingId, recordRecentlyViewed, viewMutation]);
+  }, [detailQuery.data, isStudent, listingId, recordRecentlyViewed, user?.id, viewMutation]);
 
   useEffect(() => {
     if (!isLimitNoticeVisible) {

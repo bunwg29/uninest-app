@@ -30,6 +30,16 @@ export const listingService = {
     return unwrapData<ListingDetail>(response.data);
   },
 
+  async getListingsByIds(ids: string[]): Promise<ListingDetail[]> {
+    if (ids.length === 0) return [];
+
+    const response = await apiClient.get('/listings/batch', {
+      params: { ids: ids.join(',') },
+    });
+
+    return unwrapData<ListingDetail[]>(response.data);
+  },
+
   async recordListingView(id: string): Promise<RecordListingViewResponse> {
     const response = await apiClient.patch(`/listings/${id}/view`);
 
