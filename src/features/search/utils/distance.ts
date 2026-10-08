@@ -17,9 +17,6 @@ export const haversineMeters = (
   return 2 * EARTH_RADIUS_METERS * Math.asin(Math.sqrt(a));
 };
 
-export const formatDistanceMeters = (meters: number) =>
-  meters >= 1000 ? `${(meters / 1000).toFixed(1)} km` : `${Math.round(meters)} m`;
-
 export const estimateWalkingMinutes = (meters: number) => Math.max(1, Math.round(meters / 80));
 
 export const WALKING_DISTANCE_LIMIT_METERS = 1000;

@@ -23,7 +23,6 @@ export const THEME_COLORS = {
   TRANSPARENT: 'transparent',
 } as const;
 
-export type ThemeColors = typeof THEME_COLORS;
 export type ThemeColorKey = keyof typeof THEME_COLORS;
 
 export const OVERLAY_COLORS = {

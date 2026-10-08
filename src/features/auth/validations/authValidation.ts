@@ -33,8 +33,6 @@ export const registerSchema = z.object({
   }),
 });
 
-export const createRegisterSchema = () => registerSchema;
-
 export type RegisterFormValues = z.infer<typeof registerSchema>;
 
 export const forgotPasswordSchema = z.object({
@@ -43,10 +41,6 @@ export const forgotPasswordSchema = z.object({
     .min(1, 'Vui lòng nhập số điện thoại')
     .regex(/^[0-9]{10}$/, 'Số điện thoại không hợp lệ (10 chữ số)'),
 });
-
-export const createForgotPasswordSchema = () => forgotPasswordSchema;
-
-export type ForgotPasswordFormValues = z.infer<typeof forgotPasswordSchema>;
 
 export const resetPasswordSchema = z
   .object({
@@ -61,7 +55,3 @@ export const resetPasswordSchema = z
     message: 'Hai mật khẩu không khớp nhau',
     path: ['confirmPassword'],
   });
-
-export const createResetPasswordSchema = () => resetPasswordSchema;
-
-export type ResetPasswordFormValues = z.infer<typeof resetPasswordSchema>;

@@ -48,22 +48,3 @@ export const basicInfoSchema = z.object({
 });
 
 export type BasicInfoFormValues = z.infer<typeof basicInfoSchema>;
-
-export const locationSchema = z.object({
-  streetAddress: z
-    .string()
-    .min(1, 'Vui lòng nhập địa chỉ đường phố')
-    .max(255, 'Địa chỉ tối đa 255 ký tự'),
-  provinceCode: z.string().min(1, 'Vui lòng chọn Tỉnh/Thành phố'),
-  wardCode: z.string().min(1, 'Vui lòng chọn Phường/Xã'),
-  latitude: z
-    .number({ invalid_type_error: 'Vui lòng chọn vị trí trên bản đồ' })
-    .min(-90, 'Vĩ độ không hợp lệ')
-    .max(90, 'Vĩ độ không hợp lệ'),
-  longitude: z
-    .number({ invalid_type_error: 'Vui lòng chọn vị trí trên bản đồ' })
-    .min(-180, 'Kinh độ không hợp lệ')
-    .max(180, 'Kinh độ không hợp lệ'),
-});
-
-export type LocationFormValues = z.infer<typeof locationSchema>;

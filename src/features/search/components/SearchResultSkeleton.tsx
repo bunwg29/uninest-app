@@ -34,13 +34,6 @@ export const SearchResultSkeleton = ({ count = 5 }: { count?: number }) => (
   </View>
 );
 
-export const SearchToolbarSkeleton = () => (
-  <View style={styles.toolbar}>
-    <SkeletonBox width={126} height={16} borderRadius={BORDER_RADIUS_TOKENS.SM} />
-    <SkeletonBox width={118} height={34} borderRadius={BORDER_RADIUS_TOKENS.FULL} />
-  </View>
-);
-
 const styles = StyleSheet.create({
   container: { gap: 12, padding: SPACING_TOKENS.MD },
   row: {
@@ -59,12 +52,4 @@ const styles = StyleSheet.create({
   },
   thumbnail: { backgroundColor: THEME_COLORS.BORDER },
   lines: { flex: 1, gap: 8 },
-  toolbar: {
-    height: 50,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: SPACING_TOKENS.MD,
-    backgroundColor: THEME_COLORS.SURFACE,
-  },
 });

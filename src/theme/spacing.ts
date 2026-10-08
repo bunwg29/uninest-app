@@ -16,6 +16,3 @@ export const BORDER_RADIUS_TOKENS = {
   XL: 20,
   FULL: 999,
 } as const;
-
-export type SpacingTokens = typeof SPACING_TOKENS;
-export type BorderRadiusTokens = typeof BORDER_RADIUS_TOKENS;
