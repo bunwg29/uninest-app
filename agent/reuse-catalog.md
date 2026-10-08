@@ -62,7 +62,6 @@ Thiết kế có màu chưa có token → **thêm token vào `src/theme/colors.t
 | `Modal` | Hộp thoại xác nhận giữa màn hình | `title`, `description`, `confirmText`, `cancelText`, `onConfirm`, `confirmVariant`, `isConfirmLoading`, `dismissible` |
 | `NoticeBanner` | Hộp thông báo có icon (tóm tắt, cảnh báo, thành công) | `tone` (`info`, `warning`, `success`, `error`), `icon` (lucide), `style` |
 | `PriceText` | Giá "x.xxx.xxxđ/tháng" | `price` (chuỗi đã format), `suffix`, `variant`, `priceColorKey` |
-| `Card` | Khung thẻ có viền/bóng, bấm được | `padding`, `onPress`, `hasBorder`, `hasShadow` |
 | `FilterChip` | Chip chọn/bỏ chọn trong bộ lọc | `label`, `isSelected`, `onPress`, `icon` |
 | `Toast` | Hiển thị toast — **không gọi trực tiếp**, dùng `useToast()` | — |
 

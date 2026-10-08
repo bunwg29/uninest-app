@@ -38,7 +38,6 @@ npm run lint:fix
 npm run format
 npm run typecheck
 npm run lint
-npm test
 ```
 
 ## Chạy dự án

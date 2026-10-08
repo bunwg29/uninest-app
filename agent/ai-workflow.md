@@ -40,7 +40,6 @@ npm run lint:fix
 npm run format
 npm run typecheck
 npm run lint
-npm test
 ```
 Tất cả phải **0 lỗi, 0 cảnh báo mới**. Lỗi không liên quan tới việc của mình đã có từ trước → báo lại, không tự sửa.
 

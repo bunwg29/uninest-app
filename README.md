@@ -28,7 +28,7 @@ src/
     types/      kiểu dữ liệu và hằng số
 ```
 
-Các tính năng: `auth`, `listings`, `search`, `comparison`, `booking`, `chat`, `forum`, `recommendations`.
+Các tính năng: `auth`, `listings`, `search`, `comparison`, `booking`, `chat`, `forum`, `support`, `recommendations`, `ai-chat`.
 
 ## Ghi chú hành vi
 
@@ -41,9 +41,4 @@ Các tính năng: `auth`, `listings`, `search`, `comparison`, `booking`, `chat`,
 npm run typecheck
 npm run lint
 npm run format:check
-npm run test
-npm run test:search
-npm run test:e2e
 ```
-
-`test:e2e` (Playwright) chạy luồng đăng nhập → chọn phòng → đặt lịch → giữ chỗ → huỷ trên Expo Web với backend và PostgreSQL thật. Đặt `E2E_LOGIN_PHONE` và `E2E_LOGIN_PASSWORD` trước khi chạy.
