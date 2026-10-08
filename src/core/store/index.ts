@@ -1,4 +1,5 @@
 export * from './uiStore';
+export * from './maintenanceStore';
 
 export type StoreResetter = () => void;
 

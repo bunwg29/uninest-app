@@ -1,8 +1,9 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
 import { API_CONFIG } from '../config';
-import { HTTP_STATUS_CODES } from '../constants';
+import { HTTP_STATUS_CODES, MAINTENANCE_STATUS_CODES } from '../constants';
 import { ApiErrorResponse } from '../types';
 import { tokenStorage } from '../storage/token';
+import { useMaintenanceStore } from '../store/maintenanceStore';
 
 export const unwrapApiData = <T>(payload: unknown): T => {
   if (
@@ -62,6 +63,18 @@ const unwrapRefreshPayload = (
   }
 
   return body.data;
+};
+
+const parseRetryAfter = (header: unknown): number | null => {
+  if (typeof header !== 'string' || !header.trim()) return null;
+
+  const seconds = Number(header);
+
+  if (Number.isFinite(seconds)) return Date.now() + seconds * 1000;
+
+  const timestamp = Date.parse(header);
+
+  return Number.isNaN(timestamp) ? null : timestamp;
 };
 
 let isRefreshing = false;
@@ -184,6 +197,16 @@ apiClient.interceptors.response.use(
       } finally {
         isRefreshing = false;
       }
+    }
+
+    const responseStatus = error.response?.status;
+
+    if (responseStatus && MAINTENANCE_STATUS_CODES.includes(responseStatus)) {
+      useMaintenanceStore.getState().report({
+        statusCode: responseStatus,
+        detectedAt: Date.now(),
+        expectedEndAt: parseRetryAfter(error.response?.headers['retry-after']),
+      });
     }
 
     const errorData = error.response?.data as
