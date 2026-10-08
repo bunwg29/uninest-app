@@ -18,7 +18,7 @@ import { Map as MapIcon } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AMENITY_DISPLAY_LIST, ROOM_TYPE_OPTIONS } from '@features/listings/types/constants';
 import type { RootStackParamList } from '@navigation';
-import { useToast } from '@hooks';
+import { useDebouncedValue, useToast } from '@hooks';
 import { OVERLAY_COLORS, SPACING_TOKENS, THEME_COLORS } from '@theme';
 import { Typography } from '@ui';
 import {
@@ -37,13 +37,7 @@ import {
   type RelaxSuggestion,
 } from '../components';
 import { useAuth } from '@features/auth';
-import {
-  useDebouncedValue,
-  useFavoriteIds,
-  useRecentSearches,
-  useSearchListings,
-  useToggleFavorite,
-} from '../hooks';
+import { useFavoriteIds, useRecentSearches, useSearchListings, useToggleFavorite } from '../hooks';
 import { useSearchStore } from '../store';
 import {
   SEARCH_SCHOOLS,
