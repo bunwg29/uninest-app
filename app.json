@@ -27,8 +27,7 @@
           "locationWhenInUsePermission": "UniNest cần vị trí của bạn để hiển thị bản đồ và tìm phòng trọ gần bạn."
         }
       ],
-      "expo-video",
-      "@react-native-community/datetimepicker"
+      "expo-video"
     ]
   }
 }
