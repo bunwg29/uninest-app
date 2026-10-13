@@ -227,15 +227,14 @@ export const ProfileEditScreen = () => {
         leftIcon={<Mail size={18} color={THEME_COLORS.TEXT_PLACEHOLDER} />}
         rightIcon={<ChangeContactLink onPress={() => setContactKind('email')} />}
       />
-      <UniversityPicker
-        label={isLandlord ? 'Trường đại học gần trọ' : 'Trường đang học'}
-        value={universities}
-        maxSelection={isLandlord ? 3 : 1}
-        helperText={
-          isLandlord ? 'Chọn tối đa 3 trường để sinh viên dễ tìm thấy trọ của bạn' : undefined
-        }
-        onChange={setUniversities}
-      />
+      {isLandlord ? null : (
+        <UniversityPicker
+          label="Trường đang học"
+          value={universities}
+          maxSelection={1}
+          onChange={setUniversities}
+        />
+      )}
       <Typography variant="body1" weight="BOLD" style={styles.sectionTitle}>
         Địa chỉ
       </Typography>
