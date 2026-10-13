@@ -48,16 +48,20 @@ export const listingService = {
     return unwrapApiData<PresignedUploadResponse>(response.data);
   },
 
-  async uploadVideo(video: {
-    uri: string;
-    fileName: string;
-    contentType: string;
-    fileSize?: number;
-  }): Promise<string> {
+  async uploadVideo(
+    video: {
+      uri: string;
+      fileName: string;
+      contentType: string;
+      fileSize?: number;
+    },
+    folder: 'listings' | 'forum' = 'listings'
+  ): Promise<string> {
     const response = await apiClient.post('/storage/presign-video-upload', {
       fileName: video.fileName,
       contentType: video.contentType,
       fileSize: video.fileSize,
+      folder,
     });
     const { uploadUrl, key } = unwrapApiData<PresignedUploadResponse>(response.data);
 

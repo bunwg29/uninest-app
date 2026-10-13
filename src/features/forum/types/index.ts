@@ -70,6 +70,8 @@ export interface ForumPost {
   content: string;
   imageKeys: string[];
   imageUrls: string[];
+  videoKey: string | null;
+  videoUrl: string | null;
   roommate: RoommateCriteria | null;
   roommateStatus: RoommateStatus | null;
   roommateStatusLabel: string | null;
@@ -128,6 +130,7 @@ export interface SaveForumPostPayload {
   title: string;
   content: string;
   imageKeys?: string[];
+  videoKey?: string | null;
   roommate?: RoommateCriteriaPayload;
   roommateStatus?: RoommateStatus;
   isDraft?: boolean;
@@ -193,5 +196,13 @@ export interface ForumLocalImage {
   uri: string;
   fileName: string;
   contentType: string;
+  uploadedKey?: string;
+}
+
+export interface ForumLocalVideo {
+  uri: string;
+  fileName: string;
+  contentType: string;
+  fileSize?: number;
   uploadedKey?: string;
 }
