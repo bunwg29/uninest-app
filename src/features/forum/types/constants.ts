@@ -17,6 +17,8 @@ export const FORUM_MAX_IMAGES = 10;
 
 export const FORUM_IMAGE_FOLDER = 'forum';
 
+export const FORUM_VIDEO_FOLDER = 'forum';
+
 export const FORUM_FEED_STALE_TIME_MS = 30_000;
 
 export const FORUM_BUDGET_FILTER = 1_500_000;

@@ -3,9 +3,9 @@ import { View, StyleSheet, ScrollView, TouchableOpacity, Image, Alert } from 're
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import * as ImagePicker from 'expo-image-picker';
-import { Camera, Film, Plus, X, Star } from 'lucide-react-native';
+import { Camera, Plus, X, Star } from 'lucide-react-native';
 import { THEME_COLORS, SPACING_TOKENS, BORDER_RADIUS_TOKENS, OVERLAY_COLORS } from '@theme';
-import { Button, Typography, ScreenContainer } from '@ui';
+import { Button, Typography, ScreenContainer, VideoPickerField } from '@ui';
 import {
   filterValidUploadImages,
   resolveImageContentType,
@@ -243,46 +243,7 @@ export const ImagesScreen = () => {
             Video giới thiệu (không bắt buộc)
           </Typography>
 
-          {video ? (
-            <View style={styles.videoCard}>
-              <View style={styles.videoIcon}>
-                <Film size={20} color={THEME_COLORS.PRIMARY} />
-              </View>
-
-              <View style={styles.videoInfo}>
-                <Typography variant="body2" weight="SEMIBOLD" numberOfLines={1}>
-                  {video.fileName}
-                </Typography>
-                {video.fileSize ? (
-                  <Typography variant="caption" colorKey="TEXT_MUTED">
-                    {(video.fileSize / (1024 * 1024)).toFixed(1)} MB
-                  </Typography>
-                ) : null}
-              </View>
-
-              <TouchableOpacity
-                onPress={() => setVideo(null)}
-                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                accessibilityRole="button"
-                accessibilityLabel="Xoá video"
-              >
-                <X size={18} color={THEME_COLORS.TEXT_MUTED} />
-              </TouchableOpacity>
-            </View>
-          ) : (
-            <TouchableOpacity
-              style={styles.videoAdd}
-              onPress={handlePickVideo}
-              activeOpacity={0.7}
-              accessibilityRole="button"
-              accessibilityLabel="Thêm video"
-            >
-              <Film size={20} color={THEME_COLORS.TEXT_MUTED} />
-              <Typography variant="body2" weight="SEMIBOLD" colorKey="TEXT_MUTED">
-                Thêm video (mp4, mov, tối đa 100MB)
-              </Typography>
-            </TouchableOpacity>
-          )}
+          <VideoPickerField video={video} onAdd={handlePickVideo} onRemove={() => setVideo(null)} />
         </View>
 
         <View style={styles.infoBanner}>
@@ -376,37 +337,6 @@ const styles = StyleSheet.create({
     backgroundColor: THEME_COLORS.SURFACE,
   },
   videoSection: { gap: 10 },
-  videoAdd: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 10,
-    padding: 16,
-    borderRadius: BORDER_RADIUS_TOKENS.MD,
-    borderWidth: 1,
-    borderStyle: 'dashed',
-    borderColor: OVERLAY_COLORS.FIELD_BORDER,
-    backgroundColor: THEME_COLORS.SURFACE,
-  },
-  videoCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    padding: 12,
-    borderRadius: BORDER_RADIUS_TOKENS.MD,
-    borderWidth: 1,
-    borderColor: THEME_COLORS.BORDER,
-    backgroundColor: THEME_COLORS.SURFACE,
-  },
-  videoIcon: {
-    width: 40,
-    height: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: BORDER_RADIUS_TOKENS.MD,
-    backgroundColor: THEME_COLORS.PRIMARY_LIGHT,
-  },
-  videoInfo: { flex: 1, gap: 2 },
   infoBanner: {
     flexDirection: 'row',
     alignItems: 'center',

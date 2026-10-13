@@ -7,7 +7,12 @@ import * as ImagePicker from 'expo-image-picker';
 import { Controller, useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Plus, X } from 'lucide-react-native';
-import { filterValidUploadImages, resolveImageContentType } from '@core';
+import {
+  filterValidUploadImages,
+  resolveImageContentType,
+  resolveVideoContentType,
+  validateUploadVideo,
+} from '@core';
 import { BORDER_RADIUS_TOKENS, OVERLAY_COLORS, SPACING_TOKENS, THEME_COLORS } from '@theme';
 import {
   Button,
@@ -18,6 +23,7 @@ import {
   Typography,
   KeyboardAvoidingContainer,
   KeyboardAwareScrollView,
+  VideoPickerField,
 } from '@ui';
 import { useResponsiveLayout, useToast } from '@hooks';
 import { AddressFields, EMPTY_ADDRESS, type AddressValue } from '@features/auth';
@@ -28,6 +34,7 @@ import { useCheckForumContent, useForumPost, useSaveForumPost } from '../hooks';
 import type {
   ForumCategory,
   ForumLocalImage,
+  ForumLocalVideo,
   ForumPost,
   ModeratedField,
   ModerationResult,
@@ -142,6 +149,7 @@ export const ForumPostComposerScreen = () => {
   const postId = params?.postId;
   const isEditing = Boolean(postId);
   const [images, setImages] = useState<ForumLocalImage[]>([]);
+  const [video, setVideo] = useState<ForumLocalVideo | null>(null);
   const [address, setAddress] = useState<AddressValue>(EMPTY_ADDRESS);
   const { contentWidth } = useResponsiveLayout();
   const imageColumns = contentWidth >= 700 ? 5 : contentWidth >= 500 ? 4 : 3;
@@ -190,6 +198,16 @@ export const ForumPostComposerScreen = () => {
         uploadedKey: key,
       }))
     );
+    setVideo(
+      editingPost.videoKey && editingPost.videoUrl
+        ? {
+            uri: editingPost.videoUrl,
+            fileName: editingPost.videoKey.split('/').pop() ?? editingPost.videoKey,
+            contentType: editingPost.videoKey.endsWith('.mov') ? 'video/quicktime' : 'video/mp4',
+            uploadedKey: editingPost.videoKey,
+          }
+        : null
+    );
   }, [editingPost, reset]);
 
   const clearFlag = (field: ModeratedField) => {
@@ -233,13 +251,46 @@ export const ForumPostComposerScreen = () => {
     setImages((currentImages) => [...currentImages, ...pickedImages].slice(0, FORUM_MAX_IMAGES));
   };
 
+  const handlePickVideo = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+    if (status !== 'granted') {
+      Alert.alert('Cần quyền truy cập', 'Vui lòng cho phép ứng dụng truy cập thư viện ảnh.');
+
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['videos'],
+      allowsMultipleSelection: false,
+    });
+
+    if (result.canceled || !result.assets.length) return;
+
+    const asset = result.assets[0];
+    const error = validateUploadVideo(asset);
+
+    if (error) {
+      Alert.alert('Video không hợp lệ', error);
+
+      return;
+    }
+
+    setVideo({
+      uri: asset.uri,
+      fileName: asset.fileName ?? `forum_${Date.now()}.mp4`,
+      contentType: resolveVideoContentType(asset),
+      fileSize: asset.fileSize ?? undefined,
+    });
+  };
+
   const handleRemoveImage = (index: number) => {
     setImages((currentImages) => currentImages.filter((_, imageIndex) => imageIndex !== index));
   };
 
   const savePost = (payload: SaveForumPostPayload) => {
     saveMutation.mutate(
-      { postId, payload, images },
+      { postId, payload, images, video },
       {
         onSuccess: (post) => {
           setModerationResult(null);
@@ -496,6 +547,14 @@ export const ForumPostComposerScreen = () => {
                 </TouchableOpacity>
               ) : null}
             </View>
+          </ForumFormField>
+
+          <ForumFormField label="Video" style={styles.group}>
+            <VideoPickerField
+              video={video}
+              onAdd={handlePickVideo}
+              onRemove={() => setVideo(null)}
+            />
           </ForumFormField>
 
           {isRoommate ? (

@@ -27,6 +27,7 @@ import { EmptyState, ScreenContainer, Typography, KeyboardAvoidingContainer } fr
 import { useToast } from '@hooks';
 import { HTTP_STATUS_CODES, USER_ROLES, type AppError } from '@core';
 import { useAuth } from '@features/auth';
+import { ListingVideoPlayer } from '@features/listings/components/ListingVideoPlayer';
 import type { RootStackParamList } from '@navigation';
 import {
   ForumActionSheet,
@@ -291,6 +292,12 @@ export const ForumPostDetailScreen = () => {
               {post.imageUrls.map((url, index) => (
                 <Image key={`${url}-${index}`} source={{ uri: url }} style={styles.gridImage} />
               ))}
+            </View>
+          ) : null}
+
+          {post.videoUrl ? (
+            <View style={styles.section}>
+              <ListingVideoPlayer uri={post.videoUrl} />
             </View>
           ) : null}
 
