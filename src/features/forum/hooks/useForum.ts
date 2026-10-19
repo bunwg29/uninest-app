@@ -13,6 +13,7 @@ import type {
   ForumComment,
   ForumFeedFilters,
   ForumLocalImage,
+  ForumLocalVideo,
   ForumPost,
   ForumReportPayload,
   SaveForumPostPayload,
@@ -145,13 +146,19 @@ export const useSaveForumPost = () => {
   return useMutation<
     ForumPost,
     AppError,
-    { postId?: string; payload: SaveForumPostPayload; images: ForumLocalImage[] }
+    {
+      postId?: string;
+      payload: SaveForumPostPayload;
+      images: ForumLocalImage[];
+      video: ForumLocalVideo | null;
+    }
   >({
-    mutationFn: async ({ postId, payload, images }) => {
-      const imageKeys = await Promise.all(
-        images.map((image) => image.uploadedKey ?? forumService.uploadImage(image))
-      );
-      const body = { ...payload, imageKeys };
+    mutationFn: async ({ postId, payload, images, video }) => {
+      const [imageKeys, videoKey] = await Promise.all([
+        Promise.all(images.map((image) => image.uploadedKey ?? forumService.uploadImage(image))),
+        video ? (video.uploadedKey ?? forumService.uploadVideo(video)) : null,
+      ]);
+      const body = { ...payload, imageKeys, videoKey };
 
       return postId ? forumService.updatePost(postId, body) : forumService.createPost(body);
     },

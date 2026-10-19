@@ -7,6 +7,7 @@ import type {
   ForumFeedFilters,
   ForumLikeResult,
   ForumLocalImage,
+  ForumLocalVideo,
   ForumPost,
   ForumReportEntityType,
   ForumReportPayload,
@@ -20,6 +21,7 @@ import {
   FORUM_IMAGE_FOLDER,
   FORUM_PAGE_SIZE,
   FORUM_REPLIES_PAGE_SIZE,
+  FORUM_VIDEO_FOLDER,
 } from '../types';
 
 const REPORT_ENDPOINTS: Record<ForumReportEntityType, (entityId: string) => string> = {
@@ -125,5 +127,9 @@ export const forumService = {
     await listingService.uploadImageToR2(uploadUrl, image.uri, image.contentType);
 
     return key;
+  },
+
+  async uploadVideo(video: ForumLocalVideo): Promise<string> {
+    return listingService.uploadVideo(video, FORUM_VIDEO_FOLDER);
   },
 };
