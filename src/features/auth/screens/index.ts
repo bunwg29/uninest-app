@@ -11,3 +11,4 @@ export * from './ProfileScreen';
 export * from './ProfileEditScreen';
 export * from './ChangePasswordScreen';
 export * from './SettingsScreen';
+export * from './LandlordVerificationScreen';

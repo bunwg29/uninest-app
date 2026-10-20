@@ -22,9 +22,17 @@ export interface Profile {
   phoneVerified: boolean;
   email?: string | null;
   school?: string | null;
+  universities?: { code: string; name: string }[];
   bio?: string | null;
+  provinceCode?: string | null;
+  provinceName?: string | null;
+  wardCode?: string | null;
+  wardName?: string | null;
+  streetAddress?: string | null;
+  fullAddress?: string | null;
   interestedAreas: string[];
   role: UserRole;
+  verificationStatus?: 'pending_verification' | 'verified' | null;
   stats: {
     savedRooms: number;
     appointments: number;
@@ -36,9 +44,12 @@ export interface Profile {
 export interface UpdateProfilePayload {
   name?: string;
   email?: string;
-  school?: string;
+  universityCodes?: string[];
   bio?: string;
   interestedAreas?: string[];
+  provinceCode?: string;
+  wardCode?: string;
+  streetAddress?: string;
 }
 
 export interface ChangePasswordPayload {
@@ -73,6 +84,7 @@ export interface RegisterPayload {
   provinceCode?: string;
   wardCode?: string;
   streetAddress?: string;
+  universityCodes?: string[];
 }
 
 export interface VerifyOtpPayload {

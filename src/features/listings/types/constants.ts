@@ -11,8 +11,6 @@ export const ROOM_TYPE_OPTIONS = [
 
 export const MAX_LISTING_IMAGES = 10;
 
-export const LISTING_FORM_STEPS = ['Thông tin', 'Ảnh', 'Vị trí', 'Tiện ích', 'Lịch xem'] as const;
-
 export const DAYS_OF_WEEK: { key: DayKey; label: string }[] = [
   { key: 'mon', label: 'T2' },
   { key: 'tue', label: 'T3' },
@@ -48,4 +46,4 @@ export const AMENITY_DISPLAY_LIST = [
   { id: 16, group: 'Phòng', name: 'Thang máy' },
 ] as const;
 
-export const SUPPORTED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp'] as const;
+export const SUPPORTED_IMAGE_TYPES = ['image/jpeg', 'image/png'] as const;

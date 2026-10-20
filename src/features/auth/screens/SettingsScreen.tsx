@@ -3,8 +3,8 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import {
   Bell,
-  ChevronLeft,
   ChevronRight,
+  CircleHelp,
   FileText,
   LockKeyhole,
   Shield,
@@ -12,7 +12,7 @@ import {
   Type,
 } from 'lucide-react-native';
 import { THEME_COLORS, SPACING_TOKENS, BORDER_RADIUS_TOKENS } from '@theme';
-import { ScreenContainer, Typography } from '@ui';
+import { ScreenContainer, Typography, BackButton } from '@ui';
 import { useToast } from '@hooks';
 import type { RootStackParamList } from '@navigation';
 
@@ -81,115 +81,147 @@ export const SettingsScreen = () => {
       label: 'Quyền riêng tư & dữ liệu',
       icon: Shield,
       tone: SETTING_TONES.SLATE,
-      onPress: () => showComingSoon('Quyền riêng tư & dữ liệu'),
+      onPress: () => navigation.navigate('Terms', { tab: 'privacy' }),
+    },
+  ];
+
+  const aboutItems: SettingItem[] = [
+    {
+      label: 'Trung tâm trợ giúp',
+      icon: CircleHelp,
+      tone: SETTING_TONES.BLUE,
+      onPress: () => navigation.navigate('HelpCenter'),
+    },
+    {
+      label: 'Điều khoản sử dụng',
+      icon: FileText,
+      tone: SETTING_TONES.SLATE,
+      onPress: () => navigation.navigate('Terms', { tab: 'terms' }),
     },
   ];
 
   return (
     <ScreenContainer scrollable style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <ChevronLeft size={24} color={THEME_COLORS.TEXT_PRIMARY} />
-        </TouchableOpacity>
-        <Typography variant="h2" weight="BOLD">
+        <BackButton onPress={() => navigation.goBack()} />
+
+        <Typography variant="h3" weight="BOLD">
           Cài đặt
         </Typography>
+
         <View style={styles.headerSpace} />
       </View>
 
       <SettingsSection title="GIAO DIỆN" items={appearanceItems} />
       <SettingsSection title="TÀI KHOẢN" items={accountItems} />
-
-      <Typography
-        variant="tiny"
-        weight="SEMIBOLD"
-        color={THEME_COLORS.TEXT_MUTED}
-        style={styles.sectionTitle}
-      >
-        VỀ ỨNG DỤNG
-      </Typography>
-      <SettingRow
-        item={{
-          label: 'Điều khoản sử dụng',
-          icon: FileText,
-          tone: SETTING_TONES.SLATE,
-          onPress: () => showComingSoon('Điều khoản sử dụng'),
-        }}
-      />
+      <SettingsSection title="VỀ ỨNG DỤNG" items={aboutItems} />
     </ScreenContainer>
   );
 };
 
 const SettingsSection = ({ title, items }: { title: string; items: SettingItem[] }) => (
-  <View>
+  <View style={styles.section}>
     <Typography
       variant="tiny"
-      weight="SEMIBOLD"
+      weight="BOLD"
       color={THEME_COLORS.TEXT_MUTED}
       style={styles.sectionTitle}
     >
       {title}
     </Typography>
-    {items.map((item) => (
-      <SettingRow key={item.label} item={item} />
-    ))}
+
+    <View style={styles.sectionCard}>
+      {items.map((item, index) => (
+        <SettingRow key={item.label} item={item} isLast={index === items.length - 1} />
+      ))}
+    </View>
   </View>
 );
 
-const SettingRow = ({ item }: { item: SettingItem }) => {
+const SettingRow = ({ item, isLast }: { item: SettingItem; isLast?: boolean }) => {
   const Icon = item.icon;
 
   return (
-    <TouchableOpacity style={styles.row} onPress={item.onPress}>
+    <TouchableOpacity
+      style={[styles.row, isLast && styles.rowLast]}
+      onPress={item.onPress}
+      activeOpacity={0.7}
+    >
       <View style={[styles.iconFrame, { backgroundColor: item.tone.background }]}>
-        <Icon size={19} color={item.tone.foreground} />
+        <Icon size={18} color={item.tone.foreground} />
       </View>
-      <Typography variant="body2" style={styles.rowLabel}>
+
+      <Typography variant="body2" weight="MEDIUM" style={styles.rowLabel}>
         {item.label}
       </Typography>
+
       {item.value ? (
         <Typography variant="caption" color={THEME_COLORS.TEXT_MUTED} style={styles.value}>
           {item.value}
         </Typography>
       ) : null}
+
       <ChevronRight size={18} color={THEME_COLORS.TEXT_PLACEHOLDER} />
     </TouchableOpacity>
   );
 };
 
 const styles = StyleSheet.create({
-  container: { paddingTop: 0 },
+  container: {
+    paddingTop: SPACING_TOKENS.SM,
+    paddingBottom: 40,
+  },
   header: {
-    height: 82,
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
     paddingHorizontal: SPACING_TOKENS.LG,
-    borderBottomWidth: 1,
-    borderBottomColor: THEME_COLORS.DIVIDER,
+    paddingTop: SPACING_TOKENS.SM,
+    marginBottom: SPACING_TOKENS.MD,
   },
-  backButton: { padding: SPACING_TOKENS.XS, marginRight: SPACING_TOKENS.SM },
-  headerSpace: { flex: 1 },
+  headerSpace: {
+    width: 40,
+  },
+  section: {
+    marginBottom: SPACING_TOKENS.MD,
+  },
   sectionTitle: {
-    backgroundColor: THEME_COLORS.SURFACE_MUTED,
-    paddingHorizontal: SPACING_TOKENS.SM,
-    paddingVertical: SPACING_TOKENS.SM,
+    marginHorizontal: SPACING_TOKENS.LG,
+    marginBottom: SPACING_TOKENS.SM,
+    letterSpacing: 0.5,
+  },
+  sectionCard: {
+    marginHorizontal: SPACING_TOKENS.LG,
+    backgroundColor: THEME_COLORS.SURFACE,
+    borderRadius: BORDER_RADIUS_TOKENS.LG,
+    borderWidth: 1,
+    borderColor: THEME_COLORS.BORDER,
+    overflow: 'hidden',
   },
   row: {
-    minHeight: 62,
+    minHeight: 56,
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: SPACING_TOKENS.SM,
-    backgroundColor: THEME_COLORS.SURFACE,
+    paddingHorizontal: SPACING_TOKENS.MD,
     borderBottomWidth: 1,
     borderBottomColor: THEME_COLORS.BORDER,
   },
+  rowLast: {
+    borderBottomWidth: 0,
+  },
   iconFrame: {
-    width: 38,
-    height: 38,
+    width: 36,
+    height: 36,
+    borderRadius: BORDER_RADIUS_TOKENS.MD,
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: BORDER_RADIUS_TOKENS.MD,
   },
-  rowLabel: { flex: 1, marginLeft: SPACING_TOKENS.SM },
-  value: { marginRight: SPACING_TOKENS.SM },
+  rowLabel: {
+    flex: 1,
+    marginLeft: SPACING_TOKENS.SM,
+    color: THEME_COLORS.TEXT_PRIMARY,
+  },
+  value: {
+    marginRight: SPACING_TOKENS.SM,
+  },
 });

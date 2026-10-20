@@ -48,5 +48,3 @@ export const TYPOGRAPHY_TOKENS = {
     BOLD: '700',
   },
 } as const;
-
-export type TypographyTokens = typeof TYPOGRAPHY_TOKENS;

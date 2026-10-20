@@ -20,12 +20,6 @@ const resolveContentType = (fileName: string): string => {
 
   if (ext === 'png') return 'image/png';
 
-  if (ext === 'webp') return 'image/webp';
-
-  if (ext === 'gif') return 'image/gif';
-
-  if (ext === 'heic') return 'image/heic';
-
   return 'image/jpeg';
 };
 
@@ -39,43 +33,52 @@ export const useUploadImages = (): UseUploadImagesResult => {
     setUploadProgress(0);
     setErrors([]);
 
-    const uploaded: UploadedImageItem[] = [];
     const uploadErrors: UploadImageError[] = [];
+    let completedCount = 0;
 
-    for (let i = 0; i < images.length; i++) {
-      const image = images[i];
-      const contentType = SUPPORTED_IMAGE_TYPES.includes(
-        image.contentType as (typeof SUPPORTED_IMAGE_TYPES)[number]
-      )
-        ? image.contentType
-        : resolveContentType(image.fileName);
+    const uploadResults = await Promise.all(
+      images.map(async (image, index): Promise<UploadedImageItem | null> => {
+        const contentType = SUPPORTED_IMAGE_TYPES.includes(
+          image.contentType as (typeof SUPPORTED_IMAGE_TYPES)[number]
+        )
+          ? image.contentType
+          : resolveContentType(image.fileName);
 
-      try {
-        const { uploadUrl, publicUrl } = await listingService.getPresignedUploadUrl({
-          fileName: image.fileName,
-          contentType,
-          folder: 'listings',
-        });
+        try {
+          const { uploadUrl, publicUrl, key } = await listingService.getPresignedUploadUrl({
+            fileName: image.fileName,
+            contentType,
+            fileSize: image.fileSize,
+            folder: 'listings',
+          });
 
-        await listingService.uploadImageToR2(uploadUrl, image.uri, contentType);
+          await listingService.uploadImageToR2(uploadUrl, image.uri, contentType);
 
-        uploaded.push({
-          publicUrl,
-          key: publicUrl,
-          isCover: image.isCover,
-          sortOrder: image.sortOrder,
-        });
-      } catch {
-        uploadErrors.push({
-          index: i,
-          message: `Không thể tải ảnh ${i + 1} lên. Vui lòng thử lại.`,
-        });
-      }
+          return {
+            publicUrl,
+            key,
+            isCover: image.isCover,
+            sortOrder: image.sortOrder,
+          };
+        } catch {
+          uploadErrors.push({
+            index,
+            message: `Không thể tải ảnh ${index + 1} lên. Vui lòng thử lại.`,
+          });
 
-      setUploadProgress(Math.round(((i + 1) / images.length) * 100));
-    }
+          return null;
+        } finally {
+          completedCount += 1;
+          setUploadProgress(Math.round((completedCount / images.length) * 100));
+        }
+      })
+    );
 
-    setErrors(uploadErrors);
+    const uploaded = uploadResults
+      .filter((image): image is UploadedImageItem => image !== null)
+      .sort((first, second) => first.sortOrder - second.sortOrder);
+
+    setErrors(uploadErrors.sort((first, second) => first.index - second.index));
     setIsUploading(false);
 
     return uploaded;

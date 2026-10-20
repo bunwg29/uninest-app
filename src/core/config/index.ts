@@ -8,9 +8,4 @@ export const API_CONFIG = {
 export const APP_CONFIG = {
   NAME: 'UniNest',
   VERSION: '1.0.0',
-  DEFAULT_LOCALE: 'vi',
-  FALLBACK_LOCALE: 'en',
 } as const;
-
-export type ApiConfig = typeof API_CONFIG;
-export type AppConfig = typeof APP_CONFIG;

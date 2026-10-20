@@ -4,9 +4,10 @@ import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Check, Circle, Lock } from 'lucide-react-native';
 import { THEME_COLORS, SPACING_TOKENS, BORDER_RADIUS_TOKENS } from '@theme';
-import { Button, Input, ScreenContainer, Typography } from '@ui';
+import { Button, Input, ScreenContainer, Typography, BackButton } from '@ui';
 import { useToast } from '@hooks';
 import type { AuthStackParamList } from '@navigation';
+import { useAuth } from '../hooks';
 import { authService } from '../services';
 import { resetPasswordSchema } from '../validations';
 
@@ -17,6 +18,7 @@ export const ResetPasswordScreen = () => {
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<ResetRouteProp>();
   const toast = useToast();
+  const { isAuthenticated, logout } = useAuth();
 
   const target = route.params?.target || '';
   const otpCode = route.params?.otpCode || '';
@@ -28,11 +30,11 @@ export const ResetPasswordScreen = () => {
 
   const hasMinLength = newPassword.length >= 8;
   const hasDigit = /\d/.test(newPassword);
-  const hasUppercase = /[A-Z]/.test(newPassword);
+  const hasLetter = /[A-Za-z]/.test(newPassword);
   const isMatch = Boolean(confirmPassword && newPassword === confirmPassword);
 
-  const passedCount = [hasMinLength, hasDigit, hasUppercase].filter(Boolean).length;
-  const isAllValid = hasMinLength && hasDigit && hasUppercase && isMatch;
+  const passedCount = [hasMinLength, hasDigit, hasLetter].filter(Boolean).length;
+  const isAllValid = hasMinLength && hasDigit && hasLetter && isMatch;
 
   const handleSubmit = async () => {
     const result = resetPasswordSchema.safeParse({ newPassword, confirmPassword });
@@ -58,10 +60,14 @@ export const ResetPasswordScreen = () => {
 
       toast.success('Đặt mật khẩu mới thành công!');
 
-      navigation.reset({
-        index: 0,
-        routes: [{ name: 'Login' }],
-      });
+      if (isAuthenticated) {
+        await logout();
+      } else {
+        navigation.reset({
+          index: 0,
+          routes: [{ name: 'Login' }],
+        });
+      }
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Đã có lỗi xảy ra. Vui lòng thử lại.';
 
@@ -74,6 +80,8 @@ export const ResetPasswordScreen = () => {
 
   return (
     <ScreenContainer scrollable style={styles.container}>
+      <BackButton onPress={() => navigation.goBack()} style={styles.backSpacing} />
+
       <View style={styles.header}>
         <Typography variant="h1" weight="BOLD" style={styles.title}>
           Đặt mật khẩu mới
@@ -169,7 +177,7 @@ export const ResetPasswordScreen = () => {
           </View>
 
           <View style={styles.checkItem}>
-            {hasUppercase ? (
+            {hasLetter ? (
               <Check size={16} color={THEME_COLORS.SUCCESS} />
             ) : (
               <Circle size={16} color={THEME_COLORS.BORDER} />
@@ -177,10 +185,10 @@ export const ResetPasswordScreen = () => {
 
             <Typography
               variant="caption"
-              color={hasUppercase ? THEME_COLORS.SUCCESS : THEME_COLORS.TEXT_MUTED}
+              color={hasLetter ? THEME_COLORS.SUCCESS : THEME_COLORS.TEXT_MUTED}
               style={styles.checkText}
             >
-              Có ít nhất một chữ in hoa
+              Có ít nhất một chữ cái
             </Typography>
           </View>
         </View>
@@ -230,12 +238,12 @@ export const ResetPasswordScreen = () => {
 };
 
 const styles = StyleSheet.create({
+  backSpacing: { marginTop: SPACING_TOKENS.XS, marginBottom: SPACING_TOKENS.MD },
   container: {
     paddingHorizontal: SPACING_TOKENS.LG,
     paddingVertical: SPACING_TOKENS.MD,
   },
   header: {
-    marginTop: SPACING_TOKENS.SM,
     marginBottom: SPACING_TOKENS.LG,
   },
   title: {

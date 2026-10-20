@@ -1,26 +1,116 @@
-import { apiClient } from '@core';
-import type { LandlordListingStatus, LandlordListingsPage } from '../types/landlord';
+import { apiClient, unwrapApiData } from '@core';
+import type {
+  LandlordListing,
+  LandlordStats,
+  LandlordStatsPeriod,
+  LandlordListingStatus,
+  LandlordListingsPage,
+  LandlordPublicProfile,
+} from '../types/landlord';
 
-const BASE_PATH = '/landlord/listings';
+type ApiListingStatus =
+  'active' | 'pending' | 'rejected' | 'hidden' | 'rented' | 'paused' | 'deleted';
+
+interface ApiLandlordListing extends Omit<LandlordListing, 'status'> {
+  status: ApiListingStatus;
+}
+
+interface ApiLandlordListingsPage {
+  items: ApiLandlordListing[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+  countsByStatus: Record<ApiListingStatus, number>;
+}
+
+const getApiStatus = (status: LandlordListingStatus): ApiListingStatus => {
+  if (status === 'published') return 'active';
+
+  if (status === 'expired') return 'rented';
+
+  if (status === 'paused') return 'paused';
+
+  return status;
+};
+
+const getAppStatus = (status: ApiListingStatus): LandlordListingStatus => {
+  if (status === 'active') return 'published';
+
+  if (status === 'rented' || status === 'deleted') return 'expired';
+
+  return status;
+};
+
+const mapPage = (page: ApiLandlordListingsPage): LandlordListingsPage => ({
+  items: page.items.map((listing) => ({ ...listing, status: getAppStatus(listing.status) })),
+  totalCount: page.pagination.total,
+  counters: {
+    published: page.countsByStatus.active ?? 0,
+    pending: page.countsByStatus.pending ?? 0,
+    rejected: page.countsByStatus.rejected ?? 0,
+    hidden: page.countsByStatus.hidden ?? 0,
+    expired: page.countsByStatus.rented ?? 0,
+    paused: page.countsByStatus.paused ?? 0,
+  },
+  page: page.pagination.page,
+  totalPages: page.pagination.totalPages,
+});
 
 export const landlordListingsService = {
-  async getListings(status: LandlordListingStatus, page: number): Promise<LandlordListingsPage> {
-    const response = await apiClient.get<LandlordListingsPage>(BASE_PATH, {
-      params: { status, page },
+  async getListings(
+    status: LandlordListingStatus,
+    page: number,
+    keyword?: string
+  ): Promise<LandlordListingsPage> {
+    const response = await apiClient.get('/landlord/listings', {
+      params: { status: getApiStatus(status), keyword: keyword || undefined, page, limit: 10 },
     });
 
-    return response.data;
+    return mapPage(unwrapApiData<ApiLandlordListingsPage>(response.data));
+  },
+
+  async getStats(period: LandlordStatsPeriod): Promise<LandlordStats> {
+    const response = await apiClient.get('/landlord/listings/stats', { params: { period } });
+
+    return unwrapApiData<LandlordStats>(response.data);
+  },
+
+  async getListing(id: string): Promise<LandlordListing> {
+    const response = await apiClient.get(`/landlord/listings/${id}`);
+    const listing = unwrapApiData<ApiLandlordListing>(response.data);
+
+    return { ...listing, status: getAppStatus(listing.status) };
   },
 
   async hideListing(id: string): Promise<void> {
-    await apiClient.patch(`${BASE_PATH}/${id}/hide`);
+    await apiClient.patch(`/landlord/listings/${id}/visibility`, { hidden: true });
   },
 
   async republishListing(id: string): Promise<void> {
-    await apiClient.patch(`${BASE_PATH}/${id}/republish`);
+    await apiClient.patch(`/landlord/listings/${id}/visibility`, { hidden: false });
   },
 
-  async deleteListing(id: string): Promise<void> {
-    await apiClient.delete(`${BASE_PATH}/${id}`);
+  async markRented(id: string): Promise<void> {
+    await apiClient.patch(`/landlord/listings/${id}/rental-status`, { rented: true });
+  },
+
+  async markAvailable(id: string): Promise<void> {
+    await apiClient.patch(`/landlord/listings/${id}/rental-status`, { rented: false });
+  },
+
+  async deleteListing(id: string): Promise<{ deleted: boolean }> {
+    const response = await apiClient.delete(`/landlord/listings/${id}`);
+    const result = unwrapApiData<{ deleted?: boolean } | null>(response.data);
+
+    return { deleted: result?.deleted !== false };
+  },
+
+  async getPublicProfile(landlordId: string): Promise<LandlordPublicProfile> {
+    const response = await apiClient.get(`/landlords/${landlordId}`);
+
+    return unwrapApiData<LandlordPublicProfile>(response.data);
   },
 };

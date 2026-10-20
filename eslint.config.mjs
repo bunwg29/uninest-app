@@ -6,7 +6,14 @@ import unusedImportsPlugin from 'eslint-plugin-unused-imports';
 
 export default [
   {
-    ignores: ['node_modules/**', '.expo/**', 'dist/**', 'web-build/**', 'babel.config.js', 'metro.config.js'],
+    ignores: [
+      'node_modules/**',
+      '.expo/**',
+      'dist/**',
+      'web-build/**',
+      'babel.config.js',
+      'metro.config.js',
+    ],
   },
   {
     files: ['**/*.{ts,tsx}'],

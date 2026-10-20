@@ -1,78 +1,51 @@
 import { useCallback, useMemo } from 'react';
-import { View, StyleSheet, ScrollView, Image, Dimensions, InteractionManager } from 'react-native';
+import { View, StyleSheet, ScrollView, Image } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import {
-  MapPin,
-  Maximize2,
-  Users,
-  Banknote,
-  Zap,
-  Droplets,
-  Calendar,
-  AlertCircle,
-  FileText,
-  CheckCircle2,
-} from 'lucide-react-native';
-import { THEME_COLORS, SPACING_TOKENS, BORDER_RADIUS_TOKENS } from '@theme';
-import {
-  Button,
-  Typography,
-  HeaderBar,
-  ScreenContainer,
-  Badge,
-  Divider,
-  LoadingOverlay,
-} from '@ui';
-import { useToast } from '@hooks';
-import type { ListingPostStackParamList } from '@navigation';
+import { AlertCircle, Check, Clock3, Eye } from 'lucide-react-native';
+import { THEME_COLORS, SPACING_TOKENS, BORDER_RADIUS_TOKENS, OVERLAY_COLORS } from '@theme';
+import { Button, Typography, ScreenContainer, LoadingOverlay, BackButton } from '@ui';
+import { useResponsiveLayout, useToast } from '@hooks';
+import type { ListingPostStackParamList, RootStackParamList } from '@navigation';
 import { useListingPostStore } from '../store/listingPostStore';
-import { useCreateListing } from '../hooks/useCreateListing';
+import { useCreateListing, useUpdateListing } from '../hooks/useCreateListing';
 import { useUploadImages } from '../hooks/useUploadImages';
-import {
-  ROOM_TYPE_OPTIONS,
-  DAYS_OF_WEEK,
-  VIEWING_SLOT_LABELS,
-  AMENITY_DISPLAY_LIST,
-} from '../types/constants';
-import type {
-  CreateListingPayload,
-  CreateListingImagePayload,
-  DayKey,
-  ViewingSlot,
-} from '../types';
+import { listingService } from '../services/listingService';
+import { ROOM_TYPE_OPTIONS, AMENITY_DISPLAY_LIST } from '../types/constants';
+import { LandlordStatusPill } from '../components/landlord/LandlordStatusPill';
+import type { CreateListingPayload, CreateListingImagePayload, UploadedImageItem } from '../types';
+import { formatFullPrice } from '@core';
 
 type NavigationProp = NativeStackNavigationProp<ListingPostStackParamList>;
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const IMAGE_WIDTH = SCREEN_WIDTH - SPACING_TOKENS.MD * 2;
-const IMAGE_HEIGHT = Math.round(IMAGE_WIDTH * 0.6);
-
-const formatVND = (value: string | number | undefined): string => {
-  if (!value) return '0 ₫';
-
-  const num = typeof value === 'string' ? Number(value) : value;
-
-  if (isNaN(num)) return '0 ₫';
-
-  return `${num.toLocaleString('vi-VN')} ₫`;
-};
+const MAX_PREVIEW_AMENITIES = 3;
+const RECOMMENDED_IMAGE_COUNT = 6;
+const PHONE_PATTERN = /(?:\+?84|0)[\s.-]?\d(?:[\s.-]?\d){8}/;
 
 export const PreviewScreen = () => {
   const navigation = useNavigation<NavigationProp>();
   const toast = useToast();
+  const { contentWidth, isCompact } = useResponsiveLayout();
+  const imageWidth = Math.max(contentWidth - SPACING_TOKENS.MD * 2 - 2, 1);
+  const imageHeight = Math.min(Math.round(imageWidth * 0.43), 280);
   const {
     step1,
     step3,
-    uploadedImages,
     setUploadedImages,
     localImages,
+    setLocalImages,
+    video,
+    setVideo,
+    universities,
     selectedAmenityIds,
     viewingSchedule,
+    editingListingId,
+    hasEditChanges,
     reset,
   } = useListingPostStore();
 
   const { mutate: createListing, isPending } = useCreateListing();
+  const { mutate: updateListing, isPending: isUpdating } = useUpdateListing();
   const { uploadAll, isUploading: isUploadingImages, uploadProgress } = useUploadImages();
 
   const roomTypeLabel = useMemo(() => {
@@ -96,29 +69,33 @@ export const PreviewScreen = () => {
     return parts.join(', ');
   }, [step3]);
 
-  const scheduleSummary = useMemo(() => {
-    const result: { dayLabel: string; slots: string[] }[] = [];
+  const checklist = useMemo(() => {
+    const hasRequiredInfo = Boolean(
+      step1.title.trim() && step1.roomType && step1.price && step1.area && step1.maxOccupants
+    );
+    const hasPinnedLocation = step3.latitude !== null && step3.longitude !== null;
+    const hasPhoneInDescription = PHONE_PATTERN.test(step1.description ?? '');
+    const imageCount = localImages.length;
 
-    DAYS_OF_WEEK.forEach(({ key, label }) => {
-      const daySlots = viewingSchedule[key as DayKey];
-
-      if (daySlots) {
-        const activeSlots: string[] = [];
-
-        VIEWING_SLOT_LABELS.forEach(({ key: slotKey, label: slotLabel }) => {
-          if (daySlots[slotKey as keyof ViewingSlot]) {
-            activeSlots.push(slotLabel);
+    return [
+      { key: 'info', ok: hasRequiredInfo, label: 'Đủ thông tin bắt buộc' },
+      { key: 'pin', ok: hasPinnedLocation, label: 'Vị trí đã ghim trên bản đồ' },
+      {
+        key: 'phone',
+        ok: !hasPhoneInDescription,
+        label: hasPhoneInDescription
+          ? 'Mô tả đang chứa số điện thoại'
+          : 'Không phát hiện số điện thoại trong mô tả',
+      },
+      imageCount < RECOMMENDED_IMAGE_COUNT
+        ? {
+            key: 'images',
+            ok: false,
+            label: `Mới có ${imageCount} ảnh — tin từ ${RECOMMENDED_IMAGE_COUNT} ảnh nhận nhiều liên hệ hơn`,
           }
-        });
-
-        if (activeSlots.length > 0) {
-          result.push({ dayLabel: label, slots: activeSlots });
-        }
-      }
-    });
-
-    return result;
-  }, [viewingSchedule]);
+        : { key: 'images', ok: true, label: `Đã có ${imageCount} ảnh` },
+    ];
+  }, [step1, step3, localImages.length]);
 
   const handleSubmit = useCallback(async () => {
     if (localImages.length === 0) {
@@ -127,34 +104,90 @@ export const PreviewScreen = () => {
       return;
     }
 
-    let finalImages: CreateListingImagePayload[] = [];
+    if (editingListingId && !hasEditChanges()) {
+      const rootNavigation = navigation.getParent<NativeStackNavigationProp<RootStackParamList>>();
 
-    if (uploadedImages.length === localImages.length && uploadedImages.length > 0) {
-      finalImages = uploadedImages.map((img) => ({
-        url: img.publicUrl,
-        isCover: img.isCover,
-      }));
-    } else {
+      toast.info('Tin đăng không có thay đổi');
+      reset();
+
+      if (rootNavigation) {
+        rootNavigation.reset({
+          index: 0,
+          routes: [{ name: 'Main', params: { screen: 'Listings' } }],
+        });
+      } else {
+        navigation.goBack();
+      }
+
+      return;
+    }
+
+    const videoTask: Promise<{ key: string | null } | { error: true }> =
+      video && !video.uploadedKey
+        ? listingService.uploadVideo(video).then(
+            (key) => ({ key }),
+            () => ({ error: true as const })
+          )
+        : Promise.resolve({ key: video?.uploadedKey ?? null });
+    const imagesNeedingUpload = localImages.filter((image) => !image.uploadedUrl);
+    let uploadedImages: UploadedImageItem[] = [];
+
+    if (imagesNeedingUpload.length > 0) {
       try {
-        const uploaded = await uploadAll(localImages);
+        uploadedImages = await uploadAll(imagesNeedingUpload);
 
-        if (uploaded.length !== localImages.length) {
+        if (uploadedImages.length !== imagesNeedingUpload.length) {
           toast.error('Tải ảnh lên máy chủ thất bại. Vui lòng kiểm tra kết nối và thử lại.');
 
           return;
         }
-
-        setUploadedImages(uploaded);
-        finalImages = uploaded.map((img) => ({
-          url: img.publicUrl,
-          isCover: img.isCover,
-        }));
       } catch {
-        toast.error('Lỗi khi tải ảnh lên Cloudflare R2. Vui lòng thử lại.');
+        toast.error('Tải ảnh lên thất bại. Vui lòng thử lại.');
 
         return;
       }
     }
+
+    const videoResult = await videoTask;
+
+    if ('error' in videoResult) {
+      toast.error('Tải video lên thất bại. Vui lòng thử lại.');
+
+      return;
+    }
+
+    if (video && videoResult.key && !video.uploadedKey) {
+      setVideo({ ...video, uploadedKey: videoResult.key });
+    }
+
+    const uploadedBySortOrder = new Map(
+      uploadedImages.map((image) => [image.sortOrder, image] as const)
+    );
+    const syncedLocalImages = localImages.map((image) => ({
+      ...image,
+      uploadedUrl: image.uploadedUrl ?? uploadedBySortOrder.get(image.sortOrder)?.publicUrl,
+      uploadedKey: image.uploadedKey ?? uploadedBySortOrder.get(image.sortOrder)?.key,
+    }));
+
+    if (syncedLocalImages.some((image) => !image.uploadedUrl || !image.uploadedKey)) {
+      toast.error('Không thể xác định đầy đủ ảnh đã tải lên. Vui lòng thử lại.');
+
+      return;
+    }
+
+    const syncedUploadedImages = syncedLocalImages.map((image) => ({
+      publicUrl: image.uploadedUrl as string,
+      key: image.uploadedKey as string,
+      isCover: image.isCover,
+      sortOrder: image.sortOrder,
+    }));
+    const finalImages: CreateListingImagePayload[] = syncedUploadedImages.map((image) => ({
+      key: image.key,
+      isCover: image.isCover,
+    }));
+
+    setLocalImages(syncedLocalImages);
+    setUploadedImages(syncedUploadedImages);
 
     const payload: CreateListingPayload = {
       title: step1.title.trim(),
@@ -172,304 +205,260 @@ export const PreviewScreen = () => {
       latitude: step3.latitude ?? 0,
       longitude: step3.longitude ?? 0,
       images: finalImages,
+      videoKey: videoResult.key,
+      universityCodes: universities.map((university) => university.code),
       amenityIds: selectedAmenityIds,
+      viewingSchedule,
     };
 
-    createListing(payload, {
-      onSuccess: (response) => {
-        navigation.navigate('ListingPostSuccess', {
-          listingId: response.id,
-        });
+    const onSuccess = (response: { id: string }) => {
+      navigation.navigate('ListingPostSuccess', {
+        listingId: response.id,
+        title: payload.title,
+        price: payload.price,
+        area: payload.area,
+        imageUri:
+          syncedLocalImages.find((image) => image.isCover)?.uri ?? syncedLocalImages[0]?.uri,
+      });
 
-        // Store reset AFTER transition completes
-        InteractionManager.runAfterInteractions(() => {
+      if (typeof requestIdleCallback !== 'undefined') {
+        requestIdleCallback(() => {
           reset();
         });
-      },
-      onError: (error) => {
-        toast.error(error.message || 'Không thể tạo tin đăng. Vui lòng thử lại.');
-      },
-    });
+      } else {
+        setTimeout(() => {
+          reset();
+        }, 0);
+      }
+    };
+
+    const onError = (error: { message?: string }) => {
+      toast.error(error.message || 'Không thể lưu tin đăng. Vui lòng thử lại.');
+    };
+
+    if (editingListingId) {
+      updateListing({ id: editingListingId, dto: payload }, { onSuccess, onError });
+
+      return;
+    }
+
+    createListing(payload, { onSuccess, onError });
   }, [
     localImages,
-    uploadedImages,
+    video,
+    setVideo,
+    universities,
     uploadAll,
     setUploadedImages,
+    setLocalImages,
     step1,
     step3,
     selectedAmenityIds,
+    viewingSchedule,
+    editingListingId,
+    hasEditChanges,
     createListing,
     navigation,
     reset,
     toast,
   ]);
 
+  const isBusy = isPending || isUpdating || isUploadingImages;
+  const extraAmenities = selectedAmenityNames.length - MAX_PREVIEW_AMENITIES;
+
   return (
-    <ScreenContainer applyTopInset applyBottomInset={false} keyboardAvoiding={false}>
-      <HeaderBar
-        title="Xem trước tin đăng"
-        onBack={() => navigation.goBack()}
-        subtitle="Kiểm tra kỹ thông tin trước khi gửi duyệt"
-        alignTitle="left"
-      />
+    <ScreenContainer applyTopInset applyBottomInset keyboardAvoiding={false}>
+      <View style={styles.header}>
+        <BackButton onPress={navigation.goBack} accessibilityLabel="Quay lại" />
+        <Typography variant="h3" weight="SEMIBOLD">
+          Xem trước
+        </Typography>
+      </View>
 
       <ScrollView
         style={styles.container}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* Images Preview */}
-        {imagesToDisplay.length > 0 ? (
-          <View style={styles.imageSection}>
-            <ScrollView
-              horizontal
-              pagingEnabled
-              showsHorizontalScrollIndicator={false}
-              nestedScrollEnabled
-              style={{ height: IMAGE_HEIGHT }}
-              contentContainerStyle={{ height: IMAGE_HEIGHT }}
+        <View style={styles.previewCard}>
+          <View style={styles.previewBanner}>
+            <Eye size={14} color={THEME_COLORS.WHITE} />
+            <Typography
+              variant="caption"
+              weight="BOLD"
+              color={THEME_COLORS.WHITE}
+              style={styles.bannerLabel}
             >
-              {imagesToDisplay.map((item, index) => (
-                <View key={`preview-img-${index}`} style={styles.imageSlide}>
-                  <Image
-                    source={{ uri: item.url }}
-                    style={styles.previewImage}
-                    resizeMode="cover"
-                  />
-                  {item.isCover && (
-                    <View style={styles.coverBadge}>
-                      <Typography variant="tiny" weight="BOLD" color={THEME_COLORS.SURFACE}>
-                        Ảnh bìa
+              SINH VIÊN SẼ THẤY NHƯ THẾ NÀY
+            </Typography>
+          </View>
+
+          <View style={[styles.imageSection, { height: imageHeight }]}>
+            {imagesToDisplay.length > 0 ? (
+              <ScrollView
+                horizontal
+                pagingEnabled
+                showsHorizontalScrollIndicator={false}
+                nestedScrollEnabled
+                style={{ height: imageHeight }}
+                contentContainerStyle={{ height: imageHeight }}
+              >
+                {imagesToDisplay.map((item, index) => (
+                  <View
+                    key={`preview-img-${index}`}
+                    style={[styles.imageSlide, { width: imageWidth, height: imageHeight }]}
+                  >
+                    <Image
+                      source={{ uri: item.url }}
+                      style={styles.previewImage}
+                      resizeMode="cover"
+                    />
+                    <View style={styles.imageCounterBadge}>
+                      <Typography variant="caption" weight="BOLD" color={THEME_COLORS.WHITE}>
+                        {index + 1} / {imagesToDisplay.length}
                       </Typography>
                     </View>
-                  )}
-                  <View style={styles.imageCounterBadge}>
-                    <Typography variant="tiny" weight="MEDIUM" color={THEME_COLORS.SURFACE}>
-                      {index + 1}/{imagesToDisplay.length}
-                    </Typography>
                   </View>
-                </View>
-              ))}
-            </ScrollView>
-          </View>
-        ) : null}
+                ))}
+              </ScrollView>
+            ) : null}
 
-        {/* Primary Info Card */}
-        <View style={styles.card}>
-          <View style={styles.badgeRow}>
-            <Badge label={roomTypeLabel} variant="primary" size="md" />
-            <Badge label="Chờ gửi duyệt" variant="holding" size="md" />
+            <View style={styles.availability}>
+              <LandlordStatusPill label="Còn trống" tone="success" />
+            </View>
           </View>
 
-          <Typography variant="h2" weight="BOLD" colorKey="PRIMARY" style={styles.priceText}>
-            {formatVND(step1.price)}
-            <Typography variant="body2" colorKey="TEXT_SECONDARY">
-              {' '}
-              / tháng
+          <View style={styles.previewBody}>
+            <Typography variant="h3" weight="BOLD" style={styles.titleText}>
+              {step1.title || 'Chưa đặt tiêu đề'}
             </Typography>
-          </Typography>
 
-          <Typography
-            variant="h3"
-            weight="SEMIBOLD"
-            colorKey="TEXT_PRIMARY"
-            style={styles.titleText}
-          >
-            {step1.title || 'Chưa đặt tiêu đề'}
-          </Typography>
+            <Typography variant="h2" weight="BOLD" colorKey="PRIMARY">
+              {formatFullPrice(Number(step1.price) || 0)}
+              <Typography variant="body1" colorKey="TEXT_SECONDARY">
+                {' '}
+                /tháng
+              </Typography>
+            </Typography>
 
-          <View style={styles.locationRow}>
-            <MapPin size={18} color={THEME_COLORS.PRIMARY} style={styles.iconOffset} />
-            <Typography variant="body2" colorKey="TEXT_SECONDARY" style={styles.locationText}>
+            <Typography variant="body2" colorKey="TEXT_SECONDARY">
+              {[
+                step1.area ? `${step1.area} m²` : null,
+                step1.maxOccupants ? `${step1.maxOccupants} người` : null,
+                roomTypeLabel || null,
+              ]
+                .filter(Boolean)
+                .join(' · ')}
+            </Typography>
+
+            <Typography variant="body2" colorKey="TEXT_SECONDARY">
               {fullAddress || 'Chưa chọn địa chỉ'}
             </Typography>
-          </View>
-        </View>
 
-        {/* Highlights Grid */}
-        <View style={styles.specsGrid}>
-          <View style={styles.specItem}>
-            <Maximize2 size={20} color={THEME_COLORS.PRIMARY} />
-            <Typography variant="caption" colorKey="TEXT_MUTED" style={styles.specLabel}>
-              Diện tích
-            </Typography>
-            <Typography variant="body2" weight="SEMIBOLD" colorKey="TEXT_PRIMARY">
-              {step1.area ? `${step1.area} m²` : '---'}
-            </Typography>
-          </View>
-
-          <View style={styles.specItem}>
-            <Users size={20} color={THEME_COLORS.PRIMARY} />
-            <Typography variant="caption" colorKey="TEXT_MUTED" style={styles.specLabel}>
-              Sức chứa
-            </Typography>
-            <Typography variant="body2" weight="SEMIBOLD" colorKey="TEXT_PRIMARY">
-              {step1.maxOccupants ? `${step1.maxOccupants} người` : '---'}
-            </Typography>
-          </View>
-
-          <View style={styles.specItem}>
-            <Banknote size={20} color={THEME_COLORS.PRIMARY} />
-            <Typography variant="caption" colorKey="TEXT_MUTED" style={styles.specLabel}>
-              Tiền đặt cọc
-            </Typography>
-            <Typography variant="body2" weight="SEMIBOLD" colorKey="TEXT_PRIMARY">
-              {step1.deposit ? formatVND(step1.deposit) : 'Không có'}
-            </Typography>
-          </View>
-        </View>
-
-        {/* Service Costs Card */}
-        <View style={styles.card}>
-          <Typography
-            variant="body1"
-            weight="SEMIBOLD"
-            colorKey="TEXT_PRIMARY"
-            style={styles.sectionTitle}
-          >
-            Chi phí dịch vụ hàng tháng
-          </Typography>
-
-          <View style={styles.feeRow}>
-            <View style={styles.feeLeft}>
-              <Zap size={18} color={THEME_COLORS.WARNING} />
-              <Typography variant="body2" colorKey="TEXT_PRIMARY">
-                Tiền điện
+            {universities.length > 0 ? (
+              <Typography variant="body2" colorKey="PRIMARY">
+                {`Gần ${universities.map((university) => university.name).join(' · ')}`}
               </Typography>
-            </View>
-            <Typography variant="body2" weight="MEDIUM" colorKey="TEXT_PRIMARY">
-              {step1.electricPrice
-                ? `${formatVND(step1.electricPrice)} / kWh`
-                : 'Theo giá nhà nước'}
-            </Typography>
-          </View>
+            ) : null}
 
-          <Divider style={styles.feeDivider} />
-
-          <View style={styles.feeRow}>
-            <View style={styles.feeLeft}>
-              <Droplets size={18} color={THEME_COLORS.PRIMARY} />
-              <Typography variant="body2" colorKey="TEXT_PRIMARY">
-                Tiền nước
-              </Typography>
-            </View>
-            <Typography variant="body2" weight="MEDIUM" colorKey="TEXT_PRIMARY">
-              {step1.waterPrice ? `${formatVND(step1.waterPrice)} / khối` : 'Theo giá nhà nước'}
-            </Typography>
-          </View>
-        </View>
-
-        {/* Description Card */}
-        <View style={styles.card}>
-          <View style={styles.sectionHeader}>
-            <FileText size={18} color={THEME_COLORS.PRIMARY} />
-            <Typography variant="body1" weight="SEMIBOLD" colorKey="TEXT_PRIMARY">
-              Mô tả chi tiết
-            </Typography>
-          </View>
-          <Typography variant="body2" colorKey="TEXT_SECONDARY" style={styles.descriptionText}>
-            {step1.description || 'Chủ trọ chưa nhập mô tả chi tiết cho phòng này.'}
-          </Typography>
-        </View>
-
-        {/* Amenities Card */}
-        <View style={styles.card}>
-          <View style={styles.sectionHeader}>
-            <CheckCircle2 size={18} color={THEME_COLORS.PRIMARY} />
-            <Typography variant="body1" weight="SEMIBOLD" colorKey="TEXT_PRIMARY">
-              Tiện ích phòng ({selectedAmenityIds.length})
-            </Typography>
-          </View>
-          {selectedAmenityNames.length > 0 ? (
-            <View style={styles.amenitiesWrap}>
-              {selectedAmenityNames.map((name) => (
-                <View key={name} style={styles.amenityTag}>
-                  <Typography variant="caption" colorKey="PRIMARY" weight="MEDIUM">
-                    ✓ {name}
-                  </Typography>
-                </View>
-              ))}
-            </View>
-          ) : (
-            <Typography variant="body2" colorKey="TEXT_MUTED">
-              Chưa chọn tiện ích nào.
-            </Typography>
-          )}
-        </View>
-
-        {/* Viewing Schedule Card */}
-        <View style={styles.card}>
-          <View style={styles.sectionHeader}>
-            <Calendar size={18} color={THEME_COLORS.PRIMARY} />
-            <Typography variant="body1" weight="SEMIBOLD" colorKey="TEXT_PRIMARY">
-              Khung giờ xem phòng
-            </Typography>
-          </View>
-
-          {scheduleSummary.length > 0 ? (
-            <View style={styles.scheduleList}>
-              {scheduleSummary.map(({ dayLabel, slots }) => (
-                <View key={dayLabel} style={styles.scheduleRow}>
-                  <View style={styles.dayPill}>
-                    <Typography variant="caption" weight="BOLD" colorKey="PRIMARY">
-                      {dayLabel}
+            {selectedAmenityNames.length > 0 ? (
+              <View style={styles.amenitiesWrap}>
+                {selectedAmenityNames.slice(0, MAX_PREVIEW_AMENITIES).map((name) => (
+                  <View key={name} style={styles.amenityTag}>
+                    <Typography variant="caption" weight="MEDIUM" colorKey="TEXT_SECONDARY">
+                      {name}
                     </Typography>
                   </View>
-                  <Typography variant="body2" colorKey="TEXT_SECONDARY">
-                    {slots.join(', ')}
-                  </Typography>
-                </View>
-              ))}
-            </View>
-          ) : (
-            <Typography variant="body2" colorKey="TEXT_MUTED">
-              Chưa thiết lập lịch xem phòng định kỳ (sinh viên sẽ liên hệ trực tiếp).
-            </Typography>
-          )}
+                ))}
+                {extraAmenities > 0 ? (
+                  <View style={styles.amenityTag}>
+                    <Typography variant="caption" weight="MEDIUM" colorKey="TEXT_SECONDARY">
+                      +{extraAmenities}
+                    </Typography>
+                  </View>
+                ) : null}
+              </View>
+            ) : null}
+          </View>
         </View>
 
-        {/* Notice Card */}
+        <View style={styles.checkCard}>
+          <Typography variant="body2" weight="BOLD" style={styles.checkTitle}>
+            Kiểm tra trước khi gửi
+          </Typography>
+          <View style={styles.checkDivider} />
+
+          {checklist.map((item) => (
+            <View key={item.key} style={styles.checkRow}>
+              <View style={styles.checkIcon}>
+                {item.ok ? (
+                  <Check size={14} color={THEME_COLORS.SUCCESS} strokeWidth={3} />
+                ) : (
+                  <AlertCircle size={14} color={OVERLAY_COLORS.EXPIRED_TEXT} />
+                )}
+              </View>
+              <Typography
+                variant="body2"
+                color={item.ok ? THEME_COLORS.TEXT_SECONDARY : OVERLAY_COLORS.EXPIRED_TEXT}
+                style={styles.checkLabel}
+              >
+                {item.label}
+              </Typography>
+            </View>
+          ))}
+        </View>
+
         <View style={styles.noticeCard}>
-          <AlertCircle size={20} color={THEME_COLORS.PRIMARY} style={styles.noticeIcon} />
-          <Typography variant="caption" colorKey="TEXT_SECONDARY" style={styles.noticeText}>
-            Tin đăng sẽ được đội ngũ UniNest duyệt trong vòng 2 - 24 giờ. Bạn có thể theo dõi trạng
-            thái bài đăng trong mục Quản lý tin.
+          <Clock3 size={18} color={THEME_COLORS.PRIMARY_DARK} style={styles.noticeIcon} />
+          <Typography variant="body2" colorKey="PRIMARY_DARK" style={styles.noticeText}>
+            Tin sẽ ở trạng thái{' '}
+            <Typography variant="body2" weight="BOLD" colorKey="PRIMARY_DARK">
+              Chờ duyệt
+            </Typography>{' '}
+            cho tới khi quản trị viên kiểm tra, thường trong 4–8 giờ làm việc.
           </Typography>
         </View>
       </ScrollView>
 
-      {/* Bottom Actions */}
-      <View style={styles.bottomBar}>
+      <View style={[styles.bottomBar, isCompact && styles.bottomBarCompact]}>
         <Button
           title="Chỉnh sửa"
           variant="outline"
+          size="lg"
           onPress={() => navigation.goBack()}
           style={styles.editButton}
-          disabled={isPending || isUploadingImages}
+          disabled={isBusy}
         />
         <Button
           title={
             isUploadingImages
               ? `Đang tải ảnh (${uploadProgress}%)...`
-              : isPending
-                ? 'Đang đăng...'
-                : 'Đăng tin'
+              : isPending || isUpdating
+                ? editingListingId
+                  ? 'Đang sửa...'
+                  : 'Đang đăng...'
+                : editingListingId
+                  ? 'Sửa tin'
+                  : 'Đăng tin'
           }
           variant="primary"
+          size="lg"
           onPress={handleSubmit}
-          isLoading={isPending || isUploadingImages}
-          disabled={isPending || isUploadingImages}
+          isLoading={isBusy}
+          disabled={isBusy}
           style={styles.submitButton}
         />
       </View>
 
-      {(isPending || isUploadingImages) && (
+      {isBusy && (
         <LoadingOverlay
           isFullScreen
           message={
             isUploadingImages
-              ? `Đang tải ảnh lên Cloudflare R2 (${uploadProgress}%)...`
-              : 'Đang gửi tin đăng tới máy chủ...'
+              ? `Đang tải ảnh lên (${uploadProgress}%)...`
+              : editingListingId
+                ? 'Đang cập nhật tin đăng...'
+                : 'Đang gửi tin đăng tới máy chủ...'
           }
         />
       )}
@@ -478,153 +467,80 @@ export const PreviewScreen = () => {
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: THEME_COLORS.BACKGROUND,
+  header: {
+    height: 56,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingHorizontal: 16,
+    backgroundColor: THEME_COLORS.SURFACE,
+    borderBottomWidth: 1,
+    borderBottomColor: THEME_COLORS.DIVIDER,
   },
-  scrollContent: {
-    padding: SPACING_TOKENS.MD,
-    paddingBottom: SPACING_TOKENS.XXL,
-    gap: SPACING_TOKENS.MD,
-  },
-  imageSection: {
-    height: IMAGE_HEIGHT,
-    borderRadius: BORDER_RADIUS_TOKENS.LG,
+  container: { flex: 1, backgroundColor: THEME_COLORS.BACKGROUND },
+  scrollContent: { padding: 16, paddingBottom: SPACING_TOKENS.XXL, gap: 16 },
+  previewCard: {
     overflow: 'hidden',
-    marginBottom: SPACING_TOKENS.XS,
+    borderRadius: BORDER_RADIUS_TOKENS.LG,
+    borderWidth: 1,
+    borderColor: THEME_COLORS.BORDER,
+    backgroundColor: THEME_COLORS.SURFACE,
   },
-  imageSlide: {
-    width: IMAGE_WIDTH,
-    height: IMAGE_HEIGHT,
-    position: 'relative',
+  previewBanner: {
+    height: 36,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: THEME_COLORS.TEXT_PRIMARY,
   },
-  previewImage: {
-    width: '100%',
-    height: '100%',
-    backgroundColor: THEME_COLORS.SURFACE_MUTED,
-  },
-  coverBadge: {
-    position: 'absolute',
-    top: SPACING_TOKENS.SM,
-    left: SPACING_TOKENS.SM,
-    backgroundColor: THEME_COLORS.PRIMARY,
-    paddingHorizontal: SPACING_TOKENS.SM,
-    paddingVertical: 4,
-    borderRadius: BORDER_RADIUS_TOKENS.FULL,
-  },
+  bannerLabel: { letterSpacing: 0.5 },
+  imageSection: { backgroundColor: THEME_COLORS.PRIMARY_LIGHT },
+  imageSlide: { position: 'relative' },
+  previewImage: { width: '100%', height: '100%' },
+  availability: { position: 'absolute', top: 12, left: 12 },
   imageCounterBadge: {
     position: 'absolute',
-    bottom: SPACING_TOKENS.SM,
-    right: SPACING_TOKENS.SM,
-    backgroundColor: 'rgba(0, 0, 0, 0.65)',
-    paddingHorizontal: SPACING_TOKENS.SM,
+    bottom: 12,
+    right: 12,
+    paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: BORDER_RADIUS_TOKENS.FULL,
+    backgroundColor: OVERLAY_COLORS.COUNTER_BADGE,
   },
-  card: {
-    backgroundColor: THEME_COLORS.SURFACE,
+  previewBody: { gap: 8, padding: 16 },
+  titleText: { lineHeight: 26 },
+  amenitiesWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 4 },
+  amenityTag: {
+    height: 28,
+    paddingHorizontal: 12,
+    justifyContent: 'center',
+    borderRadius: BORDER_RADIUS_TOKENS.FULL,
+    borderWidth: 1,
+    borderColor: THEME_COLORS.BORDER,
+  },
+  checkCard: {
+    padding: 16,
     borderRadius: BORDER_RADIUS_TOKENS.LG,
-    padding: SPACING_TOKENS.MD,
-    borderWidth: 1,
-    borderColor: THEME_COLORS.BORDER,
-  },
-  badgeRow: {
-    flexDirection: 'row',
-    gap: SPACING_TOKENS.SM,
-    marginBottom: SPACING_TOKENS.SM,
-  },
-  priceText: {
-    marginBottom: SPACING_TOKENS.XS,
-  },
-  titleText: {
-    marginBottom: SPACING_TOKENS.SM,
-    lineHeight: 28,
-  },
-  locationRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: SPACING_TOKENS.XS,
-  },
-  iconOffset: {
-    marginTop: 2,
-  },
-  locationText: {
-    flex: 1,
-  },
-  specsGrid: {
-    flexDirection: 'row',
-    gap: SPACING_TOKENS.SM,
-  },
-  specItem: {
-    flex: 1,
     backgroundColor: THEME_COLORS.SURFACE,
-    borderRadius: BORDER_RADIUS_TOKENS.MD,
-    padding: SPACING_TOKENS.MD,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: THEME_COLORS.BORDER,
-    gap: 4,
   },
-  specLabel: {
-    marginTop: 2,
-  },
-  sectionTitle: {
-    marginBottom: SPACING_TOKENS.MD,
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: SPACING_TOKENS.SM,
-    marginBottom: SPACING_TOKENS.SM,
-  },
-  feeRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: SPACING_TOKENS.XS,
-  },
-  feeLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: SPACING_TOKENS.SM,
-  },
-  feeDivider: {
-    marginVertical: SPACING_TOKENS.SM,
-  },
-  descriptionText: {
-    lineHeight: 22,
-  },
-  scheduleList: {
-    gap: SPACING_TOKENS.SM,
-  },
-  scheduleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: SPACING_TOKENS.SM,
-  },
-  dayPill: {
-    backgroundColor: THEME_COLORS.PRIMARY_LIGHT,
-    borderRadius: BORDER_RADIUS_TOKENS.SM,
-    paddingHorizontal: SPACING_TOKENS.SM,
-    paddingVertical: 2,
-    minWidth: 36,
-    alignItems: 'center',
-  },
+  checkTitle: { lineHeight: 22 },
+  checkDivider: { height: 1, marginVertical: 14, backgroundColor: THEME_COLORS.DIVIDER },
+  checkRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 10, paddingVertical: 6 },
+  checkIcon: { width: 16, height: 20, alignItems: 'center', justifyContent: 'center' },
+  checkLabel: { flex: 1, lineHeight: 20 },
   noticeCard: {
     flexDirection: 'row',
-    backgroundColor: THEME_COLORS.PRIMARY_LIGHT,
-    borderRadius: BORDER_RADIUS_TOKENS.MD,
-    padding: SPACING_TOKENS.MD,
-    gap: SPACING_TOKENS.SM,
     alignItems: 'flex-start',
+    gap: 10,
+    padding: 14,
+    borderRadius: BORDER_RADIUS_TOKENS.MD,
+    borderWidth: 1,
+    borderColor: OVERLAY_COLORS.INFO_BORDER,
+    backgroundColor: THEME_COLORS.PRIMARY_LIGHT,
   },
-  noticeIcon: {
-    marginTop: 2,
-  },
-  noticeText: {
-    flex: 1,
-    lineHeight: 18,
-  },
+  noticeIcon: { marginTop: 1 },
+  noticeText: { flex: 1, lineHeight: 20 },
   bottomBar: {
     flexDirection: 'row',
     padding: SPACING_TOKENS.MD,
@@ -634,21 +550,7 @@ const styles = StyleSheet.create({
     borderTopColor: THEME_COLORS.DIVIDER,
     gap: SPACING_TOKENS.MD,
   },
-  editButton: {
-    flex: 1,
-  },
-  submitButton: {
-    flex: 2,
-  },
-  amenitiesWrap: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: SPACING_TOKENS.SM,
-  },
-  amenityTag: {
-    backgroundColor: THEME_COLORS.PRIMARY_LIGHT,
-    paddingHorizontal: SPACING_TOKENS.SM,
-    paddingVertical: 4,
-    borderRadius: BORDER_RADIUS_TOKENS.FULL,
-  },
+  bottomBarCompact: { flexDirection: 'column' },
+  editButton: { flex: 1 },
+  submitButton: { flex: 2 },
 });

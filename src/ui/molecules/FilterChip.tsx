@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { TouchableOpacity, StyleSheet, ViewStyle, StyleProp, View } from 'react-native';
-import { THEME_COLORS, BORDER_RADIUS_TOKENS, SPACING_TOKENS } from '@theme';
+import { THEME_COLORS, BORDER_RADIUS_TOKENS, OVERLAY_COLORS, SPACING_TOKENS } from '@theme';
 import { Typography } from '../atoms/Typography';
 
 export interface FilterChipProps {
@@ -29,7 +29,7 @@ export const FilterChip = ({
       <Typography
         variant="label"
         weight={isSelected ? 'SEMIBOLD' : 'MEDIUM'}
-        colorKey={isSelected ? 'PRIMARY' : 'TEXT_PRIMARY'}
+        colorKey={isSelected ? 'PRIMARY_DARK' : 'TEXT_SECONDARY'}
       >
         {label}
       </Typography>
@@ -43,13 +43,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     height: 36,
-    paddingHorizontal: SPACING_TOKENS.MD,
+    paddingHorizontal: SPACING_TOKENS.MD - 2,
     borderRadius: BORDER_RADIUS_TOKENS.FULL,
     borderWidth: 1,
   },
   unselectedChip: {
     backgroundColor: THEME_COLORS.SURFACE,
-    borderColor: THEME_COLORS.BORDER,
+    borderColor: OVERLAY_COLORS.FIELD_BORDER,
   },
   selectedChip: {
     backgroundColor: THEME_COLORS.PRIMARY_LIGHT,

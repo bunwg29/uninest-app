@@ -1,77 +1,76 @@
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { CalendarDays, Grid2X2, House, MessageCircle, Plus } from 'lucide-react-native';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { BORDER_RADIUS_TOKENS, THEME_COLORS } from '@theme';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Home, Search, Sparkles, MessageSquare, User } from 'lucide-react-native';
+import { THEME_COLORS } from '@theme';
 import type { MainTabParamList } from '../types';
 import { HomeScreen, LandlordListingsScreen, LandlordPlaceholderScreen } from '@features/listings';
-import { MessagesScreen } from '@features/chat';
+import { SearchScreen } from '@features/search';
+import { AiChatScreen } from '@features/ai-chat';
+import { MessagesScreen, useChatSummary } from '@features/chat';
+import { ProfileScreen } from '@features/auth';
+import { useRoleGuard } from '@features/auth';
+import { LandlordTabNavigator } from './LandlordTabNavigator';
+import { BOTTOM_TAB_STYLES, PrimaryTabButton } from '../components/PrimaryTabButton';
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
 
-const TAB_ICON_SIZE = 21;
+const TAB_ICON_SIZE = 22;
 
 export const MainTabNavigator = () => {
+  const { isLandlord } = useRoleGuard();
+  const { data: chatSummary } = useChatSummary(!isLandlord);
+  const insets = useSafeAreaInsets();
+  const bottomPadding = Math.max(insets.bottom, 8);
+
+  if (isLandlord) {
+    return <LandlordTabNavigator />;
+  }
+
   return (
     <Tab.Navigator
-      initialRouteName="Overview"
+      initialRouteName="Home"
       screenOptions={{
+        headerShown: false,
         tabBarActiveTintColor: THEME_COLORS.PRIMARY,
-        tabBarInactiveTintColor: THEME_COLORS.TEXT_MUTED,
-        tabBarStyle: {
-          backgroundColor: THEME_COLORS.SURFACE,
-          borderTopColor: THEME_COLORS.BORDER,
-          height: 72,
-          paddingBottom: 8,
-          paddingTop: 6,
-        },
-        headerStyle: { backgroundColor: THEME_COLORS.SURFACE },
-        headerTintColor: THEME_COLORS.TEXT_PRIMARY,
+        tabBarInactiveTintColor: THEME_COLORS.TEXT_PLACEHOLDER,
+        tabBarLabelStyle: BOTTOM_TAB_STYLES.label,
+        tabBarStyle: [
+          BOTTOM_TAB_STYLES.bar,
+          { height: 64 + bottomPadding, paddingBottom: bottomPadding },
+        ],
       }}
     >
       <Tab.Screen
-        name="Overview"
+        name="Home"
         component={HomeScreen}
         options={{
-          title: 'Tổng quan',
-          tabBarIcon: ({ color }) => <Grid2X2 size={TAB_ICON_SIZE} color={color} />,
+          title: 'Trang chủ',
+          tabBarIcon: ({ color }) => <Home size={TAB_ICON_SIZE} color={color} />,
         }}
       />
 
       <Tab.Screen
-        name="Listings"
-        component={LandlordListingsScreen}
+        name="Search"
+        component={SearchScreen}
         options={{
-          title: 'Tin đăng',
-          tabBarIcon: ({ color }) => <House size={TAB_ICON_SIZE} color={color} />,
+          title: 'Tìm trọ',
+          tabBarIcon: ({ color }) => <Search size={TAB_ICON_SIZE} color={color} />,
         }}
       />
 
       <Tab.Screen
-        name="CreateListing"
-        component={LandlordPlaceholderScreen}
+        name="AiChat"
+        component={AiChatScreen}
         options={{
-          title: 'Đăng tin',
-          tabBarButton: (props) => (
-            <TouchableOpacity
-              onPress={props.onPress ?? undefined}
-              accessibilityLabel="Đăng tin"
-              style={styles.createTabButton}
-            >
-              <View style={styles.createButtonCircle}>
-                <Plus size={26} color={THEME_COLORS.WHITE} />
-              </View>
-              <Text style={styles.createTabLabel}>Đăng tin</Text>
-            </TouchableOpacity>
+          title: 'Trợ lý AI',
+          tabBarButton: ({ onPress }) => (
+            <PrimaryTabButton
+              onPress={onPress ?? undefined}
+              accessibilityLabel="Trợ lý AI"
+              label="Trợ lý AI"
+              icon={<Sparkles size={24} color={THEME_COLORS.WHITE} />}
+            />
           ),
-        }}
-      />
-
-      <Tab.Screen
-        name="Appointments"
-        component={LandlordPlaceholderScreen}
-        options={{
-          title: 'Lịch hẹn',
-          tabBarIcon: ({ color }) => <CalendarDays size={TAB_ICON_SIZE} color={color} />,
         }}
       />
 
@@ -80,36 +79,52 @@ export const MainTabNavigator = () => {
         component={MessagesScreen}
         options={{
           title: 'Tin nhắn',
-          tabBarIcon: ({ color }) => <MessageCircle size={TAB_ICON_SIZE} color={color} />,
+          tabBarBadge: chatSummary?.unreadMessages ? chatSummary.unreadMessages : undefined,
+          tabBarBadgeStyle: BOTTOM_TAB_STYLES.badge,
+          tabBarIcon: ({ color }) => <MessageSquare size={TAB_ICON_SIZE} color={color} />,
+        }}
+      />
+
+      <Tab.Screen
+        name="Profile"
+        component={ProfileScreen}
+        options={{
+          title: 'Cá nhân',
+          tabBarIcon: ({ color }) => <User size={TAB_ICON_SIZE} color={color} />,
+        }}
+      />
+
+      <Tab.Screen
+        name="Overview"
+        component={HomeScreen}
+        options={{
+          tabBarItemStyle: { display: 'none' },
+        }}
+      />
+
+      <Tab.Screen
+        name="Listings"
+        component={LandlordListingsScreen}
+        options={{
+          tabBarItemStyle: { display: 'none' },
+        }}
+      />
+
+      <Tab.Screen
+        name="CreateListing"
+        component={LandlordPlaceholderScreen}
+        options={{
+          tabBarItemStyle: { display: 'none' },
+        }}
+      />
+
+      <Tab.Screen
+        name="Appointments"
+        component={LandlordPlaceholderScreen}
+        options={{
+          tabBarItemStyle: { display: 'none' },
         }}
       />
     </Tab.Navigator>
   );
 };
-
-const styles = StyleSheet.create({
-  createTabButton: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'flex-start',
-  },
-  createButtonCircle: {
-    width: 50,
-    height: 50,
-    marginTop: -20,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: BORDER_RADIUS_TOKENS.FULL,
-    backgroundColor: THEME_COLORS.PRIMARY,
-    elevation: 5,
-    shadowColor: THEME_COLORS.BLACK,
-    shadowOpacity: 0.2,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 3 },
-  },
-  createTabLabel: {
-    marginTop: 3,
-    color: THEME_COLORS.TEXT_MUTED,
-    fontSize: 11,
-  },
-});

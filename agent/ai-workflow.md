@@ -1,60 +1,68 @@
-# AI Implementation Workflow
+# Quy trình làm việc của AI — uninest-app
 
-Mọi AI coding assistant và thành viên dự án phải tuân thủ nghiêm ngặt quy trình 7 bước sau khi tiếp nhận yêu cầu code:
+> Làm **đúng thứ tự** các bước. Không bỏ bước. Gặp điều kiện "DỪNG" thì hỏi người dùng, không tự đoán.
 
-```
-[1. Check Mandates & Boundaries] -> [2. Inspect Existing Code & Packages] -> [3. Implement Feature]
-  -> [4. Verify & Test] -> [5. Run Format, Lint & Typecheck] -> [6. Update Docs] -> [7. Confirm to User]
-```
+---
 
-## Bước 1: Kiểm tra Ràng buộc, Ranh giới & Ràng buộc Bắt buộc
-- Đọc [**`agent/rules.md`**](./rules.md):
-  - **KIỂM TRA NHÁNH GIT PHỤ TRÁCH**: Xác định file/tính năng sắp sửa thuộc trách nhiệm của nhánh Git nào (`feat/sp1-mobile-shell`, `feat/sp1-ui-components`, `feat/sp1-mobile-auth-screens`, ...). Luôn checkout đúng nhánh trước khi sửa đổi.
-  - **SỬ DỤNG PACKAGE SẴN CÓ**: Chỉ code trong các package `@features/*` và base packages sẵn có. Trừ khi là tính năng mới hoàn toàn chưa có package tương ứng thì mới tạo package mới.
-  - **BẮT BUỘC ĐA NGÔN NGỮ**: Không viết chuỗi cứng vào code; chuẩn bị sẵn key cho cả `vi` và `en`.
-  - **100% TIẾNG VIỆT THUẦN**: Toàn bộ chuỗi giao diện, thông báo lỗi, placeholder viết trực tiếp bằng Tiếng Việt. Tuyệt đối không dùng thư viện `i18n` hay hook `useTranslation()`.
-  - **HẰNG SỐ IN HOA**: Mọi hằng số mới phải viết kiểu `UPPER_SNAKE_CASE`.
-  - **KHÔNG COMMENT BỪA BÃI**: Để code tự tường minh, không comment giải thích các dòng code hiển nhiên.
-  - **KHOẢNG CÁCH DÒNG LOGIC**: Luôn có dòng trống phân cách giữa các block biến, hàm, if/else, return.
-- Đọc [**`agent/business-logic.md`**](./business-logic.md): Kiểm tra xem tính năng có thuộc danh sách **Out of scope** (không build) hay không.
+## Bước 1 — Hiểu yêu cầu và xác định nghiệp vụ
 
-## Bước 2: Rà soát & Tái sử dụng Mã nguồn Hiện có
-- Tra cứu `@theme` để lấy hằng số màu (`THEME_COLORS`), khoảng cách (`SPACING_TOKENS`), cỡ chữ (`TYPOGRAPHY_TOKENS`).
-- Tra cứu `@core` để dùng `apiClient` (Axios), `HTTP_STATUS_CODES`.
-- Tra cứu `@ui` để dùng `ErrorBoundary` và các UI components/hooks có sẵn, tránh viết lặp code.
+1. Xác định yêu cầu thuộc **mã FR / TASK-ID** nào (tra `business-logic.md`).
+2. Đọc mục nghiệp vụ tương ứng: quy tắc bắt buộc, con số, API, màn hình.
+3. Tra mục **2. Ngoài phạm vi** và **3. Quyết định đã chốt**.
 
-## Bước 3: Triển khai Tính năng theo Kiến trúc Modular
-- Đặt code vào đúng thư mục: `src/features/<feature-name>/`:
-  - `components/`: UI riêng của tính năng.
-  - `hooks/`: TanStack Query hooks hoặc custom hooks của tính năng.
-  - `screens/`: Màn hình giao diện.
-  - `services/`: API calls gọi thông qua `apiClient` từ `@core`.
-  - `store/`: Zustand store (nếu có client state cục bộ).
-  - `types/`: Type definitions của tính năng.
-  - `index.ts`: Re-export các thành phần public của tính năng.
-- Luôn sử dụng alias import (`@features/...`, `@core`, `@theme`, `@i18n`, `@ui`, `@hooks`, `@navigation`).
-- Luôn sử dụng alias import (`@features/...`, `@core`, `@theme`, `@ui`, `@hooks`, `@navigation`).
+**DỪNG và hỏi khi:**
+- Yêu cầu nằm ngoài phạm vi, hoặc mâu thuẫn với `business-logic.md`.
+- Không tìm thấy nghiệp vụ trong file, hoặc người dùng muốn đổi một con số/quy tắc đã chốt.
+- Cần API mà backend chưa có (không tự bịa endpoint, không tự viết dữ liệu giả để "cho chạy được").
+- Cần cài thư viện mới.
 
-## Bước 4: Kiểm thử Tính năng
-- Kiểm tra render luồng nghiệp vụ chính, các trạng thái loading, empty, error handling.
+## Bước 2 — Khảo sát code hiện có (bắt buộc trước khi viết)
 
-## Bước 5: Tự động Định dạng & Kiểm tra Type, Lint
-Bắt buộc chạy đầy đủ các lệnh sau để tự động format khoảng cách dòng, dọn import thừa và xác minh 0 lỗi:
+1. Đọc `reuse-catalog.md`.
+2. Tìm trong code những thứ liên quan: `grep` tên màn hình, tên API, tên component tương tự.
+3. Mở **ít nhất một màn/feature tương tự đã làm** để học cách làm (xem mục 7 của `reuse-catalog.md`).
+4. Liệt kê cho chính mình: dùng lại gì, mở rộng gì, phải tạo mới gì (và vì sao).
+
+Có thiết kế Figma → lấy đúng node màn hình đó, làm khớp thiết kế; map màu/khoảng cách sang token `@theme`.
+
+## Bước 3 — Viết code
+
+- Đặt file đúng chỗ (xem `rules.md` mục 2 và `reuse-catalog.md` mục 1).
+- Tuân thủ toàn bộ `rules.md` (R1–R11).
+- Làm **đúng phạm vi được giao**. Thấy lỗi khác ngoài phạm vi → ghi lại để báo, không tự sửa lan man.
+- Thêm thứ dùng chung mới → cập nhật `reuse-catalog.md`.
+- Thay đổi nghiệp vụ đã được người dùng duyệt → cập nhật `business-logic.md` (và copy sang repo backend).
+
+## Bước 4 — Tự kiểm tra
+
 ```bash
 npm run lint:fix
 npm run format
 npm run typecheck
 npm run lint
-npm run format:check
 ```
-Đảm bảo **0 lỗi TypeScript, 0 lỗi ESLint**.
+Tất cả phải **0 lỗi, 0 cảnh báo mới**. Lỗi không liên quan tới việc của mình đã có từ trước → báo lại, không tự sửa.
 
-## Bước 6: Cập nhật Tài liệu Nghiệp vụ (nếu có thay đổi)
-- Nếu tính năng bổ sung trạng thái, thực thể hoặc logic mới, cập nhật vào `agent/business-logic.md`.
+Kiểm tra thủ công luồng chính + 3 trạng thái tải/rỗng/lỗi. Đã sửa component dùng chung → kiểm tra các màn đang dùng nó.
 
-## Bước 7: Báo cáo cho Người dùng
-## Bước 7: Commit Chuẩn & Báo cáo cho Người dùng
-- Kiểm tra `git status` đảm bảo chỉ chứa các file thuộc đúng phạm vi trách nhiệm của nhánh hiện tại.
-- Tạo commit với message chuẩn Conventional Commits kèm mã Task ID (ví dụ: `refactor(auth): remove i18n dependency (TSK-SP1-03)`).
-- Chờ người dùng cho phép ("Allow") trước khi commit hoặc push.
-- Tóm tắt ngắn gọn các việc đã làm, danh sách file thay đổi (có markdown link trực tiếp), và kết quả kiểm tra type/lint.
+## Bước 5 — Rà lại trước khi báo cáo
+
+- [ ] Đúng nghiệp vụ, đúng con số trong `business-logic.md`
+- [ ] Không tạo trùng component/hook/hàm đã có
+- [ ] Không hard-code màu, khoảng cách; không `any`; không comment; không `console.log`
+- [ ] Mọi chữ hiển thị là tiếng Việt
+- [ ] Màn mới đã khai báo route trong `navigation/types.ts` và navigator
+- [ ] Store có dữ liệu người dùng đã `registerStoreResetter`
+- [ ] Đã xoá file, style, import thừa
+
+## Bước 6 — Commit (chỉ khi người dùng cho phép)
+
+Theo `git.md`: đúng nhánh task, đúng định dạng `<type>(<scope>): <mô tả> (<TASK-ID>)`, mỗi commit một việc, không dòng ghi công AI. **Không push** khi chưa được yêu cầu.
+
+## Bước 7 — Báo cáo cho người dùng (tiếng Việt)
+
+Ngắn gọn, gồm:
+1. Đã làm gì (theo nghiệp vụ, không liệt kê từng dòng code).
+2. Dùng lại những gì có sẵn; tạo mới gì và vì sao.
+3. Kết quả lệnh kiểm tra.
+4. Điểm cần người dùng quyết hoặc lỗi phát hiện ngoài phạm vi.

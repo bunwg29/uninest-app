@@ -1,26 +1,45 @@
 import { useCallback } from 'react';
-import { View, StyleSheet, FlatList, TouchableOpacity, Image, Alert } from 'react-native';
+import { View, StyleSheet, ScrollView, TouchableOpacity, Image, Alert } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import * as ImagePicker from 'expo-image-picker';
-import { Plus, X, Star } from 'lucide-react-native';
-import { THEME_COLORS, SPACING_TOKENS, BORDER_RADIUS_TOKENS } from '@theme';
-import { Button, Typography, HeaderBar, ScreenContainer } from '@ui';
-import { useToast } from '@hooks';
+import { Camera, Plus, X, Star } from 'lucide-react-native';
+import { THEME_COLORS, SPACING_TOKENS, BORDER_RADIUS_TOKENS, OVERLAY_COLORS } from '@theme';
+import { Button, Typography, ScreenContainer, VideoPickerField } from '@ui';
+import {
+  filterValidUploadImages,
+  resolveImageContentType,
+  resolveVideoContentType,
+  validateUploadVideo,
+} from '@core';
+import { useResponsiveLayout, useToast } from '@hooks';
 import type { ListingPostStackParamList } from '@navigation';
 import { useListingPostStore } from '../store/listingPostStore';
 import type { LocalImageItem } from '../types';
-import { MAX_LISTING_IMAGES, LISTING_FORM_STEPS } from '../types/constants';
+import { MAX_LISTING_IMAGES } from '../types/constants';
+import { WizardHeader } from '../components/landlord/WizardHeader';
 
 type NavigationProp = NativeStackNavigationProp<ListingPostStackParamList>;
 
-const TOTAL_STEPS = LISTING_FORM_STEPS.length;
-const IMAGE_CELL_SIZE = 100;
+const GRID_GAP = 12;
+const SCREEN_PADDING = 16;
+const PHOTO_TIPS = [
+  'Toàn cảnh phòng từ cửa vào',
+  'Gác lửng hoặc khu vực ngủ',
+  'Cửa sổ và ánh sáng ban ngày',
+  'Nhà vệ sinh',
+  'Lối vào và chỗ để xe',
+] as const;
 
 export const ImagesScreen = () => {
   const navigation = useNavigation<NavigationProp>();
   const toast = useToast();
-  const { localImages, setLocalImages } = useListingPostStore();
+  const { contentWidth } = useResponsiveLayout();
+  const columnCount = contentWidth >= 700 ? 5 : contentWidth >= 500 ? 4 : 3;
+  const imageCellSize = Math.floor(
+    (contentWidth - SCREEN_PADDING * 2 - GRID_GAP * (columnCount - 1)) / columnCount
+  );
+  const { localImages, setLocalImages, video, setVideo, editingListingId } = useListingPostStore();
 
   const handlePickImages = useCallback(async () => {
     if (localImages.length >= MAX_LISTING_IMAGES) {
@@ -51,18 +70,62 @@ export const ImagesScreen = () => {
 
     if (result.canceled || !result.assets.length) return;
 
-    const newImages: LocalImageItem[] = result.assets.map((asset, idx) => ({
+    const { valid, firstError } = filterValidUploadImages(result.assets);
+
+    if (firstError) toast.warning(firstError);
+
+    if (valid.length === 0) return;
+
+    const newImages: LocalImageItem[] = valid.map((asset, idx) => ({
       uri: asset.uri,
       isCover: localImages.length === 0 && idx === 0,
       sortOrder: localImages.length + idx,
       fileName: asset.fileName ?? `photo_${Date.now()}_${idx}.jpg`,
-      contentType: asset.mimeType ?? 'image/jpeg',
+      contentType: resolveImageContentType(asset),
+      fileSize: asset.fileSize ?? undefined,
     }));
 
     const combined = [...localImages, ...newImages].slice(0, MAX_LISTING_IMAGES);
 
     setLocalImages(combined);
   }, [localImages, setLocalImages, toast]);
+
+  const handlePickVideo = useCallback(async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+    if (status !== 'granted') {
+      Alert.alert(
+        'Cần quyền truy cập',
+        'Vui lòng cho phép ứng dụng truy cập thư viện ảnh trong Cài đặt',
+        [{ text: 'Đóng' }]
+      );
+
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['videos'],
+      allowsMultipleSelection: false,
+    });
+
+    if (result.canceled || !result.assets.length) return;
+
+    const asset = result.assets[0];
+    const error = validateUploadVideo(asset);
+
+    if (error) {
+      toast.warning(error);
+
+      return;
+    }
+
+    setVideo({
+      uri: asset.uri,
+      fileName: asset.fileName ?? `video_${Date.now()}.mp4`,
+      contentType: resolveVideoContentType(asset),
+      fileSize: asset.fileSize ?? undefined,
+    });
+  }, [setVideo, toast]);
 
   const handleRemoveImage = useCallback(
     (index: number) => {
@@ -101,82 +164,115 @@ export const ImagesScreen = () => {
   }, [localImages, navigation, toast]);
 
   return (
-    <ScreenContainer applyTopInset applyBottomInset={false} keyboardAvoiding={false}>
-      <HeaderBar
-        title="Đăng tin mới"
-        onBack={() => navigation.goBack()}
-        subtitle={`Bước 2 / ${TOTAL_STEPS}: Ảnh phòng`}
-        alignTitle="left"
-      />
+    <ScreenContainer applyTopInset applyBottomInset keyboardAvoiding={false}>
+      <WizardHeader step={2} isEditing={Boolean(editingListingId)} onBack={navigation.goBack} />
 
-      <StepIndicator currentStep={2} totalSteps={TOTAL_STEPS} />
+      <ScrollView
+        style={styles.flex}
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={styles.intro}>
+          <Typography variant="h2" weight="BOLD" style={styles.title}>
+            Thêm ảnh thật của phòng
+          </Typography>
+          <Typography variant="body2" colorKey="TEXT_SECONDARY" style={styles.subtitle}>
+            Tối đa {MAX_LISTING_IMAGES} ảnh. Ảnh bìa hiện ở kết quả tìm kiếm.
+          </Typography>
+        </View>
 
-      <View style={styles.flex}>
-        <FlatList
-          data={localImages}
-          keyExtractor={(item) => item.uri}
-          numColumns={3}
-          contentContainerStyle={styles.grid}
-          showsVerticalScrollIndicator={false}
-          ListHeaderComponent={
-            <View style={styles.headerSection}>
-              <Typography variant="body2" colorKey="TEXT_SECONDARY">
-                Chọn ảnh phòng (tối đa {MAX_LISTING_IMAGES} ảnh). Ảnh đầu tiên sẽ là ảnh bìa.
-              </Typography>
-            </View>
-          }
-          ListFooterComponent={
-            localImages.length < MAX_LISTING_IMAGES ? (
-              <TouchableOpacity
-                style={styles.addCell}
-                onPress={handlePickImages}
-                activeOpacity={0.7}
-              >
-                <Plus size={28} color={THEME_COLORS.PRIMARY} />
-                <Typography variant="caption" colorKey="PRIMARY" style={styles.addLabel}>
-                  Thêm ảnh
-                </Typography>
-              </TouchableOpacity>
-            ) : null
-          }
-          renderItem={({ item, index }) => (
-            <View style={styles.imageCell}>
+        <View style={styles.grid}>
+          {localImages.map((item, index) => (
+            <View
+              key={item.uri}
+              style={[styles.imageCell, { width: imageCellSize, height: imageCellSize }]}
+            >
               <Image source={{ uri: item.uri }} style={styles.image} resizeMode="cover" />
 
               <TouchableOpacity
                 style={styles.removeBtn}
                 onPress={() => handleRemoveImage(index)}
-                hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
+                hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+                accessibilityRole="button"
+                accessibilityLabel="Xoá ảnh"
               >
-                <X size={14} color={THEME_COLORS.WHITE} />
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[styles.coverBtn, item.isCover && styles.coverBtnActive]}
-                onPress={() => handleSetCover(index)}
-              >
-                <Star
-                  size={14}
-                  color={item.isCover ? THEME_COLORS.SECONDARY : THEME_COLORS.WHITE}
-                  fill={item.isCover ? THEME_COLORS.SECONDARY : 'transparent'}
-                />
+                <X size={12} color={THEME_COLORS.WHITE} />
               </TouchableOpacity>
 
               {item.isCover ? (
                 <View style={styles.coverBadge}>
-                  <Typography
-                    variant="caption"
-                    color={THEME_COLORS.WHITE}
-                    style={styles.coverBadgeText}
-                  >
-                    Bìa
+                  <Typography variant="tiny" weight="BOLD" color={THEME_COLORS.TEXT_PRIMARY}>
+                    ẢNH BÌA
                   </Typography>
                 </View>
-              ) : null}
+              ) : (
+                <TouchableOpacity
+                  style={styles.coverBtn}
+                  onPress={() => handleSetCover(index)}
+                  hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+                  accessibilityRole="button"
+                  accessibilityLabel="Đặt làm ảnh bìa"
+                >
+                  <Star size={14} color={THEME_COLORS.WHITE} />
+                </TouchableOpacity>
+              )}
             </View>
-          )}
-        />
-      </View>
+          ))}
+
+          {localImages.length < MAX_LISTING_IMAGES ? (
+            <TouchableOpacity
+              style={[styles.addCell, { width: imageCellSize, height: imageCellSize }]}
+              onPress={handlePickImages}
+              activeOpacity={0.7}
+              accessibilityRole="button"
+              accessibilityLabel="Thêm ảnh"
+            >
+              <Plus size={24} color={THEME_COLORS.TEXT_MUTED} />
+              <Typography variant="caption" weight="SEMIBOLD" colorKey="TEXT_MUTED">
+                Thêm ảnh
+              </Typography>
+              <Typography variant="tiny" colorKey="TEXT_PLACEHOLDER">
+                {localImages.length} / {MAX_LISTING_IMAGES}
+              </Typography>
+            </TouchableOpacity>
+          ) : null}
+        </View>
+
+        <View style={styles.videoSection}>
+          <Typography variant="body2" weight="BOLD">
+            Video giới thiệu (không bắt buộc)
+          </Typography>
+
+          <VideoPickerField video={video} onAdd={handlePickVideo} onRemove={() => setVideo(null)} />
+        </View>
+
+        <View style={styles.infoBanner}>
+          <Camera size={18} color={THEME_COLORS.PRIMARY_DARK} />
+          <Typography
+            variant="body2"
+            weight="MEDIUM"
+            colorKey="PRIMARY_DARK"
+            style={styles.bannerText}
+          >
+            Nhấn biểu tượng ngôi sao để chọn ảnh bìa. Ảnh đầu tiên tự động thành ảnh bìa.
+          </Typography>
+        </View>
+
+        <View style={styles.tipsCard}>
+          <Typography variant="body2" weight="BOLD" style={styles.tipsTitle}>
+            Nên chụp đủ 5 góc này
+          </Typography>
+          <View style={styles.tipsDivider} />
+          {PHOTO_TIPS.map((tip) => (
+            <View key={tip} style={styles.tipRow}>
+              <View style={styles.tipDot} />
+              <Typography variant="body2" colorKey="TEXT_SECONDARY">
+                {tip}
+              </Typography>
+            </View>
+          ))}
+        </View>
+      </ScrollView>
 
       <View style={styles.bottomBar}>
         <Button variant="primary" size="lg" fullWidth onPress={handleContinue}>
@@ -187,119 +283,86 @@ export const ImagesScreen = () => {
   );
 };
 
-const StepIndicator = ({
-  currentStep,
-  totalSteps,
-}: {
-  currentStep: number;
-  totalSteps: number;
-}) => {
-  const progress = currentStep / totalSteps;
-
-  return (
-    <View style={indicatorStyles.container}>
-      <View style={indicatorStyles.track}>
-        <View style={[indicatorStyles.fill, { width: `${progress * 100}%` }]} />
-      </View>
-    </View>
-  );
-};
-
-const indicatorStyles = StyleSheet.create({
-  container: {
-    paddingHorizontal: SPACING_TOKENS.MD,
-    paddingVertical: SPACING_TOKENS.SM,
-    backgroundColor: THEME_COLORS.SURFACE,
-  },
-  track: {
-    height: 4,
-    backgroundColor: THEME_COLORS.SURFACE_MUTED,
-    borderRadius: BORDER_RADIUS_TOKENS.FULL,
-    overflow: 'hidden',
-  },
-  fill: {
-    height: '100%',
-    backgroundColor: THEME_COLORS.PRIMARY,
-    borderRadius: BORDER_RADIUS_TOKENS.FULL,
-  },
-});
-
 const styles = StyleSheet.create({
-  flex: {
-    flex: 1,
-  },
-  headerSection: {
-    padding: SPACING_TOKENS.MD,
-    paddingBottom: SPACING_TOKENS.SM,
-  },
-  grid: {
-    paddingHorizontal: SPACING_TOKENS.SM,
-    paddingBottom: SPACING_TOKENS.XL,
-  },
+  flex: { flex: 1 },
+  content: { padding: SCREEN_PADDING, paddingBottom: SPACING_TOKENS.XL, gap: 16 },
+  intro: { gap: 6 },
+  title: { letterSpacing: -0.3 },
+  subtitle: { lineHeight: 22 },
+  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: GRID_GAP },
   imageCell: {
-    width: IMAGE_CELL_SIZE,
-    height: IMAGE_CELL_SIZE,
-    margin: SPACING_TOKENS.XS,
-    borderRadius: BORDER_RADIUS_TOKENS.SM,
+    borderRadius: BORDER_RADIUS_TOKENS.MD,
     overflow: 'hidden',
-    position: 'relative',
+    backgroundColor: THEME_COLORS.PRIMARY_LIGHT,
   },
-  image: {
-    width: '100%',
-    height: '100%',
-  },
+  image: { width: '100%', height: '100%' },
   removeBtn: {
     position: 'absolute',
-    top: 4,
-    right: 4,
+    top: 8,
+    right: 8,
     width: 22,
     height: 22,
-    borderRadius: 11,
-    backgroundColor: 'rgba(0,0,0,0.55)',
+    borderRadius: BORDER_RADIUS_TOKENS.FULL,
+    backgroundColor: OVERLAY_COLORS.RENTED_PILL,
     alignItems: 'center',
     justifyContent: 'center',
   },
   coverBtn: {
     position: 'absolute',
-    bottom: 4,
-    right: 4,
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    backgroundColor: 'rgba(0,0,0,0.45)',
+    bottom: 8,
+    right: 8,
+    width: 24,
+    height: 24,
+    borderRadius: BORDER_RADIUS_TOKENS.FULL,
+    backgroundColor: OVERLAY_COLORS.COUNTER_BADGE,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  coverBtnActive: {
-    backgroundColor: 'rgba(255,255,255,0.25)',
   },
   coverBadge: {
     position: 'absolute',
-    bottom: 4,
-    left: 4,
-    backgroundColor: THEME_COLORS.PRIMARY,
-    borderRadius: BORDER_RADIUS_TOKENS.XS,
-    paddingHorizontal: 4,
-    paddingVertical: 2,
-  },
-  coverBadgeText: {
-    fontSize: 9,
-    fontWeight: '700',
+    bottom: 8,
+    left: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+    backgroundColor: THEME_COLORS.SECONDARY,
   },
   addCell: {
-    width: IMAGE_CELL_SIZE,
-    height: IMAGE_CELL_SIZE,
-    margin: SPACING_TOKENS.XS,
-    borderRadius: BORDER_RADIUS_TOKENS.SM,
-    borderWidth: 1.5,
-    borderStyle: 'dashed',
-    borderColor: THEME_COLORS.PRIMARY,
+    gap: 2,
     alignItems: 'center',
     justifyContent: 'center',
+    borderRadius: BORDER_RADIUS_TOKENS.MD,
+    borderWidth: 1,
+    borderColor: OVERLAY_COLORS.FIELD_BORDER,
+    backgroundColor: THEME_COLORS.SURFACE,
+  },
+  videoSection: { gap: 10 },
+  infoBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    padding: 14,
+    borderRadius: BORDER_RADIUS_TOKENS.MD,
+    borderWidth: 1,
+    borderColor: OVERLAY_COLORS.INFO_BORDER,
     backgroundColor: THEME_COLORS.PRIMARY_LIGHT,
   },
-  addLabel: {
-    marginTop: 4,
+  bannerText: { flex: 1, lineHeight: 20 },
+  tipsCard: {
+    padding: 16,
+    borderRadius: BORDER_RADIUS_TOKENS.LG,
+    borderWidth: 1,
+    borderColor: THEME_COLORS.BORDER,
+    backgroundColor: THEME_COLORS.SURFACE,
+  },
+  tipsTitle: { lineHeight: 22 },
+  tipsDivider: { height: 1, marginVertical: 14, backgroundColor: THEME_COLORS.DIVIDER },
+  tipRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 6 },
+  tipDot: {
+    width: 8,
+    height: 8,
+    borderRadius: BORDER_RADIUS_TOKENS.FULL,
+    backgroundColor: OVERLAY_COLORS.STEP_PENDING_BORDER,
   },
   bottomBar: {
     padding: SPACING_TOKENS.MD,

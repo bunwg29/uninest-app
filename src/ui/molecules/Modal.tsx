@@ -9,7 +9,7 @@ import {
   StyleProp,
 } from 'react-native';
 import { X } from 'lucide-react-native';
-import { THEME_COLORS, BORDER_RADIUS_TOKENS, SPACING_TOKENS } from '@theme';
+import { THEME_COLORS, BORDER_RADIUS_TOKENS, SPACING_TOKENS, OVERLAY_COLORS } from '@theme';
 import { Typography } from '../atoms/Typography';
 import { Button, ButtonVariant } from '../atoms/Button';
 
@@ -116,7 +116,7 @@ export const Modal = ({
 const styles = StyleSheet.create({
   backdrop: {
     flex: 1,
-    backgroundColor: 'rgba(23, 27, 34, 0.55)',
+    backgroundColor: OVERLAY_COLORS.IMAGE_MORE_SCRIM,
     justifyContent: 'center',
     alignItems: 'center',
     padding: SPACING_TOKENS.LG,
@@ -127,7 +127,7 @@ const styles = StyleSheet.create({
     backgroundColor: THEME_COLORS.SURFACE,
     borderRadius: BORDER_RADIUS_TOKENS.LG,
     padding: SPACING_TOKENS.LG,
-    shadowColor: '#171B22',
+    shadowColor: OVERLAY_COLORS.SHADOW,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.15,
     shadowRadius: 16,

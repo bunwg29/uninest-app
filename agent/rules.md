@@ -1,108 +1,164 @@
-# UniNest Frontend Rules & Enterprise Coding Standards
+# Quy chuẩn code — uninest-app
 
-## 1. QUY TẮC BẮT BUỘC (CRITICAL MANDATES FOR ALL DEVELOPERS & AI)
-
-### [MANDATE-1] NGUYÊN TẮC QUẢN LÝ & SỬ DỤNG PACKAGE
-- **Dự án làm theo team với kiến trúc module hóa (Screaming Architecture)**.
-- **Ưu tiên tuyệt đối các package đã define sẵn**: Mọi AI và thành viên trong nhóm phải kiểm tra và chỉ được triển khai code bên trong các package đã định nghĩa sẵn:
-  - **Base Packages**: `@core`, `@theme`, `@ui`, `@i18n`, `@hooks`, `@navigation`.
-  - **Base Packages**: `@core`, `@theme`, `@ui`, `@hooks`, `@navigation`.
-  - **Predefined Feature Packages**:
-    `@features/auth`, `@features/listings`, `@features/search`, `@features/comparison`,
-    `@features/booking`, `@features/chat`, `@features/forum`, `@features/reviews`,
-    `@features/notifications`, `@features/payment`, `@features/ai-chat`, `@features/recommendations`.
-- **RÀNG BUỘC TẠO PACKAGE MỚI**: **TRỪ KHI** là tính năng mới hoàn toàn và **CHƯA CÓ** package define sẵn phù hợp trong danh sách trên, thì mới được phép tạo package mới. Khi tạo mới:
-  - Phải đặt tên chuẩn `kebab-case`.
-  - Tuân thủ đầy đủ cấu trúc thư mục con (`components/`, `hooks/`, `screens/`, `services/`, `types/`).
-  - Phải có file `index.ts` barrel export và khai báo alias path trong `tsconfig.json`.
-
-### [MANDATE-2] 100% ĐA NGÔN NGỮ (MANDATORY i18n)
-- **CẤM TUYỆT ĐỐI** hard-code bất kỳ chuỗi văn bản nào trong JSX/TSX.
-- 100% chuỗi text hiển thị trên giao diện người dùng phải sử dụng `useTranslation()` từ `@i18n`.
-- Khi thêm key mới, BẮT BUỘC định nghĩa đồng bộ cả hai file ngôn ngữ:
-  - `src/i18n/locales/vi/index.ts` (Tiếng Việt)
-  - `src/i18n/locales/en/index.ts` (Tiếng Anh)
-### [MANDATE-2] 100% TIẾNG VIỆT THUẦN (PURE VIETNAMESE - KHÔNG DÙNG i18n)
-- **Hệ thống đa ngôn ngữ đã bị gỡ bỏ hoàn toàn**: Tuyệt đối không import hoặc sử dụng `i18n`, `react-i18next`, `@i18n` hay hook `useTranslation()`.
-- **100% chuỗi văn bản giao diện viết trực tiếp bằng Tiếng Việt**: Toàn bộ tiêu đề màn hình, nhãn nút bấm, placeholder ô nhập liệu, helper text, thông báo toast và cảnh báo lỗi đều phải viết bằng Tiếng Việt tự nhiên, thân thiện và chuẩn văn phong sinh viên/chủ trọ Việt Nam.
-- **Validation Schema tĩnh**: Toàn bộ schema validation Zod (`authValidation.ts`, ...) định nghĩa trực tiếp chuỗi lỗi bằng Tiếng Việt, không dùng hàm bao bọc hay truyền hàm `t`.
-
-### [MANDATE-3] HẰNG SỐ PHẢI ĐẶT TÊN IN HOA (UPPER_SNAKE_CASE)
-- Mọi biến đại diện cho hằng số (config, status code, theme tokens, keys) **BẮT BUỘC PHẢI VIẾT IN HOA TOÀN BỘ**.
-- Ví dụ: `API_CONFIG`, `HTTP_STATUS_CODES`, `THEME_COLORS`, `SPACING_TOKENS`, `TYPOGRAPHY_TOKENS`.
-
-### [MANDATE-4] TÁI SỬ DỤNG BASE PACKAGES SẴN CÓ (ZERO DUPLICATION)
-- Bắt buộc đọc và tái sử dụng các package nền tảng đã dựng sẵn:
-  - HTTP Requests: Dùng `apiClient` từ `@core`. Cấm tạo instance axios mới.
-  - Colors / Layout: Dùng `THEME_COLORS`, `SPACING_TOKENS`, `TYPOGRAPHY_TOKENS` từ `@theme`.
-  - Error Catching: Dùng `ErrorBoundary` từ `@ui`.
-  - Icons: Dùng `lucide-react-native`.
-
-### [MANDATE-5] CẤM COMMENT BỪA BÃI (NO TRIVIAL COMMENTS)
-- **Tuyệt đối không viết comment giải thích các dòng code hiển nhiên** (ví dụ: `// import library`, `// call api`, `// render component`, `// handle click`, `// set state`).
-- Code phải tự tường minh thông qua cách đặt tên hàm, biến rõ nghĩa (Self-documenting code).
-- **Chỉ người lập trình trực tiếp tự comment** khi thật sự cần thiết cho các logic thuật toán phức tạp hay ngữ cảnh phi hiển nhiên.
-
-### [MANDATE-6] KHOẢNG CÁCH DÒNG GIỮA CÁC BLOCK LOGIC (PADDED BLOCKS)
-- **Tuyệt đối không viết code dính sát nhau**.
-- Phải luôn có 1 dòng trống phân cách giữa các khối logic rõ ràng:
-  - Giữa nhóm khai báo biến / hooks và nhóm logic xử lý.
-  - Giữa các câu lệnh điều kiện, luồng xử lý (`if`, `switch`, `try-catch`, `for`).
-  - Trước câu lệnh `return` hoặc khối JSX render.
-- ESLint rule `padding-line-between-statements` và Prettier sẽ tự động hỗ trợ định dạng khoảng cách chuẩn mực này.
-
-### [MANDATE-7] QUY TẮC PHÂN NHÁNH GIT & TRÁCH NHIỆM MÃ NGUỒN (BRANCH RESPONSIBILITY)
-- **Phát triển theo cấu trúc phân nhánh tính năng (Feature Branching)**: Dự án tổ chức thành các nhánh độc lập theo từng trách nhiệm:
-  - `feat/sp1-mobile-shell`: Cấu trúc khung app, Root/Tab navigator, router, cấu hình chung.
-  - `feat/sp1-ui-components`: Các component dùng chung thuộc `@ui` (atoms, molecules, feedback, layout).
-  - `feat/sp1-mobile-auth-screens`: Màn hình và logic xác thực thuộc `@features/auth`.
-- **Trách nhiệm mã nguồn theo nhánh**: Khi thực hiện thay đổi, **BẮT BUỘC** xác định file thay đổi thuộc phạm vi nhánh nào:
-  - Phải checkout sang đúng nhánh đó để thực hiện code, kiểm tra và commit.
-  - Không thay đổi các file thuộc trách nhiệm của nhánh khác trên nhánh hiện tại.
-  - Kế thừa và đồng bộ: Nhánh downstream merge từ nhánh upstream theo thứ tự (`shell` -> `ui-components` -> `auth-screens`). Kiểm tra `npm run lint` & `npm run typecheck` đạt 0 lỗi trước khi push lên `origin`.
-- **Format commit message chuẩn Conventional Commits**: `<type>(<scope>): <mô tả ngắn> (<TASK-ID>)` (ví dụ: `refactor(auth): remove i18n dependency (TSK-SP1-03)`).
+> Mỗi quy tắc có ví dụ ✅ nên / ❌ không. Code vi phạm quy tắc **bắt buộc** thì không được commit.
 
 ---
 
-## 2. Quy chuẩn Đặt tên Toàn diện (Naming Conventions)
+## 1. Công nghệ cố định
 
-### A. Tệp tin (Files) & Thư mục (Folders)
-- **Components & Screens**: `PascalCase.tsx` (ví dụ: `ListingCard.tsx`, `HomeScreen.tsx`, `RootNavigator.tsx`).
-- **Custom Hooks**: `camelCase.ts` bắt đầu bằng tiền tố `use` (ví dụ: `useDebounce.ts`, `useKeyboard.ts`).
-- **Services, Utilities & Helpers**: `camelCase.ts` (ví dụ: `listingService.ts`, `formatCurrency.ts`).
-- **Stores**: `camelCase.ts` có hậu tố `Store` (ví dụ: `authStore.ts`, `compareStore.ts`).
-- **Thư mục (Folders/Packages)**: `kebab-case` cho tên ghép hoặc chữ thường (ví dụ: `ai-chat`, `features`, `ui`, `core`).
+Expo SDK 57 · React Native · TypeScript strict · React Navigation (native-stack, bottom-tabs) · TanStack Query (server state) · Zustand (client state) · react-hook-form + zod (form) · axios qua `apiClient` · Socket.IO client qua `chatSocket` · lucide-react-native (icon) · react-native-svg.
 
-### B. Biến (Variables)
-- **Biến thông thường**: `camelCase` (ví dụ: `listingId`, `currentUser`, `totalCount`).
-- **Biến Boolean**: Bắt buộc bắt đầu bằng `is`, `has`, `should`, `can` (ví dụ: `isLoading`, `hasPermission`, `shouldRefresh`, `canSubmit`).
-- **Danh sách / Mảng (Arrays)**: Danh từ số nhiều hoặc có hậu tố `List` (ví dụ: `listings`, `users`, `amenityList`).
-- **Hằng số (Constants)**: `UPPER_SNAKE_CASE` toàn bộ (ví dụ: `API_CONFIG`, `HTTP_STATUS_CODES`, `THEME_COLORS`, `SPACING_TOKENS`).
-
-### C. Hàm (Functions) & Xử lý sự kiện (Handlers)
-- **Hàm xử lý sự kiện nội bộ**: Tiền tố `handle` (ví dụ: `handleSubmit`, `handlePressListing`, `handleDelete`).
-- **Props callback truyền xuống**: Tiền tố `on` (ví dụ: `onPress`, `onChangeText`, `onSubmitSuccess`).
-- **Hàm gọi API / Data fetching**: Động từ mô tả hành động (ví dụ: `fetchListingDetail`, `createBooking`, `updateUserProfile`).
-- **Hàm tiện ích / Helper**: Tiền tố `get`, `format`, `validate`, `parse` (ví dụ: `formatPrice`, `validatePhoneNumber`, `getDistanceKm`).
-
-### D. Kiểu dữ liệu (Types & Interfaces)
-- **Type / Interface**: `PascalCase` (ví dụ: `User`, `Listing`, `BookingStatus`).
-- **Component Props**: `<TênComponent>Props` (ví dụ: `ButtonProps`, `ListingCardProps`).
-- **Request DTO / Payload**: `<TênHànhĐộng>Dto` hoặc `<TênHànhĐộng>Payload` (ví dụ: `CreateListingDto`, `LoginPayload`).
-- **API Response**: `<TênNghiệpVụ>Response` (ví dụ: `ListingDetailResponse`).
-
-### E. React Native & Styling
-- **StyleSheet Object**: Luôn đặt tên biến là `styles` (ví dụ: `const styles = StyleSheet.create({ ... })`).
-- **Navigation Param List**: `<TênStack>ParamList` (ví dụ: `RootStackParamList`, `MainTabParamList`).
-- **Path Imports**: Luôn dùng alias `@core`, `@ui`, `@theme`, `@i18n`, `@hooks`, `@navigation`, `@features/...`. Không dùng relative path vượt quá 1 cấp (`../../`).
-- **Path Imports**: Luôn dùng alias `@core`, `@ui`, `@theme`, `@hooks`, `@navigation`, `@features/...`. Không dùng relative path vượt quá 1 cấp (`../../`).
-- **Zero Unused Imports & Variables**: Tuyệt đối không để lại import thừa hoặc biến không dùng. Hệ thống tự động chặn ở cả 2 tầng: ESLint (`unused-imports/no-unused-imports: error`) và TypeScript (`noUnusedLocals: true`). Chạy `npm run lint:fix` để tự động dọn sạch import thừa.
+**Không tự cài thư viện mới.** Cần thư viện → hỏi người giao việc trước. Không đổi phiên bản thư viện đang dùng.
 
 ---
 
-## 3. Clean Architecture & Separation of Concerns
-- **UI Presentational**: Chỉ phụ trách render và event handler, không chứa business logic nặng.
-- **Server State**: 100% qua TanStack Query (`useQuery`, `useMutation`). Không lưu cache dữ liệu server thủ công vào Zustand.
-- **Client State**: Zustand (`zustand`). Giữ store tinh gọn, đúng phạm vi feature.
-- **Form State**: `react-hook-form` + `zod` validation schema.
-- **Layout**: Dùng Flexbox, Safe Area Context (`react-native-safe-area-context`), tokens từ `@theme`.
+## 2. Cấu trúc thư mục
+
+```
+src/
+  core/        # apiClient, config, constants, storage, store toàn cục, utils dùng chung
+  theme/       # token màu, khoảng cách, chữ, bo góc
+  ui/          # component giao diện thuần dùng chung (atoms, molecules, feedback, layout)
+  hooks/       # hook dùng chung không gắn nghiệp vụ
+  navigation/  # navigator, ParamList, navigationRef
+  features/<tên>/
+    components/  hooks/  screens/  services/  store/  types/  utils/  validations/
+    index.ts     # barrel: chỉ export thứ feature khác được dùng
+```
+
+Feature hiện có: `auth`, `listings`, `search`, `comparison`, `booking`, `chat`, `forum`, `support`, `ai-chat`, `recommendations`. Feature của Sprint 3–4 chưa có thì tạo đúng tên sau, theo cấu trúc trên: `reviews` (đánh giá), `notifications` (thông báo), `payment` (thanh toán), `price-comparison` (so sánh giá), `premium`, `admin` (nếu làm trong app). `ai-chat`, `recommendations` đã có — **viết tiếp vào đó**.
+
+Tạo feature mới chỉ khi nghiệp vụ không thuộc feature nào ở trên, và phải hỏi người giao việc trước.
+
+---
+
+## 3. Quy tắc bắt buộc
+
+### R1. Tái sử dụng trước, tạo mới sau
+Trước khi tạo component/hook/hàm/hằng số: tra [`reuse-catalog.md`](./reuse-catalog.md) và tìm trong code (`grep`). Có sẵn → dùng. Gần giống → thêm prop tuỳ chọn (giá trị mặc định giữ hành vi cũ). Tạo mới → giải thích lý do trong báo cáo.
+
+```tsx
+// ❌ Tự viết sheet mới
+<Modal transparent animationType="slide">
+  <Pressable style={styles.backdrop} onPress={onClose} />
+  <View style={styles.sheet}>...</View>
+</Modal>
+
+// ✅ Dùng BottomSheet có sẵn
+<BottomSheet isVisible={isVisible} onClose={onClose}>
+  ...
+</BottomSheet>
+```
+
+### R2. Không hard-code giá trị thiết kế
+Màu, khoảng cách, bo góc, cỡ chữ lấy từ `@theme`. Màu mới → thêm token có tên theo ý nghĩa.
+
+```tsx
+// ❌
+container: { padding: 16, backgroundColor: '#1D53CC', borderRadius: 12 }
+// ✅
+container: {
+  padding: SPACING_TOKENS.MD,
+  backgroundColor: THEME_COLORS.PRIMARY,
+  borderRadius: BORDER_RADIUS_TOKENS.MD,
+}
+```
+
+Số lẻ theo đúng thiết kế Figma (vd `gap: 10`, `width: 36`) được phép khi không có token tương ứng.
+
+### R3. Tiếng Việt cho người dùng, không i18n
+Mọi chữ trên giao diện, toast, lỗi validation viết thẳng tiếng Việt có dấu, giọng thân thiện. Không dùng `i18n`, `useTranslation`, file locale.
+
+### R4. Gọi API chỉ qua service + React Query
+```ts
+// services/xxxService.ts
+export const xxxService = {
+  async list(params: XxxQuery): Promise<XxxListResponse> {
+    const response = await apiClient.get('/xxx', { params });
+
+    return unwrapApiData<XxxListResponse>(response.data);
+  },
+};
+
+// hooks/useXxx.ts
+export const XXX_QUERY_KEY = ['xxx'] as const;
+
+export const useXxx = (params: XxxQuery) =>
+  useQuery({ queryKey: [...XXX_QUERY_KEY, params], queryFn: () => xxxService.list(params) });
+```
+- Không gọi `apiClient` trong component/screen.
+- Không lưu dữ liệu server vào Zustand. Zustand chỉ cho trạng thái phía client (bộ lọc, nháp, so sánh, phiên).
+- Mutation xong phải `invalidateQueries` đúng key liên quan.
+- Lỗi API là `AppError` có message tiếng Việt → hiện bằng `toast.error(error.message)`.
+
+### R5. Mọi màn tải dữ liệu có đủ 3 trạng thái
+Đang tải (skeleton), rỗng (`EmptyState`), lỗi (thông báo + nút thử lại). Danh sách dài dùng `FlatList` + cuộn vô hạn, có kéo để làm mới.
+
+### R6. Form = react-hook-form + zod
+Schema đặt ở `features/<tên>/validations`, message tiếng Việt, **cùng con số với backend** (xem `business-logic.md`). Không tự kiểm tra bằng `if` rải rác trong component.
+
+### R7. Màn hình mới
+- Gốc là `ScreenContainer`, đầu màn dùng `HeaderBar` hoặc `BackButton`.
+- Khai báo route trong `src/navigation/types.ts` (ParamList) **và** đăng ký trong navigator tương ứng.
+- Lấy `navigation`/`route` bằng `useNavigation<NativeStackNavigationProp<RootStackParamList, 'TênRoute'>>()`, `useRoute<RouteProp<...>>()`.
+- Phải khớp thiết kế Figma (file `43C8yqbyxUmFGTuHcPPiRI`). Không tự "sáng tạo" bố cục.
+
+### R8. Store Zustand có dữ liệu người dùng phải reset khi đăng xuất
+```ts
+registerStoreResetter(() => useXxxStore.getState().reset());
+```
+Ngoại lệ: dữ liệu cố ý giữ lại cho từng tài khoản thì lưu tách theo `userId` (xem `recentlyViewedStore.ts`).
+
+### R9. Không comment
+Không viết comment trong code (kể cả `// TODO`, `// call api`). Đặt tên rõ nghĩa thay cho comment. Không để code chết, code bị comment out.
+
+### R10. Không `any`, không bỏ qua lỗi
+- Không dùng `any`, `as any`, `@ts-ignore`, `eslint-disable`. Dữ liệu chưa rõ kiểu → `unknown` rồi thu hẹp.
+- Không `catch {}` nuốt lỗi im lặng trừ chỗ thật sự chấp nhận được (vd cleanup); lỗi người dùng cần biết phải hiện toast.
+- Không `console.log`.
+
+### R11. Không phá cái đang chạy
+- Sửa component dùng chung → kiểm tra **mọi nơi đang dùng** (`grep`) vẫn đúng giao diện và hành vi.
+- Không đổi tên/xoá export đang được dùng nếu không sửa hết chỗ gọi.
+- Không đổi nghiệp vụ (giới hạn, trạng thái, luồng) khi không được giao.
+
+---
+
+## 4. Đặt tên
+
+| Loại | Quy tắc | Ví dụ |
+| --- | --- | --- |
+| Component, Screen | `PascalCase.tsx`, export có tên (không `default`) | `ListingCard.tsx` → `export const ListingCard` |
+| Screen | hậu tố `Screen` | `BookingDetailScreen` |
+| Hook | `useXxx.ts` | `useFavorites.ts` |
+| Service | `xxxService.ts`, object có method | `listingService.list()` |
+| Store | `xxxStore.ts`, hook `useXxxStore` | `comparisonStore.ts` |
+| Props | `<Tên>Props` | `SaveButtonProps` |
+| Hằng số | `UPPER_SNAKE_CASE` | `MAX_COMPARISON_ITEMS` |
+| Query key | `<TÊN>_QUERY_KEY` dạng `as const` | `FAVORITES_QUERY_KEY` |
+| Boolean | `is`, `has`, `can`, `should` | `isSaved`, `hasError` |
+| Hàm xử lý sự kiện | `handleXxx`; prop callback `onXxx` | `handleSubmit`, `onPress` |
+| Thư mục | `kebab-case` | `ai-chat` |
+
+Import luôn qua alias (`@core`, `@ui`, `@theme`, `@hooks`, `@navigation`, `@features/...`). Trong cùng feature dùng đường dẫn tương đối tối đa 1 cấp (`../hooks`). File trong `src/ui` import lẫn nhau bằng đường dẫn tương đối (tránh vòng lặp import).
+
+---
+
+## 5. Định dạng code
+
+- Prettier: nháy đơn, có `;`, 2 space, `printWidth` 100. Chạy `npm run format`.
+- Dòng trống: sau khối khai báo biến, trước `return`, trước/sau `if`/`for`/`switch`/`try` (ESLint `padding-line-between-statements` tự nhắc).
+- `const styles = StyleSheet.create({...})` đặt **cuối file**, không viết style object trực tiếp trong JSX trừ giá trị động.
+- Component nhỏ, một việc. File > ~300 dòng → tách component con vào `components/`.
+- Không để style thừa, import thừa, biến thừa (ESLint `unused-imports` + TS `noUnusedLocals`).
+
+---
+
+## 6. Hiệu năng & trải nghiệm
+
+- Danh sách: `FlatList` với `keyExtractor`, không `.map` trong `ScrollView` cho danh sách dài.
+- Hàm truyền xuống item trong danh sách: `useCallback`; item nặng: `memo`.
+- Ảnh tin đăng dùng `MediaThumbnail` (có xử lý lỗi).
+- Vùng chạm ≥ 44×44 (dùng `hitSlop` nếu icon nhỏ). Có `accessibilityRole`, `accessibilityLabel` cho nút chỉ có icon.
+- Upload nhiều ảnh: song song, có tiến độ từng ảnh, thử lại từng ảnh (`useUploadImages`).
+- Màn có bản đồ: tách `.native.tsx` / `.web.tsx` như các component `*Map` hiện có.

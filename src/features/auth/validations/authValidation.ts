@@ -33,8 +33,6 @@ export const registerSchema = z.object({
   }),
 });
 
-export const createRegisterSchema = () => registerSchema;
-
 export type RegisterFormValues = z.infer<typeof registerSchema>;
 
 export const forgotPasswordSchema = z.object({
@@ -44,24 +42,16 @@ export const forgotPasswordSchema = z.object({
     .regex(/^[0-9]{10}$/, 'Số điện thoại không hợp lệ (10 chữ số)'),
 });
 
-export const createForgotPasswordSchema = () => forgotPasswordSchema;
-
-export type ForgotPasswordFormValues = z.infer<typeof forgotPasswordSchema>;
-
 export const resetPasswordSchema = z
   .object({
     newPassword: z
       .string()
       .min(8, 'Mật khẩu phải có tối thiểu 8 ký tự')
       .regex(/[0-9]/, 'Có ít nhất một chữ số')
-      .regex(/[A-Z]/, 'Có ít nhất một chữ in hoa'),
+      .regex(/[A-Za-z]/, 'Có ít nhất một chữ cái'),
     confirmPassword: z.string().min(1, 'Vui lòng nhập lại mật khẩu'),
   })
   .refine((data) => data.newPassword === data.confirmPassword, {
     message: 'Hai mật khẩu không khớp nhau',
     path: ['confirmPassword'],
   });
-
-export const createResetPasswordSchema = () => resetPasswordSchema;
-
-export type ResetPasswordFormValues = z.infer<typeof resetPasswordSchema>;

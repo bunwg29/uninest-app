@@ -20,6 +20,7 @@ export interface InputProps extends Omit<TextInputProps, 'secureTextEntry'> {
   rightIcon?: ReactNode;
   isPassword?: boolean;
   clearable?: boolean;
+  idleBorderColor?: string;
   containerStyle?: StyleProp<ViewStyle>;
   inputContainerStyle?: StyleProp<ViewStyle>;
   onClear?: () => void;
@@ -33,6 +34,7 @@ export const Input = ({
   rightIcon,
   isPassword = false,
   clearable = false,
+  idleBorderColor = THEME_COLORS.BORDER,
   containerStyle,
   inputContainerStyle,
   value,
@@ -60,7 +62,7 @@ export const Input = ({
     ? THEME_COLORS.ERROR
     : isFocused
       ? THEME_COLORS.PRIMARY
-      : THEME_COLORS.BORDER;
+      : idleBorderColor;
 
   return (
     <View style={[styles.container, containerStyle]}>

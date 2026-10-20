@@ -5,11 +5,17 @@ import * as ImagePicker from 'expo-image-picker';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { Camera, ChevronLeft, GraduationCap, Mail, Phone, UserRound } from 'lucide-react-native';
+import { Camera, Mail, Phone, UserRound } from 'lucide-react-native';
 import { THEME_COLORS, SPACING_TOKENS } from '@theme';
-import { Avatar, Badge, Button, Input, ScreenContainer, Typography } from '@ui';
+import { Avatar, Badge, Button, Input, ScreenContainer, Typography, BackButton } from '@ui';
 import { useToast } from '@hooks';
 import type { RootStackParamList } from '@navigation';
+import { AddressFields, EMPTY_ADDRESS, type AddressValue } from '../components/AddressFields';
+import { ChangeContactSheet } from '../components/ChangeContactSheet';
+import { UniversityPicker } from '../components/UniversityPicker';
+import type { University } from '../services/universitiesService';
+import { useAuth } from '../hooks';
+import type { ContactKind } from '../services';
 import { authService } from '../services';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'ProfileEdit'>;
@@ -22,21 +28,59 @@ export const ProfileEditScreen = () => {
   const profile = profileQuery.data;
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
-  const [school, setSchool] = useState('');
+  const [universities, setUniversities] = useState<University[]>([]);
   const [bio, setBio] = useState('');
+  const [address, setAddress] = useState<AddressValue>(EMPTY_ADDRESS);
+  const [contactKind, setContactKind] = useState<ContactKind | null>(null);
+  const { updateUser, role } = useAuth();
+  const isLandlord = role === 'landlord';
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
 
   useEffect(() => {
     if (profile) {
       setName(profile.name);
       setEmail(profile.email || '');
-      setSchool(profile.school || '');
+      setUniversities(profile.universities ?? []);
       setBio(profile.bio || '');
+      setAddress({
+        province: profile.provinceCode
+          ? {
+              code: profile.provinceCode,
+              name: profile.provinceName ?? '',
+              fullName: profile.provinceName ?? '',
+              codeName: '',
+            }
+          : null,
+        ward: profile.wardCode
+          ? {
+              code: profile.wardCode,
+              name: profile.wardName ?? '',
+              fullName: profile.wardName ?? '',
+              codeName: '',
+              provinceCode: profile.provinceCode ?? '',
+            }
+          : null,
+        streetAddress: profile.streetAddress ?? '',
+      });
     }
   }, [profile]);
 
   const mutation = useMutation({
-    mutationFn: () => authService.updateProfile({ name, email: email || undefined, school, bio }),
+    mutationFn: () =>
+      authService.updateProfile({
+        name,
+        bio,
+        ...(isLandlord
+          ? {}
+          : { universityCodes: universities.map((university) => university.code) }),
+        ...(address.province && address.ward
+          ? {
+              provinceCode: address.province.code,
+              wardCode: address.ward.code,
+              streetAddress: address.streetAddress.trim(),
+            }
+          : {}),
+      }),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['profile'] });
       toast.success('Đã lưu thay đổi hồ sơ');
@@ -47,9 +91,12 @@ export const ProfileEditScreen = () => {
 
   const isDirty = profile
     ? name !== profile.name ||
-      email !== (profile.email || '') ||
-      school !== (profile.school || '') ||
-      bio !== (profile.bio || '')
+      universities.map((university) => university.code).join(',') !==
+        (profile.universities ?? []).map((university) => university.code).join(',') ||
+      bio !== (profile.bio || '') ||
+      address.province?.code !== (profile.provinceCode ?? undefined) ||
+      address.ward?.code !== (profile.wardCode ?? undefined) ||
+      address.streetAddress.trim() !== (profile.streetAddress ?? '')
     : false;
 
   const handlePickAvatar = async () => {
@@ -89,8 +136,8 @@ export const ProfileEditScreen = () => {
       const fileInfo = await FileSystem.getInfoAsync(asset.uri);
       const fileSize = fileInfo.exists ? fileInfo.size || 0 : 0;
 
-      if (fileSize <= 0 || fileSize > 5 * 1024 * 1024) {
-        throw new Error('Ảnh đại diện phải lớn hơn 0 và tối đa 5MB');
+      if (fileSize <= 0 || fileSize > 100 * 1024 * 1024) {
+        throw new Error('Ảnh đại diện phải lớn hơn 0 và tối đa 100MB');
       }
 
       const presign = await authService.presignAvatar(fileName, contentType, fileSize);
@@ -131,9 +178,7 @@ export const ProfileEditScreen = () => {
   return (
     <ScreenContainer scrollable style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={handleBack}>
-          <ChevronLeft size={24} color={THEME_COLORS.TEXT_PRIMARY} />
-        </TouchableOpacity>
+        <BackButton onPress={handleBack} />
         <Typography variant="h3" weight="BOLD">
           Chỉnh sửa hồ sơ
         </Typography>
@@ -166,25 +211,34 @@ export const ProfileEditScreen = () => {
         editable={false}
         leftIcon={<Phone size={18} color={THEME_COLORS.TEXT_PLACEHOLDER} />}
         rightIcon={
-          profile?.phoneVerified ? (
-            <Badge variant="available" size="sm" label="ĐÃ XÁC MINH" />
-          ) : undefined
+          <View style={styles.contactActions}>
+            {profile?.phoneVerified ? (
+              <Badge variant="available" size="sm" label="ĐÃ XÁC MINH" />
+            ) : null}
+            <ChangeContactLink onPress={() => setContactKind('phone')} />
+          </View>
         }
       />
       <Input
         label="Email"
         value={email}
-        onChangeText={setEmail}
-        keyboardType="email-address"
-        autoCapitalize="none"
+        editable={false}
+        placeholder="Chưa có email"
         leftIcon={<Mail size={18} color={THEME_COLORS.TEXT_PLACEHOLDER} />}
+        rightIcon={<ChangeContactLink onPress={() => setContactKind('email')} />}
       />
-      <Input
-        label="Trường đang học"
-        value={school}
-        onChangeText={setSchool}
-        leftIcon={<GraduationCap size={18} color={THEME_COLORS.TEXT_PLACEHOLDER} />}
-      />
+      {isLandlord ? null : (
+        <UniversityPicker
+          label="Trường đang học"
+          value={universities}
+          maxSelection={1}
+          onChange={setUniversities}
+        />
+      )}
+      <Typography variant="body1" weight="BOLD" style={styles.sectionTitle}>
+        Địa chỉ
+      </Typography>
+      <AddressFields value={address} onChange={setAddress} isRequired={false} />
       <Input
         label="Giới thiệu ngắn"
         value={bio}
@@ -197,24 +251,48 @@ export const ProfileEditScreen = () => {
       <Button
         fullWidth
         isLoading={mutation.isPending}
-        disabled={!isDirty}
+        disabled={!isDirty || Boolean(address.province && !address.ward)}
         onPress={() => mutation.mutate()}
       >
         Lưu thay đổi
       </Button>
+      <ChangeContactSheet
+        kind={contactKind}
+        currentValue={contactKind === 'phone' ? profile?.phone : profile?.email}
+        onClose={() => setContactKind(null)}
+        onChanged={(kind, value) => {
+          void queryClient.invalidateQueries({ queryKey: ['profile'] });
+          void updateUser(kind === 'phone' ? { phoneNumber: value } : { email: value });
+        }}
+      />
     </ScreenContainer>
   );
 };
 
+const ChangeContactLink = ({ onPress }: { onPress: () => void }) => (
+  <TouchableOpacity
+    onPress={onPress}
+    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+    accessibilityRole="button"
+  >
+    <Typography variant="body2" weight="SEMIBOLD" colorKey="PRIMARY">
+      Đổi
+    </Typography>
+  </TouchableOpacity>
+);
+
 const styles = StyleSheet.create({
+  contactActions: { flexDirection: 'row', alignItems: 'center', gap: SPACING_TOKENS.SM },
+  sectionTitle: { marginTop: SPACING_TOKENS.SM, marginBottom: SPACING_TOKENS.SM },
   container: { paddingHorizontal: SPACING_TOKENS.LG, paddingVertical: SPACING_TOKENS.MD },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    paddingTop: SPACING_TOKENS.SM,
     marginBottom: SPACING_TOKENS.XL,
   },
-  headerSpace: { width: 24 },
+  headerSpace: { width: 40 },
   avatarBlock: { alignItems: 'center', marginBottom: SPACING_TOKENS.XL },
   cameraButton: {
     backgroundColor: THEME_COLORS.PRIMARY,

@@ -1,5 +1,5 @@
 export interface CreateListingImagePayload {
-  url: string;
+  key: string;
   isCover?: boolean;
 }
 
@@ -19,7 +19,10 @@ export interface CreateListingPayload {
   latitude: number;
   longitude: number;
   images?: CreateListingImagePayload[];
+  videoKey?: string | null;
+  universityCodes?: string[];
   amenityIds?: number[];
+  viewingSchedule?: ViewingSchedule;
 }
 
 export interface ListingResponse {
@@ -32,9 +35,95 @@ export interface ListingResponse {
   createdAt: string;
 }
 
+export interface ListingDetailImage {
+  id: string;
+  url: string;
+  isCover: boolean;
+  sortOrder: number;
+}
+
+export interface ListingDetailAmenity {
+  id: number;
+  name: string;
+  group: number;
+}
+
+export interface ListingDetailAddress {
+  streetAddress: string;
+  fullAddress: string;
+  provinceCode: string;
+  provinceName: string | null;
+  wardCode: string;
+  wardName: string | null;
+}
+
+export interface ListingDetailLandlord {
+  id: string;
+  fullName: string;
+  avatarUrl: string | null;
+  bio: string | null;
+  isVerified: boolean;
+}
+
+export type ListingAvailability = 'available' | 'holding' | 'rented' | 'paused';
+
+export interface ListingHold {
+  expiresAt: string;
+  daysLeft: number;
+}
+
+export interface ListingMyBooking {
+  id: string;
+  status: 'pending' | 'confirmed' | 'holding';
+  startTime: string;
+  expiresAt: string | null;
+}
+
+export interface ListingDetail {
+  id: string;
+  title: string;
+  description: string | null;
+  roomType: string;
+  price: number;
+  area: number;
+  maxOccupants: number;
+  electricPrice: number | null;
+  waterPrice: number | null;
+  deposit: number | null;
+  address: ListingDetailAddress;
+  location: {
+    latitude: number;
+    longitude: number;
+  };
+  images: ListingDetailImage[];
+  amenities: ListingDetailAmenity[];
+  landlord: ListingDetailLandlord;
+  status: string;
+  viewingSchedule: Record<string, unknown> | null;
+  videoUrl?: string | null;
+  universities?: ListingUniversity[];
+  averageRating: number | null;
+  reviewCount?: number | null;
+  isHighlighted?: boolean;
+  viewCount: number | null;
+  availability: ListingAvailability;
+  hold: ListingHold | null;
+  isFavorite: boolean;
+  myBooking?: ListingMyBooking | null;
+  createdAt: string;
+  updatedAt: string;
+  distanceMeters?: number;
+}
+
+export interface RecordListingViewResponse {
+  viewCount: number | null;
+  incremented: boolean;
+}
+
 export interface PresignedUploadRequest {
   fileName: string;
   contentType: string;
+  fileSize?: number;
   folder?: string;
 }
 
@@ -47,10 +136,26 @@ export interface PresignedUploadResponse {
 
 export interface LocalImageItem {
   uri: string;
+  uploadedUrl?: string;
+  uploadedKey?: string;
   isCover: boolean;
   sortOrder: number;
   fileName: string;
   contentType: string;
+  fileSize?: number;
+}
+
+export interface ListingUniversity {
+  code: string;
+  name: string;
+}
+
+export interface LocalVideoItem {
+  uri: string;
+  fileName: string;
+  contentType: string;
+  fileSize?: number;
+  uploadedKey?: string;
 }
 
 export interface UploadedImageItem {
@@ -69,6 +174,8 @@ export interface ViewingSlot {
 export type DayKey = 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun';
 
 export type ViewingSchedule = Record<DayKey, ViewingSlot>;
+
+export * from './landlord';
 
 export interface ListingStep1State {
   title: string;
@@ -91,3 +198,5 @@ export interface ListingStep3State {
   latitude: number | null;
   longitude: number | null;
 }
+
+export * from './landlord';

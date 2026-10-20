@@ -1,7 +1,3 @@
-/**
- * Định dạng chuỗi hoặc số thành tiền tệ Việt Nam có dấu chấm phân cách hàng nghìn.
- * Ví dụ: '3000000' -> '3.000.000'
- */
 export const formatNumberWithDots = (value: string | number | undefined | null): string => {
   if (value === undefined || value === null || value === '') return '';
 
@@ -12,20 +8,12 @@ export const formatNumberWithDots = (value: string | number | undefined | null):
   return digitsOnly.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
 };
 
-/**
- * Lọc bỏ dấu chấm và ký tự đặc biệt, chỉ giữ lại các chữ số thô để lưu state/gửi API.
- * Ví dụ: '3.000.000' -> '3000000'
- */
 export const parseRawNumberString = (value: string | undefined | null): string => {
   if (!value) return '';
 
   return value.replace(/\D/g, '');
 };
 
-/**
- * Định dạng tiền tệ hiển thị kèm đơn vị đ.
- * Ví dụ: 3000000 -> '3.000.000 đ'
- */
 export const formatVND = (value: string | number | undefined | null): string => {
   if (!value) return '0 ₫';
 
@@ -36,3 +24,12 @@ export const formatVND = (value: string | number | undefined | null): string => 
 
   return `${num.toLocaleString('vi-VN')} ₫`;
 };
+
+export const formatFullPrice = (price: number): string => `${price.toLocaleString('vi-VN')}đ`;
+
+export const removeDiacritics = (value: string): string =>
+  value
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/đ/g, 'd');

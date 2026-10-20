@@ -1,5 +1,4 @@
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { THEME_COLORS } from '@theme';
 import type { AuthStackParamList } from '../types';
 import {
   OnboardingScreen,
@@ -10,19 +9,20 @@ import {
   OtpScreen,
   ForgotPasswordScreen,
   ResetPasswordScreen,
+  useAuth,
 } from '@features/auth';
+import { TermsScreen } from '@features/support';
 
 const Stack = createNativeStackNavigator<AuthStackParamList>();
 
 export const AuthNavigator = () => {
+  const { hasOnboarded } = useAuth();
+
   return (
     <Stack.Navigator
-      initialRouteName="RoleSelection"
+      initialRouteName={hasOnboarded ? 'Login' : 'Onboarding'}
       screenOptions={{
-        headerStyle: { backgroundColor: THEME_COLORS.SURFACE },
-        headerTintColor: THEME_COLORS.TEXT_PRIMARY,
-        headerTitleStyle: { fontWeight: '600' },
-        headerShadowVisible: false,
+        headerShown: false,
       }}
     >
       <Stack.Screen
@@ -31,6 +31,8 @@ export const AuthNavigator = () => {
         options={{ headerShown: false }}
       />
 
+      <Stack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }} />
+
       <Stack.Screen
         name="RoleSelection"
         component={RoleSelectionScreen}
@@ -38,20 +40,11 @@ export const AuthNavigator = () => {
       />
 
       <Stack.Screen
-        name="Login"
-        component={LoginScreen}
-        options={{
-          headerTitle: '',
-          headerBackTitle: 'Chọn vai trò',
-        }}
-      />
-
-      <Stack.Screen
         name="Register"
         component={RegisterScreen}
         options={{
           headerTitle: '',
-          headerBackTitle: 'Đăng nhập',
+          headerBackTitle: 'Chọn vai trò',
         }}
       />
 
@@ -90,6 +83,8 @@ export const AuthNavigator = () => {
           headerBackTitle: 'Quên mật khẩu',
         }}
       />
+
+      <Stack.Screen name="Terms" component={TermsScreen} />
     </Stack.Navigator>
   );
 };

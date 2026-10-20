@@ -1,4 +1,5 @@
 export * from './uiStore';
+export * from './maintenanceStore';
 
 export type StoreResetter = () => void;
 
@@ -16,8 +17,6 @@ export const resetAllStores = (): void => {
   storeResetters.forEach((resetter) => {
     try {
       resetter();
-    } catch {
-      // ignore reset error
-    }
+    } catch {}
   });
 };

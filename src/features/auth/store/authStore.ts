@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { setOnUnauthorizedCallback, tokenStorage } from '@core';
+import { QUERY_CLIENT, resetAllStores, setOnUnauthorizedCallback, tokenStorage } from '@core';
 import type { AuthUser, LoginPayload, RegisterPayload, UserRole, VerifyOtpPayload } from '../types';
 import { authService } from '../services';
 
@@ -9,13 +9,16 @@ interface AuthState {
   isAuthenticated: boolean;
   isLoading: boolean;
   isInitialized: boolean;
+  hasOnboarded: boolean;
   error: string | null;
   initialize: () => Promise<void>;
+  setOnboardingCompleted: (completed: boolean) => Promise<void>;
   selectRole: (role: UserRole) => Promise<void>;
   login: (payload: LoginPayload) => Promise<void>;
   register: (payload: RegisterPayload) => Promise<void>;
   verifyOtp: (payload: VerifyOtpPayload) => Promise<void>;
   logout: () => Promise<void>;
+  updateUser: (patch: Partial<AuthUser>) => Promise<void>;
   clearError: () => void;
 }
 
@@ -30,12 +33,14 @@ export const useAuthStore = create<AuthState>((set, get) => {
     isAuthenticated: false,
     isLoading: false,
     isInitialized: false,
+    hasOnboarded: false,
     error: null,
 
     async initialize() {
       set({ isLoading: true });
 
       try {
+        const hasOnboarded = await tokenStorage.getOnboardingCompleted();
         const token = await tokenStorage.getAccessToken();
         const savedRole = (await tokenStorage.getRole()) as UserRole | null;
         const savedUser = await tokenStorage.getUser<AuthUser>();
@@ -47,6 +52,7 @@ export const useAuthStore = create<AuthState>((set, get) => {
             isAuthenticated: true,
             isInitialized: true,
             isLoading: false,
+            hasOnboarded,
           });
 
           return;
@@ -58,6 +64,7 @@ export const useAuthStore = create<AuthState>((set, get) => {
           isAuthenticated: false,
           isInitialized: true,
           isLoading: false,
+          hasOnboarded,
         });
       } catch {
         set({
@@ -65,8 +72,14 @@ export const useAuthStore = create<AuthState>((set, get) => {
           isAuthenticated: false,
           isInitialized: true,
           isLoading: false,
+          hasOnboarded: false,
         });
       }
+    },
+
+    async setOnboardingCompleted(completed: boolean) {
+      await tokenStorage.setOnboardingCompleted(completed);
+      set({ hasOnboarded: completed });
     },
 
     async selectRole(role: UserRole) {
@@ -162,6 +175,8 @@ export const useAuthStore = create<AuthState>((set, get) => {
       } catch {
       } finally {
         await tokenStorage.clearTokens();
+        QUERY_CLIENT.clear();
+        resetAllStores();
 
         set({
           user: null,
@@ -170,6 +185,17 @@ export const useAuthStore = create<AuthState>((set, get) => {
           error: null,
         });
       }
+    },
+
+    async updateUser(patch) {
+      const current = get().user;
+
+      if (!current) return;
+
+      const user = { ...current, ...patch };
+
+      set({ user });
+      await tokenStorage.setUser(user);
     },
 
     clearError() {

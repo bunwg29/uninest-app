@@ -3,7 +3,7 @@
     "name": "UniNest",
     "slug": "uninest-fe",
     "version": "1.0.0",
-    "orientation": "portrait",
+    "orientation": "default",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "ios": {
@@ -18,6 +18,16 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "plugins": [
+      "expo-secure-store",
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "UniNest cần vị trí của bạn để hiển thị bản đồ và tìm phòng trọ gần bạn."
+        }
+      ],
+      "expo-video"
+    ]
   }
 }

@@ -1,5 +1,5 @@
 import { View, ActivityIndicator, StyleSheet, ViewStyle, StyleProp } from 'react-native';
-import { THEME_COLORS, BORDER_RADIUS_TOKENS, SPACING_TOKENS } from '@theme';
+import { THEME_COLORS, BORDER_RADIUS_TOKENS, SPACING_TOKENS, OVERLAY_COLORS } from '@theme';
 import { Typography } from '../atoms/Typography';
 
 export interface LoadingOverlayProps {
@@ -48,7 +48,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: 'rgba(23, 27, 34, 0.4)',
+    backgroundColor: OVERLAY_COLORS.SHEET_BACKDROP,
     alignItems: 'center',
     justifyContent: 'center',
     zIndex: 9999,
@@ -60,7 +60,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     minWidth: 140,
-    shadowColor: '#171B22',
+    shadowColor: OVERLAY_COLORS.SHADOW,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.12,
     shadowRadius: 12,

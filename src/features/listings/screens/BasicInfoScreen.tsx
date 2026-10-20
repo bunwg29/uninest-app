@@ -1,38 +1,48 @@
-import { useCallback } from 'react';
-import {
-  View,
-  ScrollView,
-  StyleSheet,
-  TouchableOpacity,
-  KeyboardAvoidingView,
-  Platform,
-} from 'react-native';
+import { useCallback, useEffect, useState } from 'react';
+import { View, StyleSheet, TouchableOpacity } from 'react-native';
+import { Check } from 'lucide-react-native';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute, type RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { ChevronDown } from 'lucide-react-native';
-import { THEME_COLORS, SPACING_TOKENS, BORDER_RADIUS_TOKENS } from '@theme';
-import { Button, Input, Typography, HeaderBar, ScreenContainer, Modal } from '@ui';
+import { THEME_COLORS, SPACING_TOKENS, BORDER_RADIUS_TOKENS, OVERLAY_COLORS } from '@theme';
+import {
+  Button,
+  Input,
+  Typography,
+  ScreenContainer,
+  FilterChip,
+  KeyboardAvoidingContainer,
+  KeyboardAwareScrollView,
+} from '@ui';
 import { formatNumberWithDots, parseRawNumberString } from '@core';
-import { useState } from 'react';
 import type { ListingPostStackParamList } from '@navigation';
 import { useListingPostStore } from '../store/listingPostStore';
 import { basicInfoSchema, type BasicInfoFormValues } from '../validations/listingValidation';
-import { ROOM_TYPE_OPTIONS, LISTING_FORM_STEPS } from '../types/constants';
+import { ROOM_TYPE_OPTIONS } from '../types/constants';
+import { WizardHeader } from '../components/landlord/WizardHeader';
+import { INITIAL_STEP1 } from '../store/listingPostStore';
 
 type NavigationProp = NativeStackNavigationProp<ListingPostStackParamList>;
+type ScreenRouteProp = RouteProp<ListingPostStackParamList, 'ListingPostBasicInfo'>;
 
-const TOTAL_STEPS = LISTING_FORM_STEPS.length;
+const TITLE_MAX_LENGTH = 150;
+const OCCUPANT_OPTIONS = [1, 2, 3, 4] as const;
+const MAX_OCCUPANT_CHIP = 4;
 
 export const BasicInfoScreen = () => {
   const navigation = useNavigation<NavigationProp>();
-  const { step1, setStep1 } = useListingPostStore();
-  const [isRoomTypeModalVisible, setIsRoomTypeModalVisible] = useState(false);
+  const route = useRoute<ScreenRouteProp>();
+  const { step1, setStep1, editingListingId, initEdit, initCreate } = useListingPostStore();
+  const isEditing = Boolean(editingListingId);
+  const [depositFollowsRent, setDepositFollowsRent] = useState(
+    step1.deposit !== '' && step1.deposit === step1.price
+  );
 
   const {
     control,
     handleSubmit,
+    reset: resetForm,
     setValue,
     watch,
     formState: { errors },
@@ -51,17 +61,43 @@ export const BasicInfoScreen = () => {
     },
   });
 
-  const selectedRoomType = watch('roomType');
-  const selectedRoomTypeLabel =
-    ROOM_TYPE_OPTIONS.find((opt) => opt.value === selectedRoomType)?.label ?? '';
+  useEffect(() => {
+    const listing = route.params?.listing;
 
-  const handleSelectRoomType = useCallback(
-    (value: string) => {
-      setValue('roomType', value, { shouldValidate: true });
-      setIsRoomTypeModalVisible(false);
-    },
-    [setValue]
-  );
+    if (listing) {
+      initEdit(listing);
+      resetForm({
+        title: listing.title || '',
+        roomType: listing.roomType || '',
+        price: listing.price ? String(listing.price) : '',
+        area: listing.area ? String(listing.area) : '',
+        maxOccupants: listing.maxOccupants ? String(listing.maxOccupants) : '',
+        description: listing.description || '',
+        electricPrice: listing.electricPrice != null ? String(listing.electricPrice) : '',
+        waterPrice: listing.waterPrice != null ? String(listing.waterPrice) : '',
+        deposit: listing.deposit != null ? String(listing.deposit) : '',
+      });
+      setDepositFollowsRent(
+        listing.deposit != null && Number(listing.deposit) === Number(listing.price)
+      );
+    } else if (!editingListingId) {
+      resetForm(INITIAL_STEP1);
+    }
+  }, [route.params?.listing, editingListingId, initEdit, resetForm]);
+
+  const selectedRoomType = watch('roomType');
+  const title = watch('title');
+  const maxOccupants = watch('maxOccupants');
+  const occupantCount = Number(maxOccupants) || 0;
+  const price = watch('price');
+  const waterPrice = watch('waterPrice');
+  const isWaterFree = waterPrice === '0';
+
+  useEffect(() => {
+    if (depositFollowsRent) {
+      setValue('deposit', price ?? '', { shouldValidate: true });
+    }
+  }, [depositFollowsRent, price, setValue]);
 
   const onSubmit = useCallback(
     (values: BasicInfoFormValues) => {
@@ -71,22 +107,25 @@ export const BasicInfoScreen = () => {
     [setStep1, navigation]
   );
 
+  const renderSuffix = (suffix: string) => (
+    <Typography variant="body2" weight="MEDIUM" colorKey="TEXT_PLACEHOLDER">
+      {suffix}
+    </Typography>
+  );
+
   return (
-    <ScreenContainer applyTopInset applyBottomInset={false} keyboardAvoiding={false}>
-      <HeaderBar
-        title="Đăng tin mới"
-        onBack={() => navigation.goBack()}
-        subtitle={`Bước 1 / ${TOTAL_STEPS}: Thông tin cơ bản`}
-        alignTitle="left"
+    <ScreenContainer applyTopInset applyBottomInset keyboardAvoiding={false}>
+      <WizardHeader
+        step={1}
+        isEditing={isEditing}
+        onBack={() => {
+          initCreate();
+          navigation.goBack();
+        }}
       />
 
-      <StepIndicator currentStep={1} totalSteps={TOTAL_STEPS} />
-
-      <KeyboardAvoidingView
-        style={styles.flex}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      >
-        <ScrollView
+      <KeyboardAvoidingContainer style={styles.flex}>
+        <KeyboardAwareScrollView
           style={styles.flex}
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
@@ -97,45 +136,50 @@ export const BasicInfoScreen = () => {
             name="title"
             render={({ field: { onChange, value } }) => (
               <Input
-                label="Tiêu đề tin đăng *"
+                label="Tiêu đề tin đăng"
                 placeholder="VD: Phòng trọ gần Đại học Bách Khoa, có gác lửng"
                 value={value}
                 onChangeText={onChange}
                 errorMessage={errors.title?.message}
                 returnKeyType="next"
-                maxLength={150}
+                maxLength={TITLE_MAX_LENGTH}
+                multiline
+                idleBorderColor={OVERLAY_COLORS.FIELD_BORDER}
+                containerStyle={styles.field}
+                inputContainerStyle={styles.titleInput}
               />
             )}
           />
+          <View style={styles.titleHint}>
+            <Typography variant="caption" colorKey="TEXT_PLACEHOLDER">
+              Ghi rõ điểm mạnh và trường gần nhất
+            </Typography>
+            <Typography variant="caption" colorKey="TEXT_PLACEHOLDER">
+              {title.length} / {TITLE_MAX_LENGTH}
+            </Typography>
+          </View>
 
           <View style={styles.fieldWrapper}>
             <Typography
               variant="label"
-              weight="MEDIUM"
+              weight="SEMIBOLD"
               colorKey="TEXT_PRIMARY"
               style={styles.label}
             >
-              Loại phòng *
+              Loại phòng
             </Typography>
 
-            <TouchableOpacity
-              style={[
-                styles.selectorTrigger,
-                errors.roomType ? styles.selectorError : null,
-                selectedRoomType ? styles.selectorSelected : null,
-              ]}
-              onPress={() => setIsRoomTypeModalVisible(true)}
-              activeOpacity={0.7}
-            >
-              <Typography
-                variant="body1"
-                color={selectedRoomType ? THEME_COLORS.TEXT_PRIMARY : THEME_COLORS.TEXT_PLACEHOLDER}
-              >
-                {selectedRoomTypeLabel || 'Chọn loại phòng'}
-              </Typography>
-
-              <ChevronDown size={18} color={THEME_COLORS.TEXT_MUTED} />
-            </TouchableOpacity>
+            <View style={styles.chipRow}>
+              {ROOM_TYPE_OPTIONS.map((option) => (
+                <FilterChip
+                  key={option.value}
+                  label={option.label}
+                  isSelected={selectedRoomType === option.value}
+                  onPress={() => setValue('roomType', option.value, { shouldValidate: true })}
+                  style={styles.roomChip}
+                />
+              ))}
+            </View>
 
             {errors.roomType ? (
               <Typography variant="caption" colorKey="ERROR" style={styles.errorText}>
@@ -151,12 +195,16 @@ export const BasicInfoScreen = () => {
                 name="price"
                 render={({ field: { onChange, value } }) => (
                   <Input
-                    label="Giá thuê (đ/tháng) *"
-                    placeholder="VD: 2.500.000"
+                    label="Giá thuê"
+                    placeholder="2.500.000"
                     value={formatNumberWithDots(value)}
                     onChangeText={(text) => onChange(parseRawNumberString(text))}
                     keyboardType="numeric"
                     errorMessage={errors.price?.message}
+                    rightIcon={renderSuffix('đ')}
+                    idleBorderColor={OVERLAY_COLORS.FIELD_BORDER}
+                    containerStyle={styles.field}
+                    inputContainerStyle={styles.fieldInput}
                   />
                 )}
               />
@@ -168,32 +216,61 @@ export const BasicInfoScreen = () => {
                 name="area"
                 render={({ field: { onChange, value } }) => (
                   <Input
-                    label="Diện tích (m²) *"
-                    placeholder="VD: 25"
+                    label="Diện tích"
+                    placeholder="22"
                     value={value}
                     onChangeText={onChange}
                     keyboardType="numeric"
                     errorMessage={errors.area?.message}
+                    rightIcon={renderSuffix('m²')}
+                    idleBorderColor={OVERLAY_COLORS.FIELD_BORDER}
+                    containerStyle={styles.field}
+                    inputContainerStyle={styles.fieldInput}
                   />
                 )}
               />
             </View>
           </View>
 
-          <Controller
-            control={control}
-            name="maxOccupants"
-            render={({ field: { onChange, value } }) => (
-              <Input
-                label="Số người ở tối đa *"
-                placeholder="VD: 2"
-                value={value}
-                onChangeText={onChange}
-                keyboardType="numeric"
-                errorMessage={errors.maxOccupants?.message}
-              />
-            )}
-          />
+          <View style={styles.fieldWrapper}>
+            <Typography
+              variant="label"
+              weight="SEMIBOLD"
+              colorKey="TEXT_PRIMARY"
+              style={styles.label}
+            >
+              Số người ở tối đa
+            </Typography>
+
+            <View style={styles.chipRow}>
+              {OCCUPANT_OPTIONS.map((count) => {
+                const isLast = count === MAX_OCCUPANT_CHIP;
+                const isSelected = isLast ? occupantCount >= count : occupantCount === count;
+
+                return (
+                  <FilterChip
+                    key={count}
+                    label={isLast ? `${count}+` : String(count)}
+                    isSelected={isSelected}
+                    onPress={() =>
+                      setValue('maxOccupants', String(count), { shouldValidate: true })
+                    }
+                    style={styles.occupantChip}
+                  />
+                );
+              })}
+            </View>
+
+            {errors.maxOccupants ? (
+              <Typography variant="caption" colorKey="ERROR" style={styles.errorText}>
+                {errors.maxOccupants.message}
+              </Typography>
+            ) : null}
+          </View>
+
+          <Typography variant="body1" weight="BOLD" colorKey="TEXT_PRIMARY" style={styles.section}>
+            Chi phí kèm theo
+          </Typography>
 
           <View style={styles.row}>
             <View style={styles.halfField}>
@@ -201,14 +278,20 @@ export const BasicInfoScreen = () => {
                 control={control}
                 name="electricPrice"
                 render={({ field: { onChange, value } }) => (
-                  <Input
-                    label="Giá điện (đ/kWh)"
-                    placeholder="VD: 4.000"
-                    value={formatNumberWithDots(value)}
-                    onChangeText={(text) => onChange(parseRawNumberString(text))}
-                    keyboardType="numeric"
-                    errorMessage={errors.electricPrice?.message}
-                  />
+                  <View style={styles.costField}>
+                    <CostLabel label="Tiền điện" />
+                    <Input
+                      placeholder="3.500"
+                      value={formatNumberWithDots(value)}
+                      onChangeText={(text) => onChange(parseRawNumberString(text))}
+                      keyboardType="numeric"
+                      errorMessage={errors.electricPrice?.message}
+                      rightIcon={renderSuffix('đ/kWh')}
+                      idleBorderColor={OVERLAY_COLORS.FIELD_BORDER}
+                      containerStyle={styles.field}
+                      inputContainerStyle={styles.fieldInput}
+                    />
+                  </View>
                 )}
               />
             </View>
@@ -218,14 +301,28 @@ export const BasicInfoScreen = () => {
                 control={control}
                 name="waterPrice"
                 render={({ field: { onChange, value } }) => (
-                  <Input
-                    label="Giá nước (đ/m³)"
-                    placeholder="VD: 100.000"
-                    value={formatNumberWithDots(value)}
-                    onChangeText={(text) => onChange(parseRawNumberString(text))}
-                    keyboardType="numeric"
-                    errorMessage={errors.waterPrice?.message}
-                  />
+                  <View style={styles.costField}>
+                    <CostLabel
+                      label="Tiền nước"
+                      toggleLabel="Miễn phí"
+                      isToggled={isWaterFree}
+                      onToggle={() =>
+                        setValue('waterPrice', isWaterFree ? '' : '0', { shouldValidate: true })
+                      }
+                    />
+                    <Input
+                      placeholder={isWaterFree ? 'Miễn phí' : '100.000'}
+                      value={isWaterFree ? '' : formatNumberWithDots(value)}
+                      onChangeText={(text) => onChange(parseRawNumberString(text))}
+                      editable={!isWaterFree}
+                      keyboardType="numeric"
+                      errorMessage={errors.waterPrice?.message}
+                      rightIcon={isWaterFree ? undefined : renderSuffix('đ/m³')}
+                      idleBorderColor={OVERLAY_COLORS.FIELD_BORDER}
+                      containerStyle={styles.field}
+                      inputContainerStyle={styles.fieldInput}
+                    />
+                  </View>
                 )}
               />
             </View>
@@ -235,14 +332,32 @@ export const BasicInfoScreen = () => {
             control={control}
             name="deposit"
             render={({ field: { onChange, value } }) => (
-              <Input
-                label="Tiền cọc (đ)"
-                placeholder="VD: 2.500.000"
-                value={formatNumberWithDots(value)}
-                onChangeText={(text) => onChange(parseRawNumberString(text))}
-                keyboardType="numeric"
-                errorMessage={errors.deposit?.message}
-              />
+              <View style={styles.depositField}>
+                <CostLabel
+                  label="Tiền cọc"
+                  toggleLabel="Bằng tiền phòng"
+                  isToggled={depositFollowsRent}
+                  onToggle={() => {
+                    const next = !depositFollowsRent;
+
+                    setDepositFollowsRent(next);
+
+                    if (next) setValue('deposit', price ?? '', { shouldValidate: true });
+                  }}
+                />
+                <Input
+                  placeholder="2.500.000"
+                  value={formatNumberWithDots(value)}
+                  onChangeText={(text) => onChange(parseRawNumberString(text))}
+                  editable={!depositFollowsRent}
+                  keyboardType="numeric"
+                  errorMessage={errors.deposit?.message}
+                  rightIcon={renderSuffix('đ')}
+                  idleBorderColor={OVERLAY_COLORS.FIELD_BORDER}
+                  containerStyle={styles.field}
+                  inputContainerStyle={styles.fieldInput}
+                />
+              </View>
             )}
           />
 
@@ -259,151 +374,119 @@ export const BasicInfoScreen = () => {
                 numberOfLines={4}
                 style={styles.textArea}
                 errorMessage={errors.description?.message}
+                idleBorderColor={OVERLAY_COLORS.FIELD_BORDER}
+                containerStyle={styles.field}
+                inputContainerStyle={styles.titleInput}
               />
             )}
           />
-
-          <View style={styles.bottomPadding} />
-        </ScrollView>
-      </KeyboardAvoidingView>
+        </KeyboardAwareScrollView>
+      </KeyboardAvoidingContainer>
 
       <View style={styles.bottomBar}>
         <Button variant="primary" size="lg" fullWidth onPress={handleSubmit(onSubmit)}>
           Tiếp tục
         </Button>
       </View>
-
-      <Modal
-        isVisible={isRoomTypeModalVisible}
-        onClose={() => setIsRoomTypeModalVisible(false)}
-        title="Chọn loại phòng"
-      >
-        <View style={styles.modalBody}>
-          {ROOM_TYPE_OPTIONS.map((opt) => (
-            <TouchableOpacity
-              key={opt.value}
-              style={[styles.modalItem, selectedRoomType === opt.value && styles.modalItemSelected]}
-              onPress={() => handleSelectRoomType(opt.value)}
-              activeOpacity={0.7}
-            >
-              <Typography
-                variant="body1"
-                weight={selectedRoomType === opt.value ? 'SEMIBOLD' : 'REGULAR'}
-                color={
-                  selectedRoomType === opt.value ? THEME_COLORS.PRIMARY : THEME_COLORS.TEXT_PRIMARY
-                }
-              >
-                {opt.label}
-              </Typography>
-            </TouchableOpacity>
-          ))}
-        </View>
-      </Modal>
     </ScreenContainer>
   );
 };
 
-const StepIndicator = ({
-  currentStep,
-  totalSteps,
-}: {
-  currentStep: number;
-  totalSteps: number;
-}) => {
-  const progress = currentStep / totalSteps;
+interface CostLabelProps {
+  label: string;
+  toggleLabel?: string;
+  isToggled?: boolean;
+  onToggle?: () => void;
+}
 
-  return (
-    <View style={indicatorStyles.container}>
-      <View style={indicatorStyles.track}>
-        <View style={[indicatorStyles.fill, { width: `${progress * 100}%` }]} />
-      </View>
-    </View>
-  );
-};
+const CostLabel = ({ label, toggleLabel, isToggled = false, onToggle }: CostLabelProps) => (
+  <View style={styles.costLabelRow}>
+    <Typography
+      variant="label"
+      weight="MEDIUM"
+      colorKey="TEXT_PRIMARY"
+      numberOfLines={1}
+      style={styles.costLabelText}
+    >
+      {label}
+    </Typography>
 
-const indicatorStyles = StyleSheet.create({
-  container: {
-    paddingHorizontal: SPACING_TOKENS.MD,
-    paddingVertical: SPACING_TOKENS.SM,
-    backgroundColor: THEME_COLORS.SURFACE,
-  },
-  track: {
-    height: 4,
-    backgroundColor: THEME_COLORS.SURFACE_MUTED,
-    borderRadius: BORDER_RADIUS_TOKENS.FULL,
-    overflow: 'hidden',
-  },
-  fill: {
-    height: '100%',
-    backgroundColor: THEME_COLORS.PRIMARY,
-    borderRadius: BORDER_RADIUS_TOKENS.FULL,
-  },
-});
+    {toggleLabel && onToggle ? (
+      <TouchableOpacity
+        style={styles.costToggle}
+        onPress={onToggle}
+        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        accessibilityRole="checkbox"
+        accessibilityState={{ checked: isToggled }}
+        accessibilityLabel={toggleLabel}
+      >
+        <View style={[styles.checkbox, isToggled && styles.checkboxChecked]}>
+          {isToggled ? <Check size={12} color={THEME_COLORS.WHITE} strokeWidth={3} /> : null}
+        </View>
+        <Typography
+          variant="caption"
+          weight="SEMIBOLD"
+          colorKey={isToggled ? 'PRIMARY' : 'TEXT_SECONDARY'}
+        >
+          {toggleLabel}
+        </Typography>
+      </TouchableOpacity>
+    ) : null}
+  </View>
+);
 
 const styles = StyleSheet.create({
-  flex: {
-    flex: 1,
-  },
-  scrollContent: {
-    padding: SPACING_TOKENS.MD,
-    paddingBottom: SPACING_TOKENS.XL,
-  },
-  fieldWrapper: {
-    marginBottom: SPACING_TOKENS.MD,
-  },
-  label: {
-    marginBottom: 6,
-  },
-  selectorTrigger: {
+  costField: { gap: 8 },
+  depositField: { gap: 8, marginBottom: 20 },
+  costLabelRow: {
+    minHeight: 22,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    height: 48,
-    borderWidth: 1,
-    borderColor: THEME_COLORS.BORDER,
-    borderRadius: BORDER_RADIUS_TOKENS.MD,
-    paddingHorizontal: SPACING_TOKENS.MD,
+    gap: 8,
+  },
+  costLabelText: { flexShrink: 1 },
+  costToggle: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  checkbox: {
+    width: 18,
+    height: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 5,
+    borderWidth: 1.5,
+    borderColor: OVERLAY_COLORS.FIELD_BORDER,
     backgroundColor: THEME_COLORS.SURFACE,
   },
-  selectorError: {
-    borderColor: THEME_COLORS.ERROR,
+  checkboxChecked: {
+    borderColor: THEME_COLORS.PRIMARY,
+    backgroundColor: THEME_COLORS.PRIMARY,
   },
-  selectorSelected: {
-    borderColor: THEME_COLORS.BORDER,
-  },
-  errorText: {
-    marginTop: SPACING_TOKENS.XS,
-  },
-  row: {
+  flex: { flex: 1 },
+  scrollContent: { padding: SPACING_TOKENS.MD, paddingBottom: SPACING_TOKENS.XL },
+  field: { marginBottom: 0 },
+  fieldWrapper: { gap: 8, marginBottom: 20 },
+  label: { marginBottom: 0 },
+  fieldInput: { height: 52, borderRadius: BORDER_RADIUS_TOKENS.MD },
+  titleInput: { minHeight: 76, borderRadius: BORDER_RADIUS_TOKENS.MD },
+  titleHint: {
     flexDirection: 'row',
-    gap: SPACING_TOKENS.SM,
+    justifyContent: 'space-between',
+    marginTop: 6,
+    marginBottom: 20,
   },
-  halfField: {
-    flex: 1,
-  },
-  textArea: {
-    minHeight: 96,
-    textAlignVertical: 'top',
-  },
-  bottomPadding: {
-    height: SPACING_TOKENS.XL,
-  },
+  chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  roomChip: { height: 40, paddingHorizontal: 16 },
+  occupantChip: { minWidth: 48, height: 40 },
+  errorText: { marginTop: SPACING_TOKENS.XS },
+  row: { flexDirection: 'row', gap: 12, marginBottom: 20 },
+  halfField: { flex: 1 },
+  section: { marginTop: 4, marginBottom: 12 },
+  textArea: { minHeight: 96, textAlignVertical: 'top' },
   bottomBar: {
     padding: SPACING_TOKENS.MD,
     paddingBottom: SPACING_TOKENS.LG,
     backgroundColor: THEME_COLORS.SURFACE,
     borderTopWidth: 1,
     borderTopColor: THEME_COLORS.DIVIDER,
-  },
-  modalBody: {
-    paddingVertical: SPACING_TOKENS.SM,
-  },
-  modalItem: {
-    paddingVertical: SPACING_TOKENS.SM + 2,
-    paddingHorizontal: SPACING_TOKENS.MD,
-    borderRadius: BORDER_RADIUS_TOKENS.MD,
-  },
-  modalItemSelected: {
-    backgroundColor: THEME_COLORS.PRIMARY_LIGHT,
   },
 });

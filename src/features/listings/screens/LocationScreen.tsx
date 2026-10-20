@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import {
   View,
   StyleSheet,
@@ -6,15 +6,13 @@ import {
   FlatList,
   ActivityIndicator,
   Alert,
-  TextInput,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import MapView, { Marker, MapPressEvent } from 'react-native-maps';
 import * as Location from 'expo-location';
-import { MapPin, ChevronDown, Search, Navigation } from 'lucide-react-native';
-import { THEME_COLORS, SPACING_TOKENS, BORDER_RADIUS_TOKENS } from '@theme';
-import { Button, Typography, HeaderBar, ScreenContainer, Modal, Input } from '@ui';
+import { MapPin, ChevronDown, Search } from 'lucide-react-native';
+import { THEME_COLORS, SPACING_TOKENS, BORDER_RADIUS_TOKENS, OVERLAY_COLORS } from '@theme';
+import { Button, Typography, ScreenContainer, Modal, Input, KeyboardAwareScrollView } from '@ui';
 import { useToast } from '@hooks';
 import type { ListingPostStackParamList } from '@navigation';
 import {
@@ -23,11 +21,14 @@ import {
   type LocationWard,
 } from '@features/auth/services/locationsService';
 import { useListingPostStore } from '../store/listingPostStore';
-import { LISTING_FORM_STEPS } from '../types/constants';
+import { WizardHeader } from '../components/landlord/WizardHeader';
+import { LocationMap, type MapCoordinate } from '../components/LocationMap';
+import { UniversityPicker } from '@features/auth';
+
+const MAX_LISTING_UNIVERSITIES = 3;
 
 type NavigationProp = NativeStackNavigationProp<ListingPostStackParamList>;
 
-const TOTAL_STEPS = LISTING_FORM_STEPS.length;
 const DEFAULT_REGION = {
   latitude: 10.7769,
   longitude: 106.7009,
@@ -38,7 +39,8 @@ const DEFAULT_REGION = {
 export const LocationScreen = () => {
   const navigation = useNavigation<NavigationProp>();
   const toast = useToast();
-  const { step3, setStep3 } = useListingPostStore();
+  const { step3, setStep3, universities, setUniversities, editingListingId } =
+    useListingPostStore();
 
   const [streetAddress, setStreetAddress] = useState(step3.streetAddress);
   const [selectedProvince, setSelectedProvince] = useState<LocationProvince | null>(
@@ -77,8 +79,6 @@ export const LocationScreen = () => {
   const [isWardModalVisible, setIsWardModalVisible] = useState(false);
   const [provinceSearch, setProvinceSearch] = useState('');
   const [wardSearch, setWardSearch] = useState('');
-
-  const mapRef = useRef<MapView>(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -130,10 +130,6 @@ export const LocationScreen = () => {
     setWardSearch('');
   }, []);
 
-  const handleMapPress = useCallback((event: MapPressEvent) => {
-    setMarkerCoord(event.nativeEvent.coordinate);
-  }, []);
-
   const handleCurrentLocation = useCallback(async () => {
     try {
       const { status } = await Location.requestForegroundPermissionsAsync();
@@ -150,10 +146,6 @@ export const LocationScreen = () => {
       const coord = { latitude: location.coords.latitude, longitude: location.coords.longitude };
 
       setMarkerCoord(coord);
-      mapRef.current?.animateToRegion(
-        { ...coord, latitudeDelta: 0.008, longitudeDelta: 0.008 },
-        500
-      );
       toast.success('Đã lấy vị trí hiện tại');
     } catch {
       toast.error('Không thể lấy vị trí hiện tại. Vui lòng chạm vào bản đồ để chọn.');
@@ -228,184 +220,142 @@ export const LocationScreen = () => {
     navigation.navigate('ListingPostAmenities');
   }, [selectedProvince, selectedWard, streetAddress, markerCoord, setStep3, navigation, toast]);
 
+  const renderSelector = ({
+    label,
+    value,
+    placeholder,
+    isLoading,
+    isDisabled = false,
+    onPress,
+  }: {
+    label: string;
+    value?: string;
+    placeholder: string;
+    isLoading: boolean;
+    isDisabled?: boolean;
+    onPress: () => void;
+  }) => (
+    <View style={styles.halfField}>
+      <Typography variant="label" weight="SEMIBOLD" colorKey="TEXT_PRIMARY" style={styles.label}>
+        {label}
+      </Typography>
+
+      <TouchableOpacity
+        style={[styles.selector, isDisabled && styles.selectorDisabled]}
+        onPress={onPress}
+        activeOpacity={isDisabled ? 1 : 0.7}
+        accessibilityRole="button"
+        accessibilityLabel={label}
+      >
+        <Typography
+          variant="body2"
+          color={value ? THEME_COLORS.TEXT_PRIMARY : THEME_COLORS.TEXT_PLACEHOLDER}
+          style={styles.selectorText}
+          numberOfLines={1}
+        >
+          {value ?? placeholder}
+        </Typography>
+
+        {isLoading ? (
+          <ActivityIndicator size="small" color={THEME_COLORS.PRIMARY} />
+        ) : (
+          <ChevronDown size={16} color={THEME_COLORS.TEXT_MUTED} />
+        )}
+      </TouchableOpacity>
+    </View>
+  );
+
   return (
-    <ScreenContainer applyTopInset applyBottomInset={false} keyboardAvoiding={false}>
-      <HeaderBar
-        title="Đăng tin mới"
-        onBack={() => navigation.goBack()}
-        subtitle={`Bước 3 / ${TOTAL_STEPS}: Vị trí`}
-        alignTitle="left"
-      />
+    <ScreenContainer applyTopInset applyBottomInset keyboardAvoiding={false}>
+      <WizardHeader step={3} isEditing={Boolean(editingListingId)} onBack={navigation.goBack} />
 
-      <StepIndicator currentStep={3} totalSteps={TOTAL_STEPS} />
+      <KeyboardAwareScrollView
+        style={styles.flex}
+        contentContainerStyle={styles.content}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
+        <Input
+          label="Địa chỉ"
+          placeholder="Số nhà, tên đường"
+          value={streetAddress}
+          onChangeText={setStreetAddress}
+          leftIcon={<MapPin size={18} color={THEME_COLORS.TEXT_MUTED} />}
+          idleBorderColor={OVERLAY_COLORS.FIELD_BORDER}
+          containerStyle={styles.streetInput}
+          inputContainerStyle={styles.streetField}
+        />
 
-      <View style={styles.flex}>
-        <View style={styles.formSection}>
-          <View style={styles.fieldRow}>
-            <View style={styles.halfField}>
-              <Typography
-                variant="label"
-                weight="MEDIUM"
-                colorKey="TEXT_PRIMARY"
-                style={styles.label}
-              >
-                Tỉnh/Thành phố *
-              </Typography>
+        <View style={styles.fieldRow}>
+          {renderSelector({
+            label: 'Tỉnh/Thành phố',
+            value: selectedProvince?.name,
+            placeholder: 'Chọn tỉnh',
+            isLoading: isLoadingProvinces,
+            onPress: () => setIsProvinceModalVisible(true),
+          })}
 
-              <TouchableOpacity
-                style={[styles.selector, !selectedProvince && styles.selectorPlaceholder]}
-                onPress={() => setIsProvinceModalVisible(true)}
-                activeOpacity={0.7}
-              >
-                <MapPin
-                  size={16}
-                  color={selectedProvince ? THEME_COLORS.PRIMARY : THEME_COLORS.TEXT_PLACEHOLDER}
-                />
+          {renderSelector({
+            label: 'Phường/Xã',
+            value: selectedWard?.name,
+            placeholder: 'Chọn phường',
+            isLoading: isLoadingWards,
+            isDisabled: !selectedProvince,
+            onPress: () => {
+              if (!selectedProvince) {
+                toast.info('Vui lòng chọn Tỉnh/Thành phố trước');
 
-                <Typography
-                  variant="body2"
-                  color={
-                    selectedProvince ? THEME_COLORS.TEXT_PRIMARY : THEME_COLORS.TEXT_PLACEHOLDER
-                  }
-                  style={styles.selectorText}
-                  numberOfLines={1}
-                >
-                  {selectedProvince ? selectedProvince.name : 'Chọn tỉnh'}
-                </Typography>
+                return;
+              }
 
-                {isLoadingProvinces ? (
-                  <ActivityIndicator size="small" color={THEME_COLORS.PRIMARY} />
-                ) : (
-                  <ChevronDown size={16} color={THEME_COLORS.TEXT_MUTED} />
-                )}
-              </TouchableOpacity>
-            </View>
-
-            <View style={styles.halfField}>
-              <Typography
-                variant="label"
-                weight="MEDIUM"
-                colorKey="TEXT_PRIMARY"
-                style={styles.label}
-              >
-                Phường/Xã *
-              </Typography>
-
-              <TouchableOpacity
-                style={[
-                  styles.selector,
-                  !selectedProvince && styles.selectorDisabled,
-                  !selectedWard && styles.selectorPlaceholder,
-                ]}
-                onPress={() => {
-                  if (!selectedProvince) {
-                    toast.info('Vui lòng chọn Tỉnh/Thành phố trước');
-
-                    return;
-                  }
-
-                  setIsWardModalVisible(true);
-                }}
-                activeOpacity={selectedProvince ? 0.7 : 1}
-              >
-                <MapPin
-                  size={16}
-                  color={selectedWard ? THEME_COLORS.PRIMARY : THEME_COLORS.TEXT_PLACEHOLDER}
-                />
-
-                <Typography
-                  variant="body2"
-                  color={selectedWard ? THEME_COLORS.TEXT_PRIMARY : THEME_COLORS.TEXT_PLACEHOLDER}
-                  style={styles.selectorText}
-                  numberOfLines={1}
-                >
-                  {selectedWard ? selectedWard.name : 'Chọn phường'}
-                </Typography>
-
-                {isLoadingWards ? (
-                  <ActivityIndicator size="small" color={THEME_COLORS.PRIMARY} />
-                ) : (
-                  <ChevronDown size={16} color={THEME_COLORS.TEXT_MUTED} />
-                )}
-              </TouchableOpacity>
-            </View>
-          </View>
-
-          <Input
-            label="Số nhà, tên đường *"
-            placeholder="VD: Số 12, đường Lý Thường Kiệt"
-            value={streetAddress}
-            onChangeText={setStreetAddress}
-            containerStyle={styles.streetInput}
-          />
+              setIsWardModalVisible(true);
+            },
+          })}
         </View>
 
-        <View style={styles.mapContainer}>
+        <View style={styles.mapSection}>
           <View style={styles.mapHeader}>
-            <Typography variant="label" weight="MEDIUM" colorKey="TEXT_PRIMARY">
-              Vị trí trên bản đồ *
+            <Typography variant="label" weight="SEMIBOLD" colorKey="TEXT_PRIMARY">
+              Kéo ghim tới đúng vị trí
             </Typography>
 
             <TouchableOpacity
               style={styles.locationBtn}
               onPress={handleCurrentLocation}
               activeOpacity={0.7}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              accessibilityRole="button"
+              accessibilityLabel="Dùng vị trí hiện tại"
             >
-              <Navigation size={14} color={THEME_COLORS.PRIMARY} />
-              <Typography variant="caption" colorKey="PRIMARY" style={styles.locationBtnText}>
-                Vị trí hiện tại
+              <Typography variant="label" weight="SEMIBOLD" colorKey="PRIMARY_DARK">
+                Dùng vị trí hiện tại
               </Typography>
             </TouchableOpacity>
           </View>
 
-          <MapView
-            ref={mapRef}
-            style={styles.map}
-            initialRegion={
-              markerCoord
-                ? { ...markerCoord, latitudeDelta: 0.01, longitudeDelta: 0.01 }
-                : DEFAULT_REGION
-            }
-            onPress={handleMapPress}
-            showsUserLocation={true}
-            showsMyLocationButton={false}
-            showsCompass={true}
-            loadingEnabled={true}
-            loadingIndicatorColor={THEME_COLORS.PRIMARY}
-            loadingBackgroundColor={THEME_COLORS.SURFACE}
-          >
-            {markerCoord ? (
-              <Marker
-                coordinate={markerCoord}
-                pinColor={THEME_COLORS.PRIMARY}
-                draggable
-                onDragEnd={(e) => setMarkerCoord(e.nativeEvent.coordinate)}
-                title="Vị trí phòng trọ"
-                description="Kéo thả marker để chọn vị trí chính xác"
-              />
-            ) : null}
-          </MapView>
-
-          <View style={styles.coordCard}>
-            <MapPin
-              size={18}
-              color={markerCoord ? THEME_COLORS.PRIMARY : THEME_COLORS.TEXT_PLACEHOLDER}
+          <View style={styles.mapFrame}>
+            <LocationMap
+              coordinate={markerCoord}
+              defaultRegion={DEFAULT_REGION}
+              onCoordinateChange={(coordinate: MapCoordinate) => setMarkerCoord(coordinate)}
             />
-            <View style={styles.coordTextContainer}>
-              <Typography variant="caption" weight="SEMIBOLD" colorKey="TEXT_PRIMARY">
-                {markerCoord
-                  ? `Toạ độ đã chọn: ${markerCoord.latitude.toFixed(6)}, ${markerCoord.longitude.toFixed(6)}`
-                  : 'Chưa chọn toạ độ trên bản đồ'}
-              </Typography>
-              <Typography variant="caption" colorKey="TEXT_SECONDARY">
-                {markerCoord
-                  ? 'Kéo marker hoặc chạm vào bản đồ để tinh chỉnh vị trí'
-                  : 'Chạm vào bản đồ hoặc bấm "Vị trí hiện tại" để ghim'}
-              </Typography>
-            </View>
           </View>
+
+          <Typography variant="caption" colorKey="TEXT_MUTED" style={styles.mapHint}>
+            {markerCoord
+              ? `Toạ độ đã chọn: ${markerCoord.latitude.toFixed(6)}, ${markerCoord.longitude.toFixed(6)}. Kéo ghim hoặc chạm vào bản đồ để tinh chỉnh.`
+              : 'Chạm vào bản đồ hoặc bấm "Dùng vị trí hiện tại" để ghim vị trí phòng.'}
+          </Typography>
         </View>
-      </View>
+
+        <UniversityPicker
+          label="Trường đại học gần phòng"
+          value={universities}
+          maxSelection={MAX_LISTING_UNIVERSITIES}
+          helperText="Chọn tối đa 3 trường để sinh viên các trường này dễ tìm thấy phòng"
+          onChange={setUniversities}
+        />
+      </KeyboardAwareScrollView>
 
       <View style={styles.bottomBar}>
         <Button
@@ -534,141 +484,39 @@ export const LocationScreen = () => {
   );
 };
 
-const StepIndicator = ({
-  currentStep,
-  totalSteps,
-}: {
-  currentStep: number;
-  totalSteps: number;
-}) => {
-  const progress = currentStep / totalSteps;
-
-  return (
-    <View style={indicatorStyles.container}>
-      <View style={indicatorStyles.track}>
-        <View style={[indicatorStyles.fill, { width: `${progress * 100}%` }]} />
-      </View>
-    </View>
-  );
-};
-
-const indicatorStyles = StyleSheet.create({
-  container: {
-    paddingHorizontal: SPACING_TOKENS.MD,
-    paddingVertical: SPACING_TOKENS.SM,
-    backgroundColor: THEME_COLORS.SURFACE,
-  },
-  track: {
-    height: 4,
-    backgroundColor: THEME_COLORS.SURFACE_MUTED,
-    borderRadius: BORDER_RADIUS_TOKENS.FULL,
-    overflow: 'hidden',
-  },
-  fill: {
-    height: '100%',
-    backgroundColor: THEME_COLORS.PRIMARY,
-    borderRadius: BORDER_RADIUS_TOKENS.FULL,
-  },
-});
-
 const styles = StyleSheet.create({
-  flex: {
-    flex: 1,
-  },
-  formSection: {
-    backgroundColor: THEME_COLORS.SURFACE,
-    paddingHorizontal: SPACING_TOKENS.MD,
-    paddingTop: SPACING_TOKENS.MD,
-    paddingBottom: SPACING_TOKENS.SM,
-  },
-  fieldRow: {
-    flexDirection: 'row',
-    gap: SPACING_TOKENS.SM,
-    marginBottom: SPACING_TOKENS.SM,
-  },
-  halfField: {
-    flex: 1,
-  },
-  label: {
-    marginBottom: 6,
-  },
+  flex: { flex: 1 },
+  content: { padding: 16, paddingBottom: SPACING_TOKENS.XL, gap: 16 },
+  streetInput: { marginBottom: 0 },
+  streetField: { height: 52, borderRadius: BORDER_RADIUS_TOKENS.MD },
+  fieldRow: { flexDirection: 'row', gap: 12 },
+  halfField: { flex: 1, gap: 8 },
+  label: { marginBottom: 0 },
   selector: {
     flexDirection: 'row',
     alignItems: 'center',
-    height: 44,
-    borderWidth: 1,
-    borderColor: THEME_COLORS.BORDER,
-    borderRadius: BORDER_RADIUS_TOKENS.MD,
-    paddingHorizontal: SPACING_TOKENS.SM,
-    backgroundColor: THEME_COLORS.SURFACE,
+    height: 52,
     gap: SPACING_TOKENS.XS,
-  },
-  selectorPlaceholder: {
-    borderColor: THEME_COLORS.BORDER,
-  },
-  selectorDisabled: {
-    backgroundColor: THEME_COLORS.SURFACE_MUTED,
-    opacity: 0.7,
-  },
-  selectorText: {
-    flex: 1,
-  },
-  streetInput: {
-    marginBottom: SPACING_TOKENS.SM,
-  },
-  mapContainer: {
-    flex: 1,
-    minHeight: 280,
-    margin: SPACING_TOKENS.MD,
+    paddingHorizontal: 16,
+    borderWidth: 1,
+    borderColor: OVERLAY_COLORS.FIELD_BORDER,
     borderRadius: BORDER_RADIUS_TOKENS.MD,
+    backgroundColor: THEME_COLORS.SURFACE,
+  },
+  selectorDisabled: { backgroundColor: THEME_COLORS.SURFACE_MUTED, opacity: 0.7 },
+  selectorText: { flex: 1 },
+  mapSection: { gap: 10 },
+  mapHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  locationBtn: { paddingVertical: 2 },
+  mapFrame: {
+    height: 232,
+    overflow: 'hidden',
+    borderRadius: BORDER_RADIUS_TOKENS.LG,
     borderWidth: 1,
     borderColor: THEME_COLORS.BORDER,
-    backgroundColor: THEME_COLORS.SURFACE,
+    backgroundColor: OVERLAY_COLORS.MAP_LAND,
   },
-  mapHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: SPACING_TOKENS.MD,
-    paddingVertical: SPACING_TOKENS.SM,
-    backgroundColor: THEME_COLORS.SURFACE,
-    borderTopLeftRadius: BORDER_RADIUS_TOKENS.MD,
-    borderTopRightRadius: BORDER_RADIUS_TOKENS.MD,
-    borderBottomWidth: 1,
-    borderBottomColor: THEME_COLORS.DIVIDER,
-  },
-  locationBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    backgroundColor: THEME_COLORS.PRIMARY_LIGHT,
-    paddingHorizontal: SPACING_TOKENS.SM,
-    paddingVertical: 4,
-    borderRadius: BORDER_RADIUS_TOKENS.FULL,
-  },
-  locationBtnText: {
-    marginLeft: 2,
-    fontWeight: '600',
-  },
-  map: {
-    flex: 1,
-    minHeight: 220,
-  },
-  coordCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: SPACING_TOKENS.SM,
-    paddingHorizontal: SPACING_TOKENS.MD,
-    paddingVertical: SPACING_TOKENS.SM,
-    backgroundColor: THEME_COLORS.SURFACE,
-    borderTopWidth: 1,
-    borderTopColor: THEME_COLORS.DIVIDER,
-    borderBottomLeftRadius: BORDER_RADIUS_TOKENS.MD,
-    borderBottomRightRadius: BORDER_RADIUS_TOKENS.MD,
-  },
-  coordTextContainer: {
-    flex: 1,
-  },
+  mapHint: { lineHeight: 18 },
   bottomBar: {
     padding: SPACING_TOKENS.MD,
     paddingBottom: SPACING_TOKENS.LG,
@@ -707,8 +555,3 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
 });
-
-// Suppress unused import warning for TextInput (used implicitly via Input component)
-const _TextInput = TextInput;
-
-void _TextInput;

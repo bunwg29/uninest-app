@@ -181,8 +181,20 @@ export const RegisterScreen = () => {
           </View>
 
           <Typography variant="body2" color={THEME_COLORS.TEXT_SECONDARY} style={styles.termsText}>
-            Tôi đồng ý với <Text style={styles.linkText}>Điều khoản sử dụng</Text> và{' '}
-            <Text style={styles.linkText}>Chính sách quyền riêng tư của UniNest.</Text>
+            Tôi đồng ý với{' '}
+            <Text
+              style={styles.linkText}
+              onPress={() => navigation.navigate('Terms', { tab: 'terms' })}
+            >
+              Điều khoản sử dụng
+            </Text>{' '}
+            và{' '}
+            <Text
+              style={styles.linkText}
+              onPress={() => navigation.navigate('Terms', { tab: 'privacy' })}
+            >
+              Chính sách quyền riêng tư của UniNest.
+            </Text>
           </Typography>
         </TouchableOpacity>
 

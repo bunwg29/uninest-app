@@ -3,9 +3,9 @@ import { StyleSheet, TouchableOpacity, View } from 'react-native';
 import { useMutation } from '@tanstack/react-query';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { Check, ChevronLeft, Circle, HelpCircle, Lock } from 'lucide-react-native';
+import { Check, Circle, HelpCircle, Lock } from 'lucide-react-native';
 import { THEME_COLORS, SPACING_TOKENS } from '@theme';
-import { Button, Input, Modal, ScreenContainer, Typography } from '@ui';
+import { Button, Input, Modal, ScreenContainer, Typography, BackButton } from '@ui';
 import { useToast } from '@hooks';
 import type { RootStackParamList } from '@navigation';
 import { authService } from '../services';
@@ -22,12 +22,12 @@ export const ChangePasswordScreen = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const hasMinLength = newPassword.length >= 8;
   const hasDigit = /\d/.test(newPassword);
-  const hasUppercase = /[A-Z]/.test(newPassword);
-  const strengthScore = [hasMinLength, hasDigit, hasUppercase].filter(Boolean).length;
+  const hasLetter = /[A-Za-z]/.test(newPassword);
+  const strengthScore = [hasMinLength, hasDigit, hasLetter].filter(Boolean).length;
   const isDifferent = Boolean(newPassword) && newPassword !== currentPassword;
   const isMatch = Boolean(confirmPassword) && newPassword === confirmPassword;
   const isValid =
-    hasMinLength && hasDigit && hasUppercase && isDifferent && isMatch && Boolean(currentPassword);
+    hasMinLength && hasDigit && hasLetter && isDifferent && isMatch && Boolean(currentPassword);
   const [isSendingOtp, setIsSendingOtp] = useState(false);
   const [isForgotModalVisible, setIsForgotModalVisible] = useState(false);
 
@@ -45,13 +45,10 @@ export const ChangePasswordScreen = () => {
     try {
       await authService.resendOtp(phoneNumber, 'FORGOT_PASSWORD');
       toast.success('Mã OTP đã được gửi đến số điện thoại của bạn');
-      navigation.navigate('Auth', {
-        screen: 'OtpVerification',
-        params: {
-          target: phoneNumber,
-          flow: 'forgot_password',
-          returnToChangePassword: true,
-        },
+      navigation.navigate('OtpVerification', {
+        target: phoneNumber,
+        flow: 'forgot_password',
+        returnToChangePassword: true,
       });
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Không thể gửi mã OTP');
@@ -73,12 +70,7 @@ export const ChangePasswordScreen = () => {
     mutationFn: () => authService.changePassword({ currentPassword, newPassword, confirmPassword }),
     onSuccess: async () => {
       await logout();
-      toast.success('Đổi mật khẩu thành công');
-
-      navigation.reset({
-        index: 0,
-        routes: [{ name: 'Auth', params: { screen: 'Login' } }],
-      });
+      toast.success('Vui lòng đăng nhập lại trên mọi thiết bị', 'Đổi mật khẩu thành công');
     },
     onError: (error) =>
       toast.error(error instanceof Error ? error.message : 'Không thể đổi mật khẩu'),
@@ -87,16 +79,14 @@ export const ChangePasswordScreen = () => {
   const checks = [
     ['Tối thiểu 8 ký tự', hasMinLength],
     ['Có ít nhất một chữ số', hasDigit],
-    ['Có ít nhất một chữ in hoa', hasUppercase],
+    ['Có ít nhất một chữ cái', hasLetter],
     ['Khác mật khẩu cũ', isDifferent],
   ] as const;
 
   return (
     <ScreenContainer scrollable style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <ChevronLeft size={24} color={THEME_COLORS.TEXT_PRIMARY} />
-        </TouchableOpacity>
+        <BackButton onPress={() => navigation.goBack()} />
         <Typography variant="h3" weight="BOLD">
           Đổi mật khẩu
         </Typography>
@@ -202,10 +192,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    paddingTop: SPACING_TOKENS.SM,
     marginBottom: SPACING_TOKENS.XL,
   },
-  backButton: { padding: SPACING_TOKENS.XS },
-  headerSpace: { width: 32 },
+  headerSpace: { width: 40 },
   forgotLink: {
     flexDirection: 'row',
     alignItems: 'center',

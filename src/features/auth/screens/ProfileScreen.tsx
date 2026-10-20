@@ -19,9 +19,11 @@ import {
   Edit3,
   LogOut,
   Settings2,
+  ShieldCheck,
   Star,
+  Home,
 } from 'lucide-react-native';
-import { THEME_COLORS, SPACING_TOKENS, BORDER_RADIUS_TOKENS } from '@theme';
+import { THEME_COLORS, SPACING_TOKENS, BORDER_RADIUS_TOKENS, OVERLAY_COLORS } from '@theme';
 import { Avatar, Button, ScreenContainer, Typography } from '@ui';
 import { useToast } from '@hooks';
 import type { RootStackParamList } from '@navigation';
@@ -32,7 +34,7 @@ type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 type IconComponent = typeof Heart;
 
 const ICON_TONES = {
-  RED: { foreground: '#D21F2B', background: '#FFF0F1' },
+  RED: { foreground: THEME_COLORS.ERROR, background: THEME_COLORS.ERROR_LIGHT },
   BLUE: { foreground: THEME_COLORS.PRIMARY, background: THEME_COLORS.PRIMARY_LIGHT },
   AMBER: { foreground: THEME_COLORS.SECONDARY, background: THEME_COLORS.WARNING_LIGHT },
   GREEN: { foreground: THEME_COLORS.SUCCESS, background: THEME_COLORS.SUCCESS_LIGHT },
@@ -50,16 +52,12 @@ export const ProfileScreen = () => {
   });
 
   const profile = profileQuery.data;
+  const isLandlord = user?.role === 'landlord';
 
   const handleLogout = async () => {
     await logout();
 
     toast.info('Đã đăng xuất thành công');
-
-    navigation.reset({
-      index: 0,
-      routes: [{ name: 'Auth', params: { screen: 'Login' } }],
-    });
   };
 
   const handleGoToLogin = () => {
@@ -69,6 +67,7 @@ export const ProfileScreen = () => {
   return (
     <ScreenContainer
       scrollable
+      applyBottomInset={false}
       style={styles.container}
       refreshControl={
         <RefreshControl refreshing={profileQuery.isRefetching} onRefresh={profileQuery.refetch} />
@@ -76,7 +75,7 @@ export const ProfileScreen = () => {
     >
       <View style={styles.headerRow}>
         <Typography variant="h2" weight="BOLD">
-          Cá nhân
+          {isLandlord ? 'Hồ sơ chủ trọ' : 'Cá nhân'}
         </Typography>
 
         <View style={styles.headerSpacer} />
@@ -111,8 +110,8 @@ export const ProfileScreen = () => {
 
               <Typography variant="body2" color={THEME_COLORS.TEXT_MUTED} style={styles.phoneText}>
                 {profile.role.toLowerCase() === 'student'
-                  ? `Sinh viên · ${profile.school || 'Chưa cập nhật trường'}`
-                  : profile.school || 'Chủ trọ'}
+                  ? `Sinh viên · ${profile.universities?.[0]?.name || 'Chưa cập nhật trường'}`
+                  : 'Chủ trọ'}
               </Typography>
 
               <View style={styles.badgeRow}>
@@ -136,83 +135,150 @@ export const ProfileScreen = () => {
             </TouchableOpacity>
           </View>
 
-          <View style={styles.statsRow}>
-            <Stat label="Đã lưu" value={profile.stats.savedRooms} />
-            <Stat label="Lịch hẹn" value={profile.stats.appointments} />
-            <Stat label="Đánh giá" value={profile.stats.reviews} />
-          </View>
-
-          <TouchableOpacity
-            style={styles.settingsRow}
-            onPress={() => navigation.navigate('Settings')}
-          >
-            <Typography variant="body2" weight="SEMIBOLD" style={styles.settingsRowLabel}>
-              Cài đặt
-            </Typography>
-            <ChevronRight size={18} color={THEME_COLORS.TEXT_PLACEHOLDER} />
-          </TouchableOpacity>
+          {!isLandlord ? (
+            <View style={styles.statsRow}>
+              <Stat label="Đã lưu" value={profile.stats.savedRooms} />
+              <Stat label="Lịch hẹn" value={profile.stats.appointments} />
+              <Stat label="Đánh giá" value={profile.stats.reviews} />
+            </View>
+          ) : null}
 
           <ProfileSection
-            title="HOẠT ĐỘNG"
+            title={isLandlord ? 'QUẢN LÝ CHỦ TRỌ' : 'HOẠT ĐỘNG'}
+            items={
+              isLandlord
+                ? [
+                    {
+                      label: 'Tin đăng của tôi',
+                      icon: Home,
+                      tone: ICON_TONES.BLUE,
+                      onPress: () => navigation.navigate('Main', { screen: 'Listings' }),
+                    },
+                    {
+                      label: 'Yêu cầu xem phòng',
+                      icon: CalendarDays,
+                      tone: ICON_TONES.AMBER,
+                      onPress: () => navigation.navigate('Main', { screen: 'Appointments' }),
+                    },
+                    ...(profile.verificationStatus === 'pending_verification'
+                      ? [
+                          {
+                            label: 'Xác minh tài khoản Chủ trọ',
+                            icon: ShieldCheck,
+                            tone: ICON_TONES.RED,
+                            detail: 'Chờ xác minh',
+                            onPress: () => navigation.navigate('LandlordVerification'),
+                          },
+                        ]
+                      : []),
+                  ]
+                : [
+                    {
+                      label: 'Phòng đã lưu',
+                      icon: Heart,
+                      tone: ICON_TONES.RED,
+                      detail: `${profile.stats.savedRooms}`,
+                      onPress: () => navigation.navigate('SavedRooms'),
+                    },
+                    {
+                      label: 'Lịch hẹn xem phòng',
+                      icon: CalendarDays,
+                      tone: ICON_TONES.AMBER,
+                      detail:
+                        profile.stats.appointments > 0
+                          ? `${profile.stats.appointments} đang chờ`
+                          : undefined,
+                      onPress: () => navigation.navigate('MyBookings'),
+                    },
+                    {
+                      label: 'Danh sách so sánh',
+                      icon: Columns2,
+                      tone: ICON_TONES.BLUE,
+                      onPress: () => navigation.navigate('Comparison'),
+                    },
+                    {
+                      label: 'Lịch sử giao dịch',
+                      icon: CreditCard,
+                      tone: ICON_TONES.GREEN,
+                      onPress: () => toast.info('Tính năng lịch sử giao dịch đang phát triển'),
+                    },
+                    {
+                      label: 'Đánh giá của tôi',
+                      icon: Star,
+                      tone: ICON_TONES.AMBER,
+                      detail: `${profile.stats.reviews}`,
+                      onPress: () => toast.info('Tính năng đánh giá đang phát triển'),
+                    },
+                  ]
+            }
+          />
+
+          {!isLandlord ? (
+            <ProfileSection
+              title="CỘNG ĐỒNG"
+              items={[
+                {
+                  label: 'Bài viết & bình luận',
+                  icon: MessageSquare,
+                  tone: ICON_TONES.SLATE,
+                  onPress: () => navigation.navigate('Community'),
+                },
+              ]}
+            />
+          ) : null}
+
+          <ProfileSection
+            title="TÀI KHOẢN & HỆ THỐNG"
             items={[
               {
-                label: 'Phòng đã lưu',
-                icon: Heart,
-                tone: ICON_TONES.RED,
-                detail: `${profile.stats.savedRooms}`,
+                label: 'Chỉnh sửa thông tin cá nhân',
+                icon: Edit3,
+                tone: ICON_TONES.BLUE,
+                onPress: () => navigation.navigate('ProfileEdit'),
               },
               {
-                label: 'Lịch hẹn xem phòng',
-                icon: CalendarDays,
-                tone: ICON_TONES.AMBER,
-                detail:
-                  profile.stats.appointments > 0
-                    ? `${profile.stats.appointments} đang chờ`
-                    : undefined,
+                label: 'Đổi mật khẩu',
+                icon: Settings2,
+                tone: ICON_TONES.SLATE,
+                onPress: () => navigation.navigate('ChangePassword'),
               },
-              { label: 'Danh sách so sánh', icon: Columns2, tone: ICON_TONES.BLUE },
-              { label: 'Lịch sử giao dịch', icon: CreditCard, tone: ICON_TONES.GREEN },
               {
-                label: 'Đánh giá của tôi',
-                icon: Star,
-                tone: ICON_TONES.AMBER,
-                detail: `${profile.stats.reviews}`,
+                label: 'Cài đặt ứng dụng',
+                icon: Settings2,
+                tone: ICON_TONES.SLATE,
+                onPress: () => navigation.navigate('Settings'),
               },
             ]}
           />
-          <ProfileSection
-            title="CỘNG ĐỒNG"
-            items={[{ label: 'Bài viết & bình luận', icon: MessageSquare, tone: ICON_TONES.SLATE }]}
-          />
-          <ProfileSection
-            title="TÀI KHOẢN"
-            items={[{ label: 'Đổi mật khẩu', icon: Settings2, tone: ICON_TONES.SLATE }]}
-            onPress={() => navigation.navigate('ChangePassword')}
-          />
 
-          <Button
-            variant="danger"
-            size="md"
-            leftIcon={<LogOut size={18} color={THEME_COLORS.SURFACE} />}
-            onPress={handleLogout}
-            style={styles.logoutButton}
-          >
-            Đăng xuất
-          </Button>
+          <View style={styles.logoutWrapper}>
+            <TouchableOpacity
+              style={styles.customLogoutButton}
+              onPress={handleLogout}
+              activeOpacity={0.7}
+            >
+              <LogOut size={20} color={THEME_COLORS.ERROR} style={styles.logoutIcon} />
+              <Typography variant="body1" weight="SEMIBOLD" color={THEME_COLORS.ERROR}>
+                Đăng xuất
+              </Typography>
+            </TouchableOpacity>
+          </View>
         </View>
       ) : (
-        <View style={styles.card}>
-          <Typography
-            variant="body1"
-            color={THEME_COLORS.TEXT_MUTED}
-            style={styles.notLoggedInText}
-          >
-            Đăng nhập để xem thông tin tài khoản và quản lý hợp đồng
-          </Typography>
+        <View style={styles.notLoggedInContainer}>
+          <View style={styles.card}>
+            <Typography
+              variant="body1"
+              color={THEME_COLORS.TEXT_MUTED}
+              style={styles.notLoggedInText}
+            >
+              Đăng nhập để xem thông tin tài khoản và quản lý hợp đồng
+            </Typography>
 
-          <Button variant="primary" size="lg" fullWidth onPress={handleGoToLogin}>
-            Đăng nhập
-          </Button>
+            <Button variant="primary" size="lg" fullWidth onPress={handleGoToLogin}>
+              Đăng nhập
+            </Button>
+          </View>
         </View>
       )}
     </ScreenContainer>
@@ -233,7 +299,6 @@ const Stat = ({ label, value }: { label: string; value: number }) => (
 const ProfileSection = ({
   title,
   items,
-  onPress,
 }: {
   title: string;
   items: Array<{
@@ -241,36 +306,51 @@ const ProfileSection = ({
     icon: IconComponent;
     tone: (typeof ICON_TONES)[keyof typeof ICON_TONES];
     detail?: string;
+    onPress?: () => void;
   }>;
-  onPress?: () => void;
 }) => (
   <View style={styles.section}>
     <Typography
       variant="tiny"
-      weight="SEMIBOLD"
+      weight="BOLD"
       color={THEME_COLORS.TEXT_MUTED}
       style={styles.sectionTitle}
     >
       {title}
     </Typography>
-    {items.map(({ label, icon: Icon, tone, detail }) => (
-      <TouchableOpacity key={label} style={styles.menuItem} onPress={onPress}>
-        <View style={styles.menuLabel}>
-          <View style={[styles.menuIconFrame, { backgroundColor: tone.background }]}>
-            <Icon size={18} color={tone.foreground} />
+
+    <View style={styles.sectionCard}>
+      {items.map(({ label, icon: Icon, tone, detail, onPress }, index) => (
+        <TouchableOpacity
+          key={label}
+          style={[styles.menuItem, index === items.length - 1 && styles.menuItemLast]}
+          onPress={onPress}
+          activeOpacity={0.7}
+        >
+          <View style={styles.menuLabel}>
+            <View style={[styles.menuIconFrame, { backgroundColor: tone.background }]}>
+              <Icon size={18} color={tone.foreground} />
+            </View>
+            <Typography variant="body2" weight="MEDIUM" style={styles.menuText}>
+              {label}
+            </Typography>
           </View>
-          <Typography variant="body2" style={styles.menuText}>
-            {label}
-          </Typography>
-        </View>
-        {detail ? (
-          <Typography variant="body2" color={THEME_COLORS.TEXT_MUTED} style={styles.detailText}>
-            {detail}
-          </Typography>
-        ) : null}
-        <ChevronRight size={18} color={THEME_COLORS.TEXT_PLACEHOLDER} />
-      </TouchableOpacity>
-    ))}
+
+          <View style={styles.menuRight}>
+            {detail ? (
+              <Typography
+                variant="caption"
+                color={THEME_COLORS.TEXT_MUTED}
+                style={styles.detailText}
+              >
+                {detail}
+              </Typography>
+            ) : null}
+            <ChevronRight size={18} color={THEME_COLORS.TEXT_PLACEHOLDER} />
+          </View>
+        </TouchableOpacity>
+      ))}
+    </View>
   </View>
 );
 
@@ -282,9 +362,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: SPACING_TOKENS.LG,
+    marginBottom: SPACING_TOKENS.MD,
     paddingHorizontal: SPACING_TOKENS.LG,
-    paddingTop: SPACING_TOKENS.LG,
+    paddingTop: SPACING_TOKENS.SM,
   },
   iconButton: {
     width: 42,
@@ -300,7 +380,14 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
   },
-  stateContainer: { paddingVertical: SPACING_TOKENS.XL, alignItems: 'center' },
+  stateContainer: {
+    paddingVertical: SPACING_TOKENS.XL,
+    alignItems: 'center',
+  },
+  notLoggedInContainer: {
+    paddingHorizontal: SPACING_TOKENS.LG,
+    marginTop: SPACING_TOKENS.MD,
+  },
   card: {
     backgroundColor: THEME_COLORS.SURFACE,
     borderRadius: BORDER_RADIUS_TOKENS.LG,
@@ -312,27 +399,16 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: SPACING_TOKENS.LG,
-    paddingHorizontal: 10,
+    paddingHorizontal: SPACING_TOKENS.LG,
   },
   statsRow: {
     flexDirection: 'row',
-    marginHorizontal: 10,
-    paddingVertical: SPACING_TOKENS.SM,
+    marginHorizontal: SPACING_TOKENS.LG,
+    paddingVertical: SPACING_TOKENS.MD,
     backgroundColor: THEME_COLORS.SURFACE_MUTED,
     borderRadius: BORDER_RADIUS_TOKENS.LG,
     marginBottom: SPACING_TOKENS.LG,
   },
-  settingsRow: {
-    minHeight: 48,
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: THEME_COLORS.SURFACE,
-    borderBottomWidth: 1,
-    borderBottomColor: THEME_COLORS.BORDER,
-    paddingHorizontal: SPACING_TOKENS.SM,
-    marginBottom: SPACING_TOKENS.SM,
-  },
-  settingsRowLabel: { flex: 1 },
   stat: {
     flex: 1,
     alignItems: 'center',
@@ -340,35 +416,63 @@ const styles = StyleSheet.create({
     borderRightColor: THEME_COLORS.BORDER,
     paddingHorizontal: SPACING_TOKENS.XS,
   },
-  statValue: { lineHeight: 26 },
-  statLabel: { marginTop: 2 },
-  menuLabel: { flexDirection: 'row', alignItems: 'center', flex: 1 },
-  menuText: { marginLeft: SPACING_TOKENS.SM },
-  section: { marginBottom: SPACING_TOKENS.SM },
+  statValue: {
+    lineHeight: 26,
+  },
+  statLabel: {
+    marginTop: 2,
+  },
+  section: {
+    marginBottom: SPACING_TOKENS.MD,
+  },
   sectionTitle: {
-    backgroundColor: THEME_COLORS.SURFACE_MUTED,
-    paddingHorizontal: SPACING_TOKENS.SM,
-    paddingVertical: SPACING_TOKENS.SM,
+    marginHorizontal: SPACING_TOKENS.LG,
+    marginBottom: SPACING_TOKENS.SM,
+    letterSpacing: 0.5,
+  },
+  sectionCard: {
+    marginHorizontal: SPACING_TOKENS.LG,
+    backgroundColor: THEME_COLORS.SURFACE,
+    borderRadius: BORDER_RADIUS_TOKENS.LG,
+    borderWidth: 1,
+    borderColor: THEME_COLORS.BORDER,
+    overflow: 'hidden',
   },
   menuItem: {
-    minHeight: 58,
+    minHeight: 56,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: THEME_COLORS.SURFACE,
-    paddingHorizontal: SPACING_TOKENS.SM,
+    paddingHorizontal: SPACING_TOKENS.MD,
     borderBottomWidth: 1,
     borderBottomColor: THEME_COLORS.BORDER,
   },
+  menuItemLast: {
+    borderBottomWidth: 0,
+  },
+  menuLabel: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  menuText: {
+    marginLeft: SPACING_TOKENS.SM,
+    color: THEME_COLORS.TEXT_PRIMARY,
+  },
   menuIconFrame: {
-    width: 38,
-    height: 38,
+    width: 36,
+    height: 36,
     borderRadius: BORDER_RADIUS_TOKENS.MD,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: THEME_COLORS.PRIMARY_LIGHT,
   },
-  detailText: { marginRight: SPACING_TOKENS.SM },
+  menuRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  detailText: {
+    marginRight: SPACING_TOKENS.SM,
+  },
   userInfo: {
     marginLeft: SPACING_TOKENS.MD,
     flex: 1,
@@ -391,10 +495,23 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: THEME_COLORS.SUCCESS,
   },
-  logoutButton: {
+  logoutWrapper: {
+    marginHorizontal: SPACING_TOKENS.LG,
     marginTop: SPACING_TOKENS.MD,
-    alignSelf: 'center',
-    minWidth: 156,
+    marginBottom: 48,
+  },
+  customLogoutButton: {
+    height: 52,
+    borderRadius: BORDER_RADIUS_TOKENS.LG,
+    backgroundColor: THEME_COLORS.ERROR_LIGHT,
+    borderWidth: 1,
+    borderColor: OVERLAY_COLORS.ERROR_BORDER,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  logoutIcon: {
+    marginRight: SPACING_TOKENS.SM,
   },
   notLoggedInText: {
     marginBottom: SPACING_TOKENS.LG,

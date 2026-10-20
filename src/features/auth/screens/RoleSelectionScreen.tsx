@@ -4,7 +4,7 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Info } from 'lucide-react-native';
 import { THEME_COLORS, SPACING_TOKENS, BORDER_RADIUS_TOKENS } from '@theme';
-import { Button, ScreenContainer, Typography } from '@ui';
+import { Button, ScreenContainer, Typography, BackButton } from '@ui';
 import type { AuthStackParamList } from '@navigation';
 import { RoleCard } from '../components';
 import { useAuth } from '../hooks';
@@ -21,18 +21,22 @@ export const RoleSelectionScreen = () => {
   const handleContinue = async () => {
     await selectRole(selectedRole);
 
-    navigation.navigate('Login');
+    navigation.navigate('Register', { role: selectedRole });
   };
 
   return (
     <ScreenContainer scrollable style={styles.container}>
+      <View style={styles.topNav}>
+        <BackButton onPress={() => navigation.goBack()} />
+      </View>
+
       <View style={styles.header}>
         <Typography variant="h1" weight="BOLD" style={styles.title}>
-          Bạn dùng app với vai trò nào?
+          Bạn đăng ký với vai trò nào?
         </Typography>
 
         <Typography variant="body1" color={THEME_COLORS.TEXT_SECONDARY} style={styles.subtitle}>
-          Chọn đúng vai trò giúp UniNest cá nhân hoá trải nghiệm của bạn.
+          Chọn đúng vai trò giúp UniNest phục vụ bạn tốt nhất.
         </Typography>
       </View>
 
@@ -77,8 +81,12 @@ const styles = StyleSheet.create({
     paddingVertical: SPACING_TOKENS.MD,
     justifyContent: 'space-between',
   },
+  topNav: {
+    paddingTop: SPACING_TOKENS.XS,
+    marginBottom: SPACING_TOKENS.SM,
+  },
   header: {
-    marginTop: SPACING_TOKENS.LG,
+    marginTop: SPACING_TOKENS.SM,
     marginBottom: SPACING_TOKENS.XL,
   },
   title: {

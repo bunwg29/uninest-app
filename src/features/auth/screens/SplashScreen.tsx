@@ -4,7 +4,7 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { THEME_COLORS, SPACING_TOKENS, BORDER_RADIUS_TOKENS } from '@theme';
 import { tokenStorage, APP_CONFIG } from '@core';
-import { Typography } from '@ui';
+import { ScreenContainer, Typography } from '@ui';
 import type { AuthStackParamList, RootStackParamList } from '@navigation';
 import { useAuth } from '../hooks';
 
@@ -12,7 +12,11 @@ const APP_LOGO = require('../../../../assets/logo.png');
 
 type NavigationProp = NativeStackNavigationProp<AuthStackParamList & RootStackParamList>;
 
-export const SplashScreen = () => {
+export interface SplashScreenProps {
+  onFinish?: () => void;
+}
+
+export const SplashScreen = ({ onFinish }: SplashScreenProps) => {
   const navigation = useNavigation<NavigationProp>();
   const { isAuthenticated, isInitialized, initialize } = useAuth();
 
@@ -26,6 +30,12 @@ export const SplashScreen = () => {
     }
 
     const timer = setTimeout(async () => {
+      if (onFinish) {
+        onFinish();
+
+        return;
+      }
+
       if (isAuthenticated) {
         navigation.reset({
           index: 0,
@@ -45,16 +55,16 @@ export const SplashScreen = () => {
       } else {
         navigation.reset({
           index: 0,
-          routes: [{ name: 'Auth', params: { screen: 'RoleSelection' } }],
+          routes: [{ name: 'Auth', params: { screen: 'Login' } }],
         });
       }
     }, 1500);
 
     return () => clearTimeout(timer);
-  }, [isInitialized, isAuthenticated, navigation]);
+  }, [isInitialized, isAuthenticated, navigation, onFinish]);
 
   return (
-    <View style={styles.container}>
+    <ScreenContainer style={styles.container} keyboardAvoiding={false}>
       <View style={styles.content}>
         <View style={styles.logoContainer}>
           <Image source={APP_LOGO} style={styles.logoImage} resizeMode="cover" />
@@ -93,7 +103,7 @@ export const SplashScreen = () => {
           {`Phiên bản ${APP_CONFIG.VERSION}`}
         </Typography>
       </View>
-    </View>
+    </ScreenContainer>
   );
 };
 

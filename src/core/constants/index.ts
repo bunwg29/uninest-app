@@ -6,12 +6,6 @@ export const USER_ROLES = {
 
 export type UserRole = (typeof USER_ROLES)[keyof typeof USER_ROLES];
 
-export const PAGINATION_DEFAULTS = {
-  DEFAULT_PAGE: 1,
-  DEFAULT_LIMIT: 20,
-  MAX_LIMIT: 100,
-} as const;
-
 export const HTTP_STATUS_CODES = {
   OK: 200,
   CREATED: 201,
@@ -27,6 +21,11 @@ export const HTTP_STATUS_CODES = {
   INTERNAL_SERVER_ERROR: 500,
   BAD_GATEWAY: 502,
   SERVICE_UNAVAILABLE: 503,
+  GATEWAY_TIMEOUT: 504,
 } as const;
 
-export type HttpStatusCode = (typeof HTTP_STATUS_CODES)[keyof typeof HTTP_STATUS_CODES];
+export const MAINTENANCE_STATUS_CODES: readonly number[] = [
+  HTTP_STATUS_CODES.BAD_GATEWAY,
+  HTTP_STATUS_CODES.SERVICE_UNAVAILABLE,
+  HTTP_STATUS_CODES.GATEWAY_TIMEOUT,
+];

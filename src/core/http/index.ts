@@ -1,8 +1,22 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
 import { API_CONFIG } from '../config';
-import { HTTP_STATUS_CODES } from '../constants';
+import { HTTP_STATUS_CODES, MAINTENANCE_STATUS_CODES } from '../constants';
 import { ApiErrorResponse } from '../types';
 import { tokenStorage } from '../storage/token';
+import { useMaintenanceStore } from '../store/maintenanceStore';
+
+export const unwrapApiData = <T>(payload: unknown): T => {
+  if (
+    typeof payload === 'object' &&
+    payload !== null &&
+    'data' in payload &&
+    (payload as { status?: boolean }).status !== undefined
+  ) {
+    return (payload as { data: T }).data;
+  }
+
+  return payload as T;
+};
 
 export class AppError extends Error {
   public readonly statusCode: number;
@@ -34,6 +48,33 @@ export const apiClient = axios.create({
 
 type CustomAxiosRequestConfig = InternalAxiosRequestConfig & {
   _retry?: boolean;
+};
+
+interface RefreshTokenPayload {
+  accessToken: string;
+  refreshToken?: string;
+}
+
+const unwrapRefreshPayload = (
+  body: RefreshTokenPayload | { data?: RefreshTokenPayload }
+): RefreshTokenPayload | undefined => {
+  if ('accessToken' in body) {
+    return body;
+  }
+
+  return body.data;
+};
+
+const parseRetryAfter = (header: unknown): number | null => {
+  if (typeof header !== 'string' || !header.trim()) return null;
+
+  const seconds = Number(header);
+
+  if (Number.isFinite(seconds)) return Date.now() + seconds * 1000;
+
+  const timestamp = Date.parse(header);
+
+  return Number.isNaN(timestamp) ? null : timestamp;
 };
 
 let isRefreshing = false;
@@ -114,18 +155,23 @@ apiClient.interceptors.response.use(
         const refreshToken = await tokenStorage.getRefreshToken();
 
         if (!refreshToken) {
-          throw new Error('No refresh token available');
+          throw new Error('Không tìm thấy mã làm mới phiên đăng nhập');
         }
 
-        const refreshResponse = await axios.post<{
-          accessToken: string;
-          refreshToken?: string;
-        }>(`${API_CONFIG.BASE_URL}/auth/refresh-token`, {
+        const refreshResponse = await axios.post<
+          RefreshTokenPayload | { data?: RefreshTokenPayload }
+        >(`${API_CONFIG.BASE_URL}/auth/refresh-token`, {
           refreshToken,
         });
 
-        const newAccessToken = refreshResponse.data.accessToken;
-        const newRefreshToken = refreshResponse.data.refreshToken || refreshToken;
+        const refreshPayload = unwrapRefreshPayload(refreshResponse.data);
+
+        if (!refreshPayload?.accessToken) {
+          throw new Error('Phản hồi làm mới phiên đăng nhập không hợp lệ');
+        }
+
+        const newAccessToken = refreshPayload.accessToken;
+        const newRefreshToken = refreshPayload.refreshToken || refreshToken;
 
         await tokenStorage.setTokens({
           accessToken: newAccessToken,
@@ -153,6 +199,16 @@ apiClient.interceptors.response.use(
       }
     }
 
+    const responseStatus = error.response?.status;
+
+    if (responseStatus && MAINTENANCE_STATUS_CODES.includes(responseStatus)) {
+      useMaintenanceStore.getState().report({
+        statusCode: responseStatus,
+        detectedAt: Date.now(),
+        expectedEndAt: parseRetryAfter(error.response?.headers['retry-after']),
+      });
+    }
+
     const errorData = error.response?.data as
       (ApiErrorResponse & { message?: string | string[] }) | undefined;
     const rawMessages = errorData?.messages ?? errorData?.message;
@@ -163,7 +219,7 @@ apiClient.interceptors.response.use(
           ? rawMessages
           : null) ||
       error.message ||
-      'An unexpected network error occurred';
+      'Đã xảy ra lỗi kết nối không mong muốn';
 
     const statusCode =
       (typeof errorData?.statusCode === 'number' ? errorData.statusCode : null) ||

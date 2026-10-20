@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
-import { View, TouchableOpacity, StyleSheet, ViewStyle, StyleProp } from 'react-native';
-import { ChevronLeft } from 'lucide-react-native';
+import { View, StyleSheet, ViewStyle, StyleProp } from 'react-native';
 import { THEME_COLORS, SPACING_TOKENS } from '@theme';
+import { BackButton } from '../atoms/BackButton';
 import { Typography } from '../atoms/Typography';
 
 export interface HeaderBarProps {
@@ -27,18 +27,7 @@ export const HeaderBar = ({
 
   return (
     <View style={[styles.container, hasBottomBorder && styles.bottomBorder, style]}>
-      <View style={styles.leftSlot}>
-        {onBack ? (
-          <TouchableOpacity
-            style={styles.backButton}
-            onPress={onBack}
-            activeOpacity={0.7}
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-          >
-            <ChevronLeft size={24} color={THEME_COLORS.TEXT_PRIMARY} />
-          </TouchableOpacity>
-        ) : null}
-      </View>
+      <View style={styles.leftSlot}>{onBack ? <BackButton onPress={onBack} /> : null}</View>
 
       <View style={[styles.titleSlot, isCentered && styles.centeredTitleSlot]}>
         <Typography
@@ -70,12 +59,13 @@ export const HeaderBar = ({
 
 const styles = StyleSheet.create({
   container: {
-    height: 56,
+    minHeight: 56,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     backgroundColor: THEME_COLORS.SURFACE,
     paddingHorizontal: SPACING_TOKENS.MD,
+    paddingVertical: SPACING_TOKENS.XS,
   },
   bottomBorder: {
     borderBottomWidth: 1,
@@ -84,12 +74,6 @@ const styles = StyleSheet.create({
   leftSlot: {
     width: 44,
     alignItems: 'flex-start',
-    justifyContent: 'center',
-  },
-  backButton: {
-    width: 40,
-    height: 40,
-    alignItems: 'center',
     justifyContent: 'center',
   },
   titleSlot: {

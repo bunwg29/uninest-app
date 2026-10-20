@@ -1,14 +1,23 @@
 import type { NavigatorScreenParams } from '@react-navigation/native';
 import type { UserRole } from '@features/auth';
+import type { ForumCategory } from '@features/forum';
+import type { LandlordListing } from '@features/listings';
+import type { HelpTopicId, LegalTab } from '@features/support';
 
 export type ListingPostStackParamList = {
-  ListingPostBasicInfo: undefined;
+  ListingPostBasicInfo: { listingId?: string; listing?: LandlordListing } | undefined;
   ListingPostImages: undefined;
   ListingPostLocation: undefined;
   ListingPostAmenities: undefined;
   ListingPostSchedule: undefined;
   ListingPostPreview: undefined;
-  ListingPostSuccess: { listingId: string };
+  ListingPostSuccess: {
+    listingId: string;
+    title?: string;
+    price?: number;
+    area?: number;
+    imageUri?: string;
+  };
 };
 
 export type AuthStackParamList = {
@@ -31,9 +40,22 @@ export type AuthStackParamList = {
   };
   ForgotPassword: undefined;
   ResetPassword: { target: string; otpCode: string };
+  Terms: { tab?: LegalTab } | undefined;
 };
 
 export type MainTabParamList = {
+  Home: undefined;
+  Search: undefined;
+  AiChat: undefined;
+  Messages: undefined;
+  Profile: undefined;
+  Overview?: undefined;
+  Listings?: undefined;
+  CreateListing?: undefined;
+  Appointments?: undefined;
+};
+
+export type LandlordTabParamList = {
   Overview: undefined;
   Listings: undefined;
   CreateListing: undefined;
@@ -46,4 +68,35 @@ export type RootStackParamList = {
   Auth: NavigatorScreenParams<AuthStackParamList> | undefined;
   Main: NavigatorScreenParams<MainTabParamList> | undefined;
   ListingPost: NavigatorScreenParams<ListingPostStackParamList> | undefined;
+  ProfileEdit: undefined;
+  ChangePassword: undefined;
+  Settings: undefined;
+  ChatRoom: { conversationId: string };
+  ChatImagePreview: { conversationId: string; counterpartName: string; imageUris: string[] };
+  LandlordListingDetail: { listing: LandlordListing };
+  StudentListingPreview: { listing: LandlordListing };
+  BookingNew: { resourceId: string };
+  BookingConfirm: undefined;
+  BookingSuccess: { id: string };
+  MyBookings: undefined;
+  BookingDetail: { id: string };
+  CancelBooking: { id: string };
+  BookingHold: { id: string };
+  OtpVerification: {
+    target: string;
+    flow?: 'register' | 'forgot_password';
+    role?: UserRole;
+    returnToChangePassword?: boolean;
+  };
+  ResetPassword: { target: string; otpCode: string };
+  ListingDetail: { id: string };
+  LandlordPublicProfile: { landlordId: string; isPreview?: boolean };
+  Comparison: undefined;
+  SavedRooms: undefined;
+  LandlordVerification: undefined;
+  Community: { category?: ForumCategory } | undefined;
+  ForumPostDetail: { postId: string };
+  ForumPostComposer: { postId?: string; category?: ForumCategory } | undefined;
+  Terms: { tab?: LegalTab } | undefined;
+  HelpCenter: { topicId?: HelpTopicId } | undefined;
 };

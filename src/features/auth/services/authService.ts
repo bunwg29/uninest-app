@@ -1,4 +1,4 @@
-import { apiClient, tokenStorage, getDeviceInfo } from '@core';
+import { apiClient, tokenStorage, getDeviceInfo, unwrapApiData } from '@core';
 import type {
   AuthResponse,
   AuthTokens,
@@ -35,19 +35,6 @@ interface BackendAuthResult {
   user: BackendUser;
 }
 
-const unwrapData = <T>(payload: unknown): T => {
-  if (
-    typeof payload === 'object' &&
-    payload !== null &&
-    'data' in payload &&
-    (payload as { status?: boolean }).status !== undefined
-  ) {
-    return (payload as { data: T }).data;
-  }
-
-  return payload as T;
-};
-
 const mapBackendUser = (user: BackendUser): AuthUser => {
   let role: UserRole = 'student';
 
@@ -78,7 +65,25 @@ const mapBackendTokens = (result: BackendAuthResult): AuthTokens => ({
   expiresIn: result.expiresIn,
 });
 
+export type ContactKind = 'phone' | 'email';
+
 export const authService = {
+  async requestContactOtp(
+    kind: ContactKind,
+    value: string
+  ): Promise<{ requestId: string; expiresIn: number }> {
+    const response = await apiClient.post(
+      `/users/me/${kind}/request-otp`,
+      kind === 'phone' ? { newPhone: value } : { newEmail: value }
+    );
+
+    return unwrapApiData<{ requestId: string; expiresIn: number }>(response.data);
+  },
+
+  async verifyContactOtp(kind: ContactKind, requestId: string, otp: string): Promise<void> {
+    await apiClient.post(`/users/me/${kind}/verify-otp`, { requestId, otp });
+  },
+
   async login(payload: LoginPayload): Promise<AuthResponse> {
     const { deviceName, deviceId } = await getDeviceInfo();
 
@@ -89,7 +94,7 @@ export const authService = {
       deviceId,
     });
 
-    const result = unwrapData<BackendAuthResult>(response.data);
+    const result = unwrapApiData<BackendAuthResult>(response.data);
 
     return {
       user: mapBackendUser(result.user),
@@ -111,9 +116,10 @@ export const authService = {
       provinceCode: payload.provinceCode || undefined,
       wardCode: payload.wardCode || undefined,
       streetAddress: payload.streetAddress?.trim() || undefined,
+      universityCodes: payload.universityCodes?.length ? payload.universityCodes : undefined,
     });
 
-    const result = unwrapData<{ message: string }>(response.data);
+    const result = unwrapApiData<{ message: string }>(response.data);
 
     return {
       success: true,
@@ -133,7 +139,7 @@ export const authService = {
       deviceId,
     });
 
-    const result = unwrapData<BackendAuthResult>(response.data);
+    const result = unwrapApiData<BackendAuthResult>(response.data);
 
     return {
       user: mapBackendUser(result.user),
@@ -150,7 +156,7 @@ export const authService = {
       type,
     });
 
-    const result = unwrapData<{ message: string }>(response.data);
+    const result = unwrapApiData<{ message: string }>(response.data);
 
     return {
       success: true,
@@ -165,7 +171,7 @@ export const authService = {
       identifier: payload.phoneNumber.trim(),
     });
 
-    const result = unwrapData<{ message: string }>(response.data);
+    const result = unwrapApiData<{ message: string }>(response.data);
 
     return {
       success: true,
@@ -183,9 +189,20 @@ export const authService = {
     return { success: true };
   },
 
+  async submitLandlordVerification(payload: {
+    identityNumber: string;
+    provinceCode?: string;
+    wardCode?: string;
+    streetAddress?: string;
+  }): Promise<Profile> {
+    const response = await apiClient.post('/profile/landlord-verification', payload);
+
+    return unwrapApiData<Profile>(response.data);
+  },
+
   async getProfile(): Promise<Profile> {
     const response = await apiClient.get('/profile');
-    const result = unwrapData<Profile>(response.data);
+    const result = unwrapApiData<Profile>(response.data);
 
     return result;
   },
@@ -193,7 +210,7 @@ export const authService = {
   async updateProfile(payload: UpdateProfilePayload): Promise<Profile> {
     const response = await apiClient.patch('/profile', payload);
 
-    return unwrapData<Profile>(response.data);
+    return unwrapApiData<Profile>(response.data);
   },
 
   async presignAvatar(fileName: string, contentType: string, fileSize: number) {
@@ -203,21 +220,19 @@ export const authService = {
       fileSize,
     });
 
-    return unwrapData<{ uploadUrl: string; objectKey: string; expiresIn: number }>(response.data);
+    return unwrapApiData<{ uploadUrl: string; objectKey: string; expiresIn: number }>(
+      response.data
+    );
   },
 
   async confirmAvatar(objectKey: string): Promise<{ avatarUrl: string }> {
     const response = await apiClient.post('/profile/avatar/confirm', { objectKey });
 
-    return unwrapData<{ avatarUrl: string }>(response.data);
+    return unwrapApiData<{ avatarUrl: string }>(response.data);
   },
 
   async changePassword(payload: ChangePasswordPayload): Promise<void> {
-    const deviceId = await tokenStorage.getDeviceId();
-
-    await apiClient.patch('/auth/change-password', payload, {
-      headers: deviceId ? { 'x-device-id': deviceId } : undefined,
-    });
+    await apiClient.post('/users/me/change-password', payload);
   },
 
   async logout(): Promise<void> {
@@ -230,9 +245,7 @@ export const authService = {
           refreshToken,
           deviceId: deviceId || undefined,
         });
-      } catch {
-        // ignore logout errors
-      }
+      } catch {}
     }
   },
 };

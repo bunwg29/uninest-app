@@ -1,16 +1,18 @@
 import type { ReactNode, ReactElement } from 'react';
 import {
   View,
-  ScrollView,
-  KeyboardAvoidingView,
   Platform,
   StyleSheet,
+  StatusBar,
   ViewStyle,
   StyleProp,
   RefreshControlProps,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { THEME_COLORS, SPACING_TOKENS } from '@theme';
+import { RESPONSIVE_MAX_CONTENT_WIDTH } from '@hooks';
+import { KeyboardAvoidingContainer } from './KeyboardAvoidingContainer';
+import { KeyboardAwareScrollView } from './KeyboardAwareScrollView';
 
 export type ScreenPadding = 'none' | 'sm' | 'md' | 'lg';
 
@@ -24,6 +26,7 @@ export interface ScreenContainerProps {
   contentContainerStyle?: StyleProp<ViewStyle>;
   applyTopInset?: boolean;
   applyBottomInset?: boolean;
+  maxContentWidth?: number | null;
 }
 
 export const ScreenContainer = ({
@@ -36,37 +39,57 @@ export const ScreenContainer = ({
   contentContainerStyle,
   applyTopInset = true,
   applyBottomInset = true,
+  maxContentWidth = RESPONSIVE_MAX_CONTENT_WIDTH,
 }: ScreenContainerProps) => {
   const insets = useSafeAreaInsets();
+  const flatStyle = StyleSheet.flatten(style);
+  const extraPaddingTop = Number(flatStyle?.paddingTop ?? flatStyle?.paddingVertical ?? 0);
+  const extraPaddingBottom = Number(flatStyle?.paddingBottom ?? flatStyle?.paddingVertical ?? 0);
+
+  const topInset = applyTopInset
+    ? Math.max(insets.top, Platform.OS === 'android' ? (StatusBar.currentHeight ?? 0) : 0)
+    : 0;
 
   const safePaddingStyle: ViewStyle = {
-    paddingTop: applyTopInset ? insets.top : 0,
-    paddingBottom: applyBottomInset ? insets.bottom : 0,
+    paddingTop: topInset + extraPaddingTop,
+    paddingBottom: (applyBottomInset ? insets.bottom : 0) + extraPaddingBottom,
+  };
+  const responsiveContentStyle: ViewStyle = {
+    width: '100%',
+    maxWidth: maxContentWidth ?? undefined,
+    alignSelf: 'center',
   };
 
   const content = scrollable ? (
-    <ScrollView
+    <KeyboardAwareScrollView
       style={styles.flexOne}
-      contentContainerStyle={[PADDING_STYLES[padding], contentContainerStyle]}
+      contentContainerStyle={[
+        responsiveContentStyle,
+        PADDING_STYLES[padding],
+        contentContainerStyle,
+      ]}
       showsVerticalScrollIndicator={false}
       refreshControl={refreshControl}
-      keyboardShouldPersistTaps="handled"
     >
       {children}
-    </ScrollView>
+    </KeyboardAwareScrollView>
   ) : (
-    <View style={[styles.flexOne, PADDING_STYLES[padding], contentContainerStyle]}>{children}</View>
+    <View
+      style={[
+        styles.flexOne,
+        responsiveContentStyle,
+        PADDING_STYLES[padding],
+        contentContainerStyle,
+      ]}
+    >
+      {children}
+    </View>
   );
 
   return (
-    <View style={[styles.container, safePaddingStyle, style]}>
+    <View style={[styles.container, style, safePaddingStyle]}>
       {keyboardAvoiding ? (
-        <KeyboardAvoidingView
-          style={styles.flexOne}
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        >
-          {content}
-        </KeyboardAvoidingView>
+        <KeyboardAvoidingContainer style={styles.flexOne}>{content}</KeyboardAvoidingContainer>
       ) : (
         content
       )}

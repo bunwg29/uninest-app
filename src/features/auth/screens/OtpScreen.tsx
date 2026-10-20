@@ -3,9 +3,9 @@ import { View, StyleSheet, TouchableOpacity, Text } from 'react-native';
 
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { AlertCircle, AlertTriangle, ChevronLeft, ShieldCheck } from 'lucide-react-native';
+import { AlertCircle, AlertTriangle, ShieldCheck } from 'lucide-react-native';
 import { THEME_COLORS, SPACING_TOKENS, BORDER_RADIUS_TOKENS } from '@theme';
-import { Button, ScreenContainer, Typography } from '@ui';
+import { Button, ScreenContainer, Typography, BackButton } from '@ui';
 import { useToast } from '@hooks';
 import type { AuthStackParamList, RootStackParamList } from '@navigation';
 import { OtpInput } from '../components';
@@ -101,11 +101,6 @@ export const OtpScreen = () => {
       });
 
       toast.success('Xác thực tài khoản thành công!');
-
-      navigation.reset({
-        index: 0,
-        routes: [{ name: 'Main' }],
-      });
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Đã có lỗi xảy ra. Vui lòng thử lại.';
 
@@ -126,9 +121,7 @@ export const OtpScreen = () => {
     <ScreenContainer scrollable style={styles.container}>
       <View style={styles.header}>
         <View style={styles.topRow}>
-          <TouchableOpacity onPress={handleBack} style={styles.backButton}>
-            <ChevronLeft size={24} color={THEME_COLORS.TEXT_PRIMARY} />
-          </TouchableOpacity>
+          <BackButton onPress={handleBack} />
 
           <View style={styles.stepBadge}>
             <Typography variant="caption" weight="SEMIBOLD" color={THEME_COLORS.PRIMARY}>
@@ -241,11 +234,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: SPACING_TOKENS.SM,
-  },
-  backButton: {
-    marginLeft: -SPACING_TOKENS.XS,
-    padding: SPACING_TOKENS.XS,
+    paddingTop: SPACING_TOKENS.XS,
+    marginBottom: SPACING_TOKENS.MD,
   },
   stepBadge: {
     backgroundColor: THEME_COLORS.PRIMARY_LIGHT,

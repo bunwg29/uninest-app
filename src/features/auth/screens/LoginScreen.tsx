@@ -5,7 +5,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Phone, Mail, Lock } from 'lucide-react-native';
-import { THEME_COLORS, SPACING_TOKENS, BORDER_RADIUS_TOKENS } from '@theme';
+import { THEME_COLORS, SPACING_TOKENS, BORDER_RADIUS_TOKENS, OVERLAY_COLORS } from '@theme';
 import { Button, Divider, Input, ScreenContainer, Typography } from '@ui';
 import { useToast } from '@hooks';
 import type { AuthStackParamList, RootStackParamList } from '@navigation';
@@ -17,7 +17,7 @@ type NavigationProp = NativeStackNavigationProp<AuthStackParamList & RootStackPa
 
 export const LoginScreen = () => {
   const navigation = useNavigation<NavigationProp>();
-  const { login, role, isLoading, error, clearError } = useAuth();
+  const { login, isLoading, error, clearError } = useAuth();
   const toast = useToast();
 
   const [loginType, setLoginType] = useState<LoginIdentifierType>('phone');
@@ -50,11 +50,6 @@ export const LoginScreen = () => {
       });
 
       toast.success('Đăng nhập thành công!');
-
-      navigation.reset({
-        index: 0,
-        routes: [{ name: 'Main' }],
-      });
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Đã có lỗi xảy ra');
     }
@@ -62,7 +57,7 @@ export const LoginScreen = () => {
 
   const handleGoToRegister = () => {
     clearError();
-    navigation.navigate('Register', { role: role || 'student' });
+    navigation.navigate('RoleSelection');
   };
 
   const handleGoToForgotPassword = () => {
@@ -238,7 +233,7 @@ const styles = StyleSheet.create({
   },
   tabButtonActive: {
     backgroundColor: THEME_COLORS.SURFACE,
-    shadowColor: '#000',
+    shadowColor: OVERLAY_COLORS.SHADOW,
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
     shadowRadius: 2,

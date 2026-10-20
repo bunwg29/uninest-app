@@ -1,9 +1,9 @@
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   FlatList,
   Image,
+  Keyboard,
   Modal as RNModal,
   RefreshControl,
   StyleSheet,
@@ -14,16 +14,37 @@ import {
 import {
   AlertCircle,
   ChevronRight,
+  Clock3,
   EllipsisVertical,
   ImageOff,
-  Plus,
+  Info,
   Search,
   X,
 } from 'lucide-react-native';
-import { THEME_COLORS, BORDER_RADIUS_TOKENS, SPACING_TOKENS } from '@theme';
-import { useLandlordListingMutation, useLandlordListings } from '../hooks';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { RootStackParamList } from '@navigation';
+import { formatVND } from '@core';
+import { THEME_COLORS, BORDER_RADIUS_TOKENS, OVERLAY_COLORS, SPACING_TOKENS } from '@theme';
+import {
+  useLandlordListingDetailMutation,
+  useLandlordListingMutation,
+  useLandlordListings,
+} from '../hooks';
 import type { LandlordListing, LandlordListingStatus } from '../types';
-import { Badge, Button, EmptyState, Modal, SkeletonBox, Typography } from '@ui';
+import {
+  Button,
+  EmptyState,
+  GradientView,
+  LoadingOverlay,
+  Modal,
+  ScreenContainer,
+  SkeletonBox,
+  Typography,
+} from '@ui';
+import { useResponsiveLayout, useToast } from '@hooks';
+import { useListingPostStore } from '../store/listingPostStore';
+import { LANDLORD_STATUS_LABELS, LANDLORD_STATUS_TONES, LandlordStatusPill } from '../components';
 
 type StatusTab = {
   key: LandlordListingStatus;
@@ -35,80 +56,153 @@ const STATUS_TABS: StatusTab[] = [
   { key: 'pending', label: 'Chờ duyệt' },
   { key: 'rejected', label: 'Bị từ chối' },
   { key: 'hidden', label: 'Đã ẩn' },
-  { key: 'expired', label: 'Hết hạn' },
+  { key: 'expired', label: 'Đã cho thuê' },
+  { key: 'paused', label: 'Ngừng nhận yêu cầu' },
 ];
 
-const STATUS_LABELS: Record<LandlordListingStatus, string> = {
-  published: 'ĐANG HIỂN THỊ',
-  pending: 'CHỜ DUYỆT',
-  rejected: 'BỊ TỪ CHỐI',
-  hidden: 'ĐÃ ẨN',
-  expired: 'HẾT HẠN',
-};
-
-const STATUS_VARIANTS: Record<LandlordListingStatus, 'available' | 'holding' | 'neutral'> = {
-  published: 'available',
-  pending: 'holding',
-  rejected: 'holding',
-  hidden: 'neutral',
-  expired: 'neutral',
-};
-
 type ListingAction = {
-  key: 'edit' | 'hide' | 'feature' | 'delete' | 'republish' | 'reason' | 'cancel';
+  key: 'viewDetail' | 'edit' | 'hide' | 'delete' | 'republish' | 'cancel';
   label: string;
   danger?: boolean;
 };
 
 export const LandlordListingsScreen = () => {
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const toast = useToast();
+  const mutationLockRef = useRef(false);
   const [activeStatus, setActiveStatus] = useState<LandlordListingStatus>('published');
   const [selectedListing, setSelectedListing] = useState<LandlordListing | null>(null);
-  const [confirmAction, setConfirmAction] = useState<'hide' | 'delete' | null>(null);
+  const [confirmAction, setConfirmAction] = useState<'hide' | 'delete' | 'cancel' | null>(null);
   const [searchText, setSearchText] = useState('');
   const [isSearchVisible, setIsSearchVisible] = useState(false);
 
-  const listingsQuery = useLandlordListings(activeStatus);
+  const normalizedSearchText = searchText.trim();
+  const listingsQuery = useLandlordListings(activeStatus, normalizedSearchText);
   const listingMutation = useLandlordListingMutation();
+  const listingDetailMutation = useLandlordListingDetailMutation();
   const listings = useMemo(
-    () =>
-      (listingsQuery.data?.pages.flatMap((page) => page.items) || []).filter((listing) =>
-        listing.title.toLowerCase().includes(searchText.trim().toLowerCase())
-      ),
-    [listingsQuery.data, searchText]
+    () => listingsQuery.data?.pages.flatMap((page) => page.items) || [],
+    [listingsQuery.data]
   );
   const counters = listingsQuery.data?.pages[0]?.counters;
+  const hasAnyListings = counters ? Object.values(counters).some((count) => count > 0) : false;
+
+  const refetchRef = useRef(listingsQuery.refetch);
+
+  refetchRef.current = listingsQuery.refetch;
+
+  useFocusEffect(
+    useCallback(() => {
+      void refetchRef.current();
+    }, [])
+  );
 
   const handleRefresh = () => {
     void listingsQuery.refetch();
   };
 
-  const handleConfirmAction = () => {
-    if (!selectedListing || !confirmAction) return;
+  const handleToggleSearch = () => {
+    if (isSearchVisible) {
+      Keyboard.dismiss();
+      setSearchText('');
+      setIsSearchVisible(false);
 
+      return;
+    }
+
+    setIsSearchVisible(true);
+  };
+
+  const handleCloseSearch = () => {
+    Keyboard.dismiss();
+    setSearchText('');
+    setIsSearchVisible(false);
+  };
+
+  const handleCreateListing = () => {
+    useListingPostStore.getState().initCreate();
+    navigation.getParent()?.navigate('ListingPost', {
+      screen: 'ListingPostBasicInfo',
+      params: undefined,
+    });
+  };
+
+  const handleEditListing = async (listing: LandlordListing) => {
+    try {
+      const listingDetail = await listingDetailMutation.mutateAsync(listing.id);
+
+      useListingPostStore.getState().initEdit(listingDetail);
+      navigation.getParent()?.navigate('ListingPost', {
+        screen: 'ListingPostBasicInfo',
+        params: { listingId: listing.id, listing: listingDetail },
+      });
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Không thể tải thông tin tin đăng');
+    }
+  };
+
+  const executeListingMutation = (
+    action: 'hide' | 'republish' | 'delete',
+    listingId: string,
+    onSuccess?: () => void
+  ) => {
+    if (mutationLockRef.current) return;
+
+    mutationLockRef.current = true;
     listingMutation.mutate(
-      { action: confirmAction, id: selectedListing.id },
+      { action, id: listingId },
       {
-        onSuccess: () => {
-          setConfirmAction(null);
-          setSelectedListing(null);
+        onSuccess: (result) => {
+          const wasPaused =
+            action === 'delete' && typeof result === 'object' && result?.deleted === false;
+          const successMessage = wasPaused
+            ? 'Tin đã có lịch hẹn hoặc giữ chỗ nên chuyển sang "Ngừng nhận yêu cầu"'
+            : action === 'hide'
+              ? 'Đã ẩn tin đăng'
+              : action === 'republish'
+                ? 'Đã hiển thị lại tin đăng'
+                : 'Đã xoá tin đăng';
+
+          toast.success(successMessage);
+          onSuccess?.();
+        },
+        onError: (error) => {
+          toast.error(error instanceof Error ? error.message : 'Không thể cập nhật tin đăng');
+        },
+        onSettled: () => {
+          mutationLockRef.current = false;
         },
       }
     );
   };
 
+  const handleConfirmAction = () => {
+    if (!selectedListing || !confirmAction) return;
+
+    executeListingMutation(
+      confirmAction === 'cancel' ? 'delete' : confirmAction,
+      selectedListing.id,
+      () => {
+        setConfirmAction(null);
+        setSelectedListing(null);
+      }
+    );
+  };
+
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <Typography variant="h1" weight="BOLD">
+    <ScreenContainer style={styles.container} applyBottomInset={false} keyboardAvoiding={false}>
+      <View style={[styles.header, isSearchVisible && styles.headerWithSearch]}>
+        <Typography variant="h1" weight="BOLD" style={styles.headerTitle}>
           Tin đăng
         </Typography>
 
         <TouchableOpacity
+          style={styles.searchButton}
           accessibilityLabel="Tìm kiếm tin đăng"
-          onPress={() => setIsSearchVisible((visible) => !visible)}
+          onPress={handleToggleSearch}
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
-          <Search size={22} color={THEME_COLORS.TEXT_PRIMARY} />
+          <Search size={20} color={THEME_COLORS.TEXT_PRIMARY} />
         </TouchableOpacity>
       </View>
 
@@ -123,7 +217,11 @@ export const LandlordListingsScreen = () => {
             placeholderTextColor={THEME_COLORS.TEXT_PLACEHOLDER}
             style={styles.searchField}
           />
-          <TouchableOpacity onPress={() => setSearchText('')} accessibilityLabel="Xoá tìm kiếm">
+          <TouchableOpacity
+            style={styles.closeSearchButton}
+            onPress={handleCloseSearch}
+            accessibilityLabel="Đóng tìm kiếm"
+          >
             <X size={18} color={THEME_COLORS.TEXT_MUTED} />
           </TouchableOpacity>
         </View>
@@ -147,7 +245,9 @@ export const LandlordListingsScreen = () => {
           renderItem={({ item }) => (
             <LandlordListingCard
               listing={item}
-              onPress={() => setSelectedListing(item)}
+              onPress={() =>
+                navigation.getParent()?.navigate('LandlordListingDetail', { listing: item })
+              }
               onMenuPress={() => setSelectedListing(item)}
             />
           )}
@@ -166,10 +266,28 @@ export const LandlordListingsScreen = () => {
               <ListingsSkeleton />
             ) : (
               <EmptyState
-                title={getEmptyTitle(activeStatus)}
-                description={getEmptyDescription(activeStatus)}
-                actionTitle={activeStatus === 'published' ? 'Đăng tin ngay' : undefined}
-                onAction={activeStatus === 'published' ? () => undefined : undefined}
+                title={
+                  normalizedSearchText
+                    ? 'Không tìm thấy tin đăng'
+                    : hasAnyListings
+                      ? getEmptyTitle(activeStatus)
+                      : 'Chưa có tin đăng nào'
+                }
+                description={
+                  normalizedSearchText
+                    ? 'Thử tìm với từ khóa khác.'
+                    : getEmptyDescription(activeStatus)
+                }
+                actionTitle={
+                  activeStatus === 'published' && !normalizedSearchText
+                    ? 'Đăng tin ngay'
+                    : undefined
+                }
+                onAction={
+                  activeStatus === 'published' && !normalizedSearchText
+                    ? handleCreateListing
+                    : undefined
+                }
                 style={styles.emptyState}
               />
             )
@@ -195,29 +313,29 @@ export const LandlordListingsScreen = () => {
         />
       )}
 
-      <TouchableOpacity
-        accessibilityLabel="Tạo tin đăng mới"
-        style={styles.fab}
-        onPress={() => undefined}
-        activeOpacity={0.85}
-      >
-        <Plus size={28} color={THEME_COLORS.WHITE} />
-      </TouchableOpacity>
-
       <ListingActionSheet
-        listing={selectedListing}
+        listing={confirmAction ? null : selectedListing}
         onClose={() => setSelectedListing(null)}
         onConfirmAction={setConfirmAction}
         onAction={(action) => {
           if (action === 'republish') {
-            listingMutation.mutate({ action, id: selectedListing?.id || '' });
+            if (selectedListing) executeListingMutation(action, selectedListing.id);
+
             setSelectedListing(null);
 
             return;
           }
 
-          if (action === 'reason') {
-            Alert.alert('Lý do từ chối', selectedListing?.rejectionReason || 'Chưa có thông tin lý do từ chối.');
+          if (action === 'viewDetail' && selectedListing) {
+            navigation.getParent()?.navigate('ListingDetail', { id: selectedListing.id });
+            setSelectedListing(null);
+
+            return;
+          }
+
+          if (action === 'edit' && selectedListing) {
+            void handleEditListing(selectedListing);
+            setSelectedListing(null);
 
             return;
           }
@@ -228,19 +346,40 @@ export const LandlordListingsScreen = () => {
 
       <Modal
         isVisible={Boolean(confirmAction)}
-        onClose={() => setConfirmAction(null)}
-        title={confirmAction === 'delete' ? 'Xoá tin đăng?' : 'Ẩn tin đăng?'}
+        onClose={() => {
+          setConfirmAction(null);
+          setSelectedListing(null);
+        }}
+        title={
+          confirmAction === 'delete'
+            ? 'Xoá tin đăng?'
+            : confirmAction === 'cancel'
+              ? 'Huỷ gửi duyệt?'
+              : 'Ẩn tin đăng?'
+        }
         description={
           confirmAction === 'delete'
             ? 'Tin đăng sẽ bị xoá khỏi danh sách của bạn và không thể khôi phục.'
-            : 'Tin đăng sẽ không còn hiển thị với người tìm phòng.'
+            : confirmAction === 'cancel'
+              ? 'Tin đăng sẽ được huỷ khỏi hàng chờ duyệt.'
+              : 'Tin đăng sẽ không còn hiển thị với người tìm phòng.'
         }
-        confirmText={confirmAction === 'delete' ? 'Xoá tin' : 'Ẩn tin'}
+        confirmText={
+          confirmAction === 'delete'
+            ? 'Xoá tin'
+            : confirmAction === 'cancel'
+              ? 'Huỷ gửi duyệt'
+              : 'Ẩn tin'
+        }
         confirmVariant="danger"
         onConfirm={handleConfirmAction}
         isConfirmLoading={listingMutation.isPending}
       />
-    </View>
+
+      {(listingMutation.isPending && !confirmAction) || listingDetailMutation.isPending ? (
+        <LoadingOverlay isFullScreen message="Đang cập nhật tin đăng..." />
+      ) : null}
+    </ScreenContainer>
   );
 };
 
@@ -262,21 +401,23 @@ const StatusTabs = ({
       contentContainerStyle={styles.tabsContent}
       renderItem={({ item }) => {
         const isActive = item.key === activeStatus;
-        const count = counters?.[item.key] ?? 0;
+        const count = counters?.[item.key];
 
         return (
           <TouchableOpacity
             style={[styles.tab, isActive && styles.activeTab]}
             onPress={() => onChange(item.key)}
+            accessibilityRole="button"
+            accessibilityState={{ selected: isActive }}
           >
             <Typography
-              variant="caption"
-              weight={isActive ? 'SEMIBOLD' : 'REGULAR'}
-              color={isActive ? THEME_COLORS.PRIMARY : THEME_COLORS.TEXT_MUTED}
+              variant="body2"
+              weight={isActive ? 'BOLD' : 'MEDIUM'}
+              color={isActive ? THEME_COLORS.PRIMARY_DARK : THEME_COLORS.TEXT_SECONDARY}
+              style={styles.tabLabel}
             >
-              {item.label}
+              {count ? `${item.label} ${count}` : item.label}
             </Typography>
-            <Badge label={count} variant={isActive ? 'primary' : 'neutral'} size="sm" />
           </TouchableOpacity>
         );
       }}
@@ -294,11 +435,18 @@ const LandlordListingCard = ({
   onMenuPress: () => void;
 }) => {
   const [hasImageError, setHasImageError] = useState(false);
+  const { isCompact } = useResponsiveLayout();
+  const isHolding = listing.holdingStatus && listing.status === 'published';
+  const imageTip = getImageTip(listing);
 
   return (
-    <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.9}>
+    <TouchableOpacity
+      style={[styles.card, isCompact && styles.cardCompact]}
+      onPress={onPress}
+      activeOpacity={0.9}
+    >
       <View style={styles.cardTopRow}>
-        <View style={styles.thumbnail}>
+        <View style={[styles.thumbnail, isCompact && styles.thumbnailCompact]}>
           {listing.imageUrl && !hasImageError ? (
             <Image
               source={{ uri: listing.imageUrl }}
@@ -307,48 +455,74 @@ const LandlordListingCard = ({
               onError={() => setHasImageError(true)}
             />
           ) : (
-            <View style={styles.thumbnailPlaceholder}>
+            <GradientView
+              colors={[OVERLAY_COLORS.FIELD_BORDER, THEME_COLORS.SURFACE_MUTED]}
+              style={styles.thumbnailPlaceholder}
+            >
               <ImageOff size={22} color={THEME_COLORS.TEXT_PLACEHOLDER} />
-            </View>
+            </GradientView>
           )}
         </View>
 
         <View style={styles.cardDetails}>
           <View style={styles.badgesRow}>
-            <Badge
-              label={STATUS_LABELS[listing.status]}
-              variant={listing.status === 'rejected' ? 'danger' : STATUS_VARIANTS[listing.status]}
-              size="sm"
-            />
-            {listing.isFeatured ? <Badge label="NỔI BẬT" variant="featured" size="sm" /> : null}
+            {isHolding ? (
+              <LandlordStatusPill label="Đang giữ chỗ" tone="warning" />
+            ) : (
+              <LandlordStatusPill
+                label={LANDLORD_STATUS_LABELS[listing.status]}
+                tone={LANDLORD_STATUS_TONES[listing.status]}
+              />
+            )}
+            {listing.isFeatured ? <LandlordStatusPill label="Nổi bật" tone="featured" /> : null}
           </View>
-          <Typography variant="body1" weight="SEMIBOLD" numberOfLines={2} style={styles.cardTitle}>
+          <Typography variant="body2" weight="BOLD" numberOfLines={2} style={styles.cardTitle}>
             {listing.title}
           </Typography>
-          <Typography variant="body2" weight="SEMIBOLD" colorKey="TEXT_SECONDARY">
-            {formatCurrency(listing.price)} ₫/tháng · {listing.area} m²
-          </Typography>
+          <View style={styles.priceRow}>
+            <Typography variant="body1" weight="BOLD" colorKey="PRIMARY_DARK">
+              {formatListingPrice(listing.price)}
+            </Typography>
+            <Typography variant="caption" weight="MEDIUM" colorKey="TEXT_PLACEHOLDER">
+              {`/tháng${Number.isFinite(listing.area) ? ` · ${listing.area} m²` : ''}`}
+            </Typography>
+          </View>
         </View>
 
         <TouchableOpacity
+          style={styles.menuButton}
           onPress={onMenuPress}
-          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          accessibilityLabel={`Thao tác với tin ${listing.title}`}
+          hitSlop={SPACING_TOKENS.XS}
         >
-          <EllipsisVertical size={21} color={THEME_COLORS.TEXT_MUTED} />
+          <EllipsisVertical size={20} color={THEME_COLORS.TEXT_MUTED} />
         </TouchableOpacity>
       </View>
 
-      <View style={styles.statsRow}>
-        <Stat label="Lượt xem" value={listing.viewCount} />
-        <Stat label="Liên hệ" value={listing.contactCount} />
-        <Stat label="Đã lưu" value={listing.saveCount} />
-      </View>
+      {listing.status === 'published' && Number.isFinite(listing.viewCount) ? (
+        <View style={styles.statsRow}>
+          <Stat label="Lượt xem" value={listing.viewCount} />
+          <View style={styles.statDivider} />
+          <Stat label="Liên hệ" value={listing.contactCount ?? 0} />
+          <View style={styles.statDivider} />
+          <Stat label="Đã lưu" value={listing.saveCount ?? 0} />
+        </View>
+      ) : null}
 
-      {listing.holdingStatus ? (
-        <View style={styles.holdingBanner}>
-          <Typography variant="caption" colorKey="WARNING">
-            Bạn {listing.holderName} giữ chỗ tới {listing.holdExpireDate} · đã cọc{' '}
-            {formatCurrency(listing.depositAmount || 0)} ₫
+      {isHolding && listing.holderName ? (
+        <View style={[styles.note, styles.noteWarning]}>
+          <Clock3 size={16} color={THEME_COLORS.WARNING} style={styles.noteIcon} />
+          <Typography variant="body2" colorKey="WARNING" style={styles.noteText}>
+            {getHoldingNote(listing)}
+          </Typography>
+        </View>
+      ) : null}
+
+      {imageTip ? (
+        <View style={[styles.note, styles.noteInfo]}>
+          <Info size={16} color={THEME_COLORS.PRIMARY_DARK} style={styles.noteIcon} />
+          <Typography variant="body2" colorKey="PRIMARY_DARK" style={styles.noteText}>
+            {imageTip}
           </Typography>
         </View>
       ) : null}
@@ -358,11 +532,11 @@ const LandlordListingCard = ({
 
 const Stat = ({ label, value }: { label: string; value: number }) => (
   <View style={styles.stat}>
-    <Typography variant="caption" colorKey="TEXT_MUTED">
-      {label}
-    </Typography>
-    <Typography variant="body2" weight="SEMIBOLD">
+    <Typography variant="body1" weight="BOLD">
       {value.toLocaleString('vi-VN')}
+    </Typography>
+    <Typography variant="caption" weight="MEDIUM" colorKey="TEXT_PLACEHOLDER">
+      {label}
     </Typography>
   </View>
 );
@@ -375,7 +549,7 @@ const ListingActionSheet = ({
 }: {
   listing: LandlordListing | null;
   onClose: () => void;
-  onConfirmAction: (action: 'hide' | 'delete') => void;
+  onConfirmAction: (action: 'hide' | 'delete' | 'cancel') => void;
   onAction: (action: ListingAction['key']) => void;
 }) => {
   if (!listing) return null;
@@ -399,7 +573,7 @@ const ListingActionSheet = ({
               key={action.key}
               style={styles.sheetAction}
               onPress={() => {
-                if (action.key === 'hide' || action.key === 'delete') {
+                if (action.key === 'hide' || action.key === 'delete' || action.key === 'cancel') {
                   onConfirmAction(action.key);
                 } else {
                   onAction(action.key);
@@ -424,38 +598,41 @@ const ListingActionSheet = ({
 
 function getListingActions(status: LandlordListingStatus): ListingAction[] {
   const commonDelete: ListingAction = { key: 'delete', label: 'Xoá tin', danger: true };
+  const viewDetail: ListingAction = { key: 'viewDetail', label: 'Xem chi tiết phòng' };
 
   if (status === 'published') {
     return [
-      { key: 'edit', label: 'Chỉnh sửa' },
+      viewDetail,
+      { key: 'edit', label: 'Sửa' },
       { key: 'hide', label: 'Ẩn tin' },
-      { key: 'feature', label: 'Nâng cấp Nổi bật' },
       commonDelete,
     ];
   }
 
   if (status === 'hidden') {
     return [
-      { key: 'edit', label: 'Chỉnh sửa' },
-      { key: 'republish', label: 'Đăng lại' },
+      viewDetail,
+      { key: 'edit', label: 'Sửa' },
+      { key: 'republish', label: 'Hiện tin' },
       commonDelete,
     ];
   }
 
+  if (status === 'paused') {
+    return [viewDetail, { key: 'edit', label: 'Sửa' }, { key: 'republish', label: 'Mở lại tin' }];
+  }
+
   if (status === 'rejected') {
-    return [
-      { key: 'reason', label: 'Xem lý do từ chối' },
-      { key: 'edit', label: 'Chỉnh sửa & gửi duyệt lại' },
-      commonDelete,
-    ];
+    return [viewDetail, { key: 'edit', label: 'Sửa' }, commonDelete];
   }
 
   return status === 'pending'
     ? [
-        { key: 'edit', label: 'Chỉnh sửa' },
-        { key: 'cancel', label: 'Huỷ gửi duyệt' },
+        viewDetail,
+        { key: 'edit', label: 'Sửa' },
+        { key: 'cancel', label: 'Hủy gửi duyệt', danger: true },
       ]
-    : [{ key: 'edit', label: 'Chỉnh sửa' }, commonDelete];
+    : [viewDetail, { key: 'edit', label: 'Sửa' }, commonDelete];
 }
 
 const ListingsSkeleton = () => (
@@ -473,14 +650,39 @@ const ListingsSkeleton = () => (
   </View>
 );
 
-function formatCurrency(value: number): string {
-  return value.toLocaleString('vi-VN');
+const MIN_RECOMMENDED_IMAGES = 6;
+
+function getHoldingNote(listing: LandlordListing): string {
+  const expireDate = listing.holdExpireDate ? new Date(listing.holdExpireDate) : null;
+  const expireText =
+    expireDate && !Number.isNaN(expireDate.getTime())
+      ? ` giữ chỗ tới ${String(expireDate.getDate()).padStart(2, '0')}/${String(expireDate.getMonth() + 1).padStart(2, '0')}`
+      : ' đang giữ chỗ';
+  const depositText = listing.depositAmount
+    ? ` · đã cọc ${formatListingPrice(listing.depositAmount)}`
+    : '';
+
+  return `Bạn ${listing.holderName}${expireText}${depositText}`;
+}
+
+function getImageTip(listing: LandlordListing): string | null {
+  const imageCount = listing.imageUrls?.length;
+
+  if (listing.status !== 'published' || imageCount === undefined) return null;
+
+  return imageCount < MIN_RECOMMENDED_IMAGES
+    ? `Tin này chỉ có ${imageCount} ảnh. Thêm ảnh WC và lối vào để tăng lượt liên hệ.`
+    : null;
+}
+
+function formatListingPrice(value: number): string {
+  return Number.isFinite(value) ? formatVND(value).replace(' ₫', 'đ') : 'Chưa cập nhật giá';
 }
 
 function getEmptyTitle(status: LandlordListingStatus): string {
   return status === 'hidden'
     ? 'Bạn chưa ẩn tin nào'
-    : `Chưa có tin ${STATUS_TABS.find((tab) => tab.key === status)?.label.toLowerCase()}`;
+    : `Không có tin đăng ở trạng thái ${STATUS_TABS.find((tab) => tab.key === status)?.label.toLowerCase()}`;
 }
 
 function getEmptyDescription(status: LandlordListingStatus): string {
@@ -491,89 +693,126 @@ function getEmptyDescription(status: LandlordListingStatus): string {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: THEME_COLORS.BACKGROUND },
+  headerTitle: { letterSpacing: -0.5 },
   header: {
+    height: 56,
     paddingHorizontal: SPACING_TOKENS.MD,
-    paddingTop: SPACING_TOKENS.MD,
-    paddingBottom: SPACING_TOKENS.SM,
     backgroundColor: THEME_COLORS.SURFACE,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
   },
-  listContent: { paddingBottom: 110 },
-  tabsContainer: {
-    backgroundColor: THEME_COLORS.SURFACE,
-    borderBottomWidth: 1,
-    borderBottomColor: THEME_COLORS.DIVIDER,
+  headerWithSearch: {
+    paddingBottom: 0,
   },
-  tabsContent: { paddingHorizontal: SPACING_TOKENS.MD, paddingVertical: SPACING_TOKENS.SM },
-  tab: {
-    flexDirection: 'row',
+  searchButton: {
+    width: 40,
+    height: 40,
     alignItems: 'center',
-    gap: SPACING_TOKENS.XS,
-    paddingHorizontal: SPACING_TOKENS.SM + 2,
-    paddingVertical: SPACING_TOKENS.SM,
-    marginRight: SPACING_TOKENS.SM,
-    borderRadius: BORDER_RADIUS_TOKENS.FULL,
-  },
-  activeTab: { backgroundColor: THEME_COLORS.PRIMARY_LIGHT },
-  card: {
-    marginHorizontal: SPACING_TOKENS.MD,
-    marginTop: SPACING_TOKENS.SM,
-    padding: SPACING_TOKENS.SM + 2,
-    backgroundColor: THEME_COLORS.SURFACE,
+    justifyContent: 'center',
     borderRadius: BORDER_RADIUS_TOKENS.MD,
     borderWidth: 1,
     borderColor: THEME_COLORS.BORDER,
+    backgroundColor: THEME_COLORS.SURFACE,
   },
-  cardTopRow: { flexDirection: 'row', alignItems: 'flex-start' },
+  listContent: { paddingBottom: SPACING_TOKENS.LG },
+  tabsContainer: {
+    backgroundColor: THEME_COLORS.SURFACE,
+    borderBottomWidth: 1,
+    borderBottomColor: THEME_COLORS.BORDER,
+  },
+  tabsContent: {
+    paddingHorizontal: SPACING_TOKENS.MD,
+    paddingBottom: 13,
+    gap: SPACING_TOKENS.SM,
+  },
+  tab: {
+    height: 34,
+    justifyContent: 'center',
+    paddingHorizontal: 14,
+    borderRadius: BORDER_RADIUS_TOKENS.FULL,
+    borderWidth: 1,
+    borderColor: OVERLAY_COLORS.FIELD_BORDER,
+    backgroundColor: THEME_COLORS.SURFACE,
+  },
+  tabLabel: { fontSize: 13, lineHeight: 20 },
+  activeTab: {
+    borderColor: THEME_COLORS.PRIMARY,
+    backgroundColor: THEME_COLORS.PRIMARY_LIGHT,
+  },
+  card: {
+    marginHorizontal: SPACING_TOKENS.MD,
+    marginTop: SPACING_TOKENS.MD,
+    padding: 14,
+    backgroundColor: THEME_COLORS.SURFACE,
+    borderRadius: BORDER_RADIUS_TOKENS.LG,
+  },
+  cardCompact: {
+    marginHorizontal: SPACING_TOKENS.SM,
+    padding: SPACING_TOKENS.SM + SPACING_TOKENS.XS,
+  },
+  cardTopRow: { flexDirection: 'row', alignItems: 'center' },
   thumbnail: {
-    width: 92,
-    height: 92,
+    width: 72,
+    height: 72,
     borderRadius: BORDER_RADIUS_TOKENS.MD,
     overflow: 'hidden',
     backgroundColor: THEME_COLORS.SURFACE_MUTED,
+  },
+  thumbnailCompact: {
+    width: 64,
+    height: 64,
   },
   thumbnailImage: { width: '100%', height: '100%' },
   thumbnailPlaceholder: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: THEME_COLORS.SURFACE_MUTED,
   },
-  cardDetails: { flex: 1, marginHorizontal: SPACING_TOKENS.SM },
-  badgesRow: { flexDirection: 'row', flexWrap: 'wrap', gap: SPACING_TOKENS.XS, marginBottom: 5 },
+  cardDetails: { flex: 1, minWidth: 0, marginLeft: 12 },
+  badgesRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 4 },
   cardTitle: { marginBottom: 4 },
-  statsRow: {
+  priceRow: {
     flexDirection: 'row',
-    borderTopWidth: 1,
-    borderTopColor: THEME_COLORS.DIVIDER,
-    marginTop: SPACING_TOKENS.SM,
-    paddingTop: SPACING_TOKENS.SM,
+    flexWrap: 'wrap',
+    alignItems: 'baseline',
+    gap: 6,
   },
-  stat: { flex: 1 },
-  holdingBanner: {
-    marginTop: SPACING_TOKENS.SM,
-    padding: SPACING_TOKENS.SM,
-    borderRadius: BORDER_RADIUS_TOKENS.SM,
-    backgroundColor: THEME_COLORS.WARNING_LIGHT,
-  },
-  fab: {
-    position: 'absolute',
-    bottom: 22,
-    alignSelf: 'center',
-    width: 58,
-    height: 58,
-    borderRadius: BORDER_RADIUS_TOKENS.FULL,
+  menuButton: {
+    width: 28,
+    height: 44,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: THEME_COLORS.PRIMARY,
-    elevation: 6,
-    shadowColor: THEME_COLORS.BLACK,
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 3 },
+    marginLeft: SPACING_TOKENS.XS,
   },
+  statsRow: {
+    flexDirection: 'row',
+    marginTop: 14,
+    alignItems: 'center',
+    paddingVertical: 10,
+    borderRadius: 10,
+    backgroundColor: THEME_COLORS.BACKGROUND,
+  },
+  statDivider: { width: 1, height: 39, backgroundColor: THEME_COLORS.BORDER },
+  note: {
+    flexDirection: 'row',
+    marginTop: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderRadius: BORDER_RADIUS_TOKENS.MD,
+    borderWidth: 1,
+  },
+  noteWarning: {
+    borderColor: OVERLAY_COLORS.WARNING_BORDER,
+    backgroundColor: THEME_COLORS.WARNING_LIGHT,
+  },
+  noteInfo: {
+    borderColor: OVERLAY_COLORS.INFO_BORDER,
+    backgroundColor: THEME_COLORS.PRIMARY_LIGHT,
+  },
+  noteIcon: { marginTop: 2 },
+  noteText: { flex: 1, marginLeft: 10, fontSize: 13 },
+  stat: { flex: 1, alignItems: 'center' },
   emptyState: { flex: 1, minHeight: 420 },
   errorState: {
     flex: 1,
@@ -585,27 +824,45 @@ const styles = StyleSheet.create({
   retryButton: { marginTop: SPACING_TOKENS.LG, minWidth: 140 },
   searchFieldContainer: {
     marginHorizontal: SPACING_TOKENS.MD,
-    marginBottom: SPACING_TOKENS.SM,
-    paddingHorizontal: SPACING_TOKENS.SM,
-    height: 42,
+    marginTop: SPACING_TOKENS.MD,
+    marginBottom: SPACING_TOKENS.MD,
+    paddingLeft: SPACING_TOKENS.MD,
+    paddingRight: 6,
+    height: 48,
     flexDirection: 'row',
     alignItems: 'center',
-    borderRadius: BORDER_RADIUS_TOKENS.SM,
-    backgroundColor: THEME_COLORS.SURFACE_MUTED,
+    borderWidth: 1,
+    borderColor: THEME_COLORS.BORDER,
+    borderRadius: BORDER_RADIUS_TOKENS.MD,
+    backgroundColor: THEME_COLORS.SURFACE,
   },
   searchField: {
     flex: 1,
-    marginHorizontal: SPACING_TOKENS.SM,
+    height: 46,
+    marginLeft: SPACING_TOKENS.SM,
+    paddingVertical: 0,
+    fontSize: 15,
     color: THEME_COLORS.TEXT_PRIMARY,
   },
+  closeSearchButton: {
+    width: 36,
+    height: 36,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: BORDER_RADIUS_TOKENS.FULL,
+  },
   footerLoader: { paddingVertical: SPACING_TOKENS.LG },
-  sheetBackdrop: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(23, 27, 34, 0.45)' },
+  sheetBackdrop: {
+    flex: 1,
+    justifyContent: 'flex-end',
+    backgroundColor: OVERLAY_COLORS.SHEET_BACKDROP,
+  },
   sheet: {
     backgroundColor: THEME_COLORS.SURFACE,
     borderTopLeftRadius: BORDER_RADIUS_TOKENS.XL,
     borderTopRightRadius: BORDER_RADIUS_TOKENS.XL,
-    padding: SPACING_TOKENS.LG,
-    paddingBottom: SPACING_TOKENS.XXL,
+    padding: SPACING_TOKENS.MD,
+    paddingBottom: SPACING_TOKENS.MD,
   },
   sheetHeader: {
     flexDirection: 'row',

@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { View, TouchableOpacity, StyleSheet, ViewStyle, StyleProp } from 'react-native';
 import { CheckCircle2, AlertCircle, AlertTriangle, Info, X } from 'lucide-react-native';
-import { THEME_COLORS, BORDER_RADIUS_TOKENS, SPACING_TOKENS } from '@theme';
+import { THEME_COLORS, BORDER_RADIUS_TOKENS, SPACING_TOKENS, OVERLAY_COLORS } from '@theme';
 import { Typography } from '../atoms/Typography';
 
 export type ToastType = 'success' | 'error' | 'warning' | 'info';
@@ -115,7 +115,7 @@ const styles = StyleSheet.create({
     padding: SPACING_TOKENS.MD,
     borderRadius: BORDER_RADIUS_TOKENS.MD,
     borderWidth: 1,
-    shadowColor: '#171B22',
+    shadowColor: OVERLAY_COLORS.SHADOW,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.08,
     shadowRadius: 8,
