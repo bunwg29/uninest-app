@@ -93,6 +93,9 @@ export type RootStackParamList = {
   LandlordPublicProfile: { landlordId: string; isPreview?: boolean };
   Comparison: undefined;
   SavedRooms: undefined;
+  Notifications: undefined;
+  NotificationSettings: undefined;
+  SavedSearches: undefined;
   LandlordVerification: undefined;
   Community: { category?: ForumCategory } | undefined;
   ForumPostDetail: { postId: string };

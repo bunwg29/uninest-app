@@ -21,6 +21,12 @@ import {
 } from '@features/listings';
 import { ComparisonScreen } from '@features/comparison';
 import { SavedRoomsScreen } from '@features/search';
+import {
+  NotificationsScreen,
+  NotificationSettingsScreen,
+  SavedSearchesScreen,
+  usePushRegistration,
+} from '@features/notifications';
 import { HelpCenterScreen, TermsScreen } from '@features/support';
 import {
   BookingConfirmScreen,
@@ -43,6 +49,7 @@ export const RootNavigator = () => {
   const [isSplashDone, setIsSplashDone] = useState(false);
 
   useChatRealtime(isAuthenticated ? (user?.id ?? null) : null);
+  usePushRegistration(isAuthenticated ? (user?.id ?? null) : null);
 
   const showSplash = !isInitialized || !isSplashDone;
 
@@ -81,6 +88,9 @@ export const RootNavigator = () => {
               <Stack.Screen name="LandlordPublicProfile" component={LandlordPublicProfileScreen} />
               <Stack.Screen name="Comparison" component={ComparisonScreen} />
               <Stack.Screen name="SavedRooms" component={SavedRoomsScreen} />
+              <Stack.Screen name="Notifications" component={NotificationsScreen} />
+              <Stack.Screen name="NotificationSettings" component={NotificationSettingsScreen} />
+              <Stack.Screen name="SavedSearches" component={SavedSearchesScreen} />
               <Stack.Screen name="LandlordVerification" component={LandlordVerificationScreen} />
               <Stack.Screen name="BookingNew" component={BookingNewScreen} />
               <Stack.Screen name="BookingConfirm" component={BookingConfirmScreen} />
