@@ -37,6 +37,8 @@ import {
   type RelaxSuggestion,
 } from '../components';
 import { useAuth } from '@features/auth';
+import { useSavedSearchActions } from '@features/notifications';
+import { buildSearchParams } from '../services/searchParams';
 import { useFavoriteIds, useRecentSearches, useSearchListings, useToggleFavorite } from '../hooks';
 import { useSearchStore } from '../store';
 import {
@@ -109,6 +111,7 @@ export const SearchScreen = () => {
   const { width } = useWindowDimensions();
   const favoriteIdsQuery = useFavoriteIds();
   const toggleFavorite = useToggleFavorite();
+  const { create: saveSearch } = useSavedSearchActions();
   const recentSearches = useRecentSearches();
   const favoriteIds = useMemo(() => new Set(favoriteIdsQuery.data ?? []), [favoriteIdsQuery.data]);
   const gridColumns = width >= 900 ? 4 : width >= 600 ? 3 : 2;
@@ -273,6 +276,32 @@ export const SearchScreen = () => {
 
     setFilterValidationMessage(undefined);
     applyDraftFilters();
+  };
+
+  const handleSaveFilters = async () => {
+    const validationMessage = getFilterValidationMessage(draftFilters);
+
+    if (validationMessage) {
+      setFilterValidationMessage(validationMessage);
+
+      return;
+    }
+
+    if (role !== 'student') {
+      toast.info('Chỉ sinh viên có thể lưu bộ lọc tìm phòng.');
+
+      return;
+    }
+
+    try {
+      const name = `Bộ lọc ${new Date().toLocaleString('vi-VN')}`;
+
+      await saveSearch.mutateAsync({ name, criteria: buildSearchParams(draftFilters) });
+      toast.success('Đã lưu bộ lọc. Bạn sẽ nhận thông báo khi có phòng phù hợp.');
+      closeFilters();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Không thể lưu bộ lọc');
+    }
   };
 
   const handleCloseFilters = () => {
@@ -699,6 +728,7 @@ export const SearchScreen = () => {
           resetDraftFilters();
         }}
         onApply={handleApplyFilters}
+        onSave={() => void handleSaveFilters()}
         onClose={handleCloseFilters}
         onUseCurrentLocation={handleUseCurrentLocationFilter}
       />
