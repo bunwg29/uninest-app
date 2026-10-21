@@ -131,6 +131,7 @@ Thiết kế có màu chưa có token → **thêm token vào `src/theme/colors.t
 | `useOpenListingChat().openChat(listingId)` | `@features/chat` | Mở/tạo hội thoại từ bất kỳ đâu |
 | `chatSocket` | `@features/chat` (services) | Kết nối Socket.IO duy nhất của app — **không tạo socket thứ hai** |
 | `useChatSummary()` | `@features/chat` | Số tin chưa đọc cho badge |
+| `useUnreadNotificationCount()` | `@features/notifications` | Số thông báo chưa đọc cho chuông ở màn Sinh viên/Chủ trọ |
 | `useFavoriteIds()`, `useToggleFavorite()`, `FAVORITE_IDS_QUERY_KEY` | `@features/search` | Lưu/bỏ lưu phòng ở bất kỳ màn nào |
 | `useSearchStore`, `SEARCH_SCHOOLS` | `@features/search` | Áp bộ lọc từ màn khác (vd danh mục ở Trang chủ) |
 | `useComparison()` | `@features/comparison` | Thêm/bỏ phòng khỏi danh sách so sánh (tối đa 4) |
