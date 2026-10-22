@@ -92,6 +92,7 @@ export type RootStackParamList = {
   ListingDetail: { id: string };
   LandlordPublicProfile: { landlordId: string; isPreview?: boolean };
   Comparison: undefined;
+  PriceComparison: undefined;
   SavedRooms: undefined;
   LandlordVerification: undefined;
   Community: { category?: ForumCategory } | undefined;
