@@ -1,17 +1,19 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { apiClient, unwrapApiData } from '@core';
 import type {
+  NotificationFilter,
   NotificationPreferences,
   NotificationsPage,
-  NotificationType,
   PushPlatform,
 } from '../types';
 
 const REGISTERED_DEVICE_KEY = 'uninest:registered-push-device';
 
 export const notificationService = {
-  async list(page: number, type?: NotificationType): Promise<NotificationsPage> {
-    const response = await apiClient.get('/notifications', { params: { page, limit: 20, type } });
+  async list(page: number, filter: NotificationFilter = {}): Promise<NotificationsPage> {
+    const response = await apiClient.get('/notifications', {
+      params: { page, limit: 20, type: filter.type, unread: filter.unread || undefined },
+    });
 
     return unwrapApiData<NotificationsPage>(response.data);
   },

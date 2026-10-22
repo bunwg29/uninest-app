@@ -28,3 +28,8 @@ export interface NotificationPreferences {
 }
 
 export type PushPlatform = 'android' | 'ios';
+
+export interface NotificationFilter {
+  type?: NotificationType;
+  unread?: boolean;
+}

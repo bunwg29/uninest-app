@@ -78,7 +78,7 @@ Thiết kế có màu chưa có token → **thêm token vào `src/theme/colors.t
 | Component | Dùng khi |
 | --- | --- |
 | `ScreenContainer` | **Gốc của mọi màn hình** — tự xử lý safe area, bàn phím, độ rộng tối đa. Prop: `scrollable`, `padding`, `refreshControl`, `applyTopInset`, `applyBottomInset`, `keyboardAvoiding` |
-| `HeaderBar` | Thanh tiêu đề màn hình có nút quay lại — `title`, `subtitle`, `onBack`, `rightAction`, `alignTitle`, `hasBottomBorder` |
+| `HeaderBar` | Thanh tiêu đề màn hình có nút quay lại — `title`, `subtitle`, `onBack`, `rightAction`, `rightActionWidth` (khi nút phải là chữ dài hơn 44px), `alignTitle`, `hasBottomBorder` |
 | `KeyboardAwareScrollView`, `KeyboardAvoidingContainer` | Form dài có bàn phím (thường đã có sẵn trong `ScreenContainer`) |
 
 ### Boundaries

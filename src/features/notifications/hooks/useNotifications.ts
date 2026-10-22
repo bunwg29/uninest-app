@@ -1,13 +1,13 @@
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { notificationService } from '../services/notificationService';
-import type { NotificationPreferences, NotificationType } from '../types';
+import type { NotificationFilter, NotificationPreferences } from '../types';
 
 export const NOTIFICATION_QUERY_KEY = ['notifications'] as const;
 
-export const useNotifications = (type?: NotificationType) =>
+export const useNotifications = (filter: NotificationFilter = {}) =>
   useInfiniteQuery({
-    queryKey: [...NOTIFICATION_QUERY_KEY, 'list', type ?? 'all'],
-    queryFn: ({ pageParam }) => notificationService.list(pageParam, type),
+    queryKey: [...NOTIFICATION_QUERY_KEY, 'list', filter.type ?? 'all', filter.unread ?? false],
+    queryFn: ({ pageParam }) => notificationService.list(pageParam, filter),
     initialPageParam: 1,
     getNextPageParam: (lastPage) => (lastPage.hasMore ? lastPage.page + 1 : undefined),
   });

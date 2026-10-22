@@ -10,14 +10,15 @@ import {
   useWindowDimensions,
   View,
 } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute, type RouteProp } from '@react-navigation/native';
+import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import axios from 'axios';
 import * as Location from 'expo-location';
 import { Map as MapIcon } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AMENITY_DISPLAY_LIST, ROOM_TYPE_OPTIONS } from '@features/listings/types/constants';
-import type { RootStackParamList } from '@navigation';
+import type { MainTabParamList, RootStackParamList } from '@navigation';
 import { useDebouncedValue, useToast } from '@hooks';
 import { OVERLAY_COLORS, SPACING_TOKENS, THEME_COLORS } from '@theme';
 import { Typography } from '@ui';
@@ -82,6 +83,8 @@ const isNetworkFailure = (error: unknown) => axios.isAxiosError(error) && !error
 
 export const SearchScreen = () => {
   const navigation = useNavigation<NavigationProp>();
+  const tabNavigation = useNavigation<BottomTabNavigationProp<MainTabParamList, 'Search'>>();
+  const route = useRoute<RouteProp<MainTabParamList, 'Search'>>();
   const toast = useToast();
   const insets = useSafeAreaInsets();
   const {
@@ -177,6 +180,15 @@ export const SearchScreen = () => {
       `${school.name} ${school.shortName}`.toLowerCase().includes(normalized)
     );
   }, [keywordInput]);
+
+  const shouldOpenFilters = route.params?.openFilters === true;
+
+  useEffect(() => {
+    if (!shouldOpenFilters) return;
+
+    openFilters();
+    tabNavigation.setParams({ openFilters: undefined });
+  }, [openFilters, shouldOpenFilters, tabNavigation]);
 
   useEffect(() => {
     if (
@@ -294,7 +306,8 @@ export const SearchScreen = () => {
     }
 
     try {
-      const name = `Bộ lọc ${new Date().toLocaleString('vi-VN')}`;
+      const summary = getQuerySummary(draftFilters);
+      const name = (summary || 'Tất cả phòng trọ').slice(0, 100);
 
       await saveSearch.mutateAsync({ name, criteria: buildSearchParams(draftFilters) });
       toast.success('Đã lưu bộ lọc. Bạn sẽ nhận thông báo khi có phòng phù hợp.');
