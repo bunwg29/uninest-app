@@ -22,6 +22,7 @@ import {
   ShieldCheck,
   Star,
   Home,
+  BarChart3,
 } from 'lucide-react-native';
 import { THEME_COLORS, SPACING_TOKENS, BORDER_RADIUS_TOKENS, OVERLAY_COLORS } from '@theme';
 import { Avatar, Button, ScreenContainer, Typography } from '@ui';
@@ -195,6 +196,12 @@ export const ProfileScreen = () => {
                       icon: Columns2,
                       tone: ICON_TONES.BLUE,
                       onPress: () => navigation.navigate('Comparison'),
+                    },
+                    {
+                      label: 'So sánh giá khu vực',
+                      icon: BarChart3,
+                      tone: ICON_TONES.GREEN,
+                      onPress: () => navigation.navigate('PriceComparison'),
                     },
                     {
                       label: 'Lịch sử giao dịch',
