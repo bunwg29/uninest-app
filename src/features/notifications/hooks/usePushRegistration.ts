@@ -4,6 +4,7 @@ import * as Device from 'expo-device';
 import { useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@hooks';
 import { navigationRef } from '@navigation/navigationRef';
+import { useAuthStore } from '@features/auth';
 import { notificationService } from '../services/notificationService';
 import { NOTIFICATION_QUERY_KEY } from './useNotifications';
 
@@ -15,7 +16,11 @@ const openNotificationTarget = (data: Record<string, unknown>) => {
   } else if (data.screen === 'BookingDetail' && typeof data.bookingId === 'string') {
     navigationRef.navigate('BookingDetail', { id: data.bookingId });
   } else if (data.screen === 'ListingDetail' && typeof data.listingId === 'string') {
-    navigationRef.navigate('ListingDetail', { id: data.listingId });
+    if (useAuthStore.getState().role === 'landlord') {
+      navigationRef.navigate('Main', { screen: 'Listings' });
+    } else {
+      navigationRef.navigate('ListingDetail', { id: data.listingId });
+    }
   } else if (data.screen === 'ForumPostDetail' && typeof data.postId === 'string') {
     navigationRef.navigate('ForumPostDetail', { postId: data.postId });
   } else {
