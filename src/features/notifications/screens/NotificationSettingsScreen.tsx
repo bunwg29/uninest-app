@@ -11,7 +11,7 @@ import {
   Lock,
   Megaphone,
   MessageSquare,
-  Wallet,
+  ShieldCheck,
   type LucideIcon,
 } from 'lucide-react-native';
 import type { RootStackParamList } from '@navigation';
@@ -191,15 +191,15 @@ export const NotificationSettingsScreen = () => {
           <SectionTitle>Bắt buộc</SectionTitle>
           <View style={styles.card}>
             <CardRow
-              icon={Wallet}
-              title="Giao dịch & đặt cọc"
-              description="Tiền cọc, biên nhận, đối soát"
-              right={<AlwaysOn />}
-            />
-            <CardRow
               icon={CalendarDays}
               title="Yêu cầu xem phòng"
               description="Yêu cầu mới, thay đổi lịch hẹn"
+              right={<AlwaysOn />}
+            />
+            <CardRow
+              icon={ShieldCheck}
+              title="Kết quả duyệt tin & cảnh báo"
+              description="Tin được duyệt, bị từ chối, bị ẩn; cảnh báo từ quản trị viên"
               right={<AlwaysOn />}
               divider
             />
@@ -228,8 +228,8 @@ export const NotificationSettingsScreen = () => {
             />
           </View>
           <NoticeBanner tone="warning" icon={Info}>
-            Thông báo giao dịch, đặt lịch, kết quả duyệt tin và cảnh báo từ quản trị viên không thể
-            tắt để bạn không bỏ lỡ yêu cầu của sinh viên.
+            Thông báo đặt lịch, kết quả duyệt tin và cảnh báo từ quản trị viên không thể tắt để bạn
+            không bỏ lỡ yêu cầu của sinh viên.
           </NoticeBanner>
         </View>
       );
@@ -237,18 +237,12 @@ export const NotificationSettingsScreen = () => {
 
     return (
       <View>
-        <SectionTitle>Giao dịch & lịch hẹn</SectionTitle>
+        <SectionTitle>Lịch hẹn</SectionTitle>
         <View style={styles.group}>
           <Row
             title="Xác nhận lịch hẹn"
             description="Chủ trọ đồng ý hoặc từ chối yêu cầu"
             right={<ToggleSwitch value locked label="Xác nhận lịch hẹn" />}
-          />
-          <Row
-            title="Giao dịch đặt cọc"
-            description="Kết quả thanh toán và biên nhận"
-            right={<ToggleSwitch value locked label="Giao dịch đặt cọc" />}
-            divider
           />
           <Row
             title="Nhắc trước giờ hẹn"

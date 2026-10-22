@@ -51,8 +51,8 @@ const STUDENT_TABS: Array<{ key: string; label: string; filter: NotificationFilt
 const LANDLORD_TABS: Array<{ key: string; label: string; filter: NotificationFilter }> = [
   { key: 'all', label: 'Tất cả', filter: {} },
   { key: 'unread', label: 'Chưa đọc', filter: { unread: true } },
-  { key: 'payment', label: 'Giao dịch', filter: { type: 'payment' } },
   { key: 'booking', label: 'Lịch hẹn', filter: { type: 'booking' } },
+  { key: 'system', label: 'Hệ thống', filter: { type: 'system' } },
 ];
 
 const groupBySection = (items: AppNotification[]) => {

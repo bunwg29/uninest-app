@@ -5,7 +5,6 @@ import {
   CalendarCheck,
   CircleCheck,
   Clock3,
-  CreditCard,
   House,
   MessageSquare,
   ShieldAlert,
@@ -37,11 +36,6 @@ const TONES: Record<NotificationType, Tone> = {
   },
   listing: { icon: House, color: THEME_COLORS.PRIMARY, background: THEME_COLORS.PRIMARY_LIGHT },
   forum: { icon: Users, color: THEME_COLORS.TEXT_MUTED, background: THEME_COLORS.SURFACE_MUTED },
-  payment: {
-    icon: CreditCard,
-    color: THEME_COLORS.SUCCESS,
-    background: THEME_COLORS.SUCCESS_LIGHT,
-  },
   system: { icon: Bell, color: THEME_COLORS.PRIMARY, background: THEME_COLORS.PRIMARY_LIGHT },
 };
 

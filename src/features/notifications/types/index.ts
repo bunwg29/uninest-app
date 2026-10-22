@@ -1,5 +1,4 @@
-export type NotificationType =
-  'listing' | 'message' | 'reminder' | 'system' | 'booking' | 'payment' | 'forum';
+export type NotificationType = 'listing' | 'message' | 'reminder' | 'system' | 'booking' | 'forum';
 
 export interface AppNotification {
   id: string;
