@@ -101,6 +101,7 @@ Sprint sau chỉ phụ thuộc sprint trước. Trong một sprint, mỗi nhóm 
 - App: lưu token bằng `expo-secure-store`. Gặp 401 → làm mới token **đúng 1 lần** (có hàng đợi, không gọi refresh trùng) rồi gửi lại request. Refresh hỏng → xoá phiên, về màn Đăng nhập.
 - Đăng nhập xong điều hướng theo vai trò: Sinh viên → tab Sinh viên, Chủ trọ → tab Chủ trọ.
 - Chủ trọ mới ở trạng thái **"Chờ xác minh"** (`landlord_verified_at` rỗng) → **không được tạo tin** (`LANDLORD_NOT_VERIFIED`) cho tới khi gửi xác minh: số CCCD/CMND 9 hoặc 12 chữ số, địa chỉ liên hệ tuỳ chọn.
+- Xác minh Chủ trọ là **tự động**: gửi số CCCD/CMND hợp lệ → `landlord_verified_at` được ghi ngay, đăng tin được luôn. **Không có** luồng nộp ảnh giấy tờ hay Admin duyệt/từ chối/yêu cầu bổ sung hồ sơ (đã chốt; các màn L-21→L-23 và ADW-12 đã gỡ khỏi Figma).
 - Đổi mật khẩu: phải nhập đúng mật khẩu hiện tại, mật khẩu mới khác mật khẩu cũ.
 - Đổi email/số điện thoại: xác thực OTP gửi tới **giá trị mới**, không trùng tài khoản khác.
 - Chỉ chính chủ xem/sửa hồ sơ của mình. Admin không sửa hồ sơ thay người dùng.
