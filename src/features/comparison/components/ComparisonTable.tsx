@@ -303,7 +303,7 @@ const ImageCell = ({
   const coverImage = item.images?.find((image) => image.isCover) ?? item.images?.[0];
   const gradientColors = getPlaceholderGradient({
     id: item.id,
-    isHighlighted: item.availability === 'holding',
+    isHighlighted: Boolean(item.isHighlighted),
   });
 
   return (

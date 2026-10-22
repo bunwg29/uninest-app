@@ -17,7 +17,6 @@ import type { RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import {
   CircleAlert,
-  Clock3,
   Eye,
   Flag,
   Footprints,
@@ -99,16 +98,9 @@ const ROUND_BUTTON_SIZE = 40;
 const ACTION_BUTTON_SIZE = 48;
 const VISIBLE_AMENITY_COUNT = 6;
 const ACTION_BAR_HEIGHT = 72;
-const HOLD_STRIP_HEIGHT = 38;
 const TOP_SCRIM_HEIGHT = 110;
 const TOP_SCRIM_OPACITIES = [1, 0.75, 0.5, 0.3, 0.15, 0.06] as const;
 const LIMIT_NOTICE_DURATION_MS = 3500;
-
-const formatShortDate = (value: string) => {
-  const date = new Date(value);
-
-  return `${String(date.getDate()).padStart(2, '0')}/${String(date.getMonth() + 1).padStart(2, '0')}`;
-};
 
 export const ListingDetailScreen = () => {
   const route = useRoute<DetailRoute>();
@@ -238,16 +230,6 @@ export const ListingDetailScreen = () => {
     });
   };
 
-  const handleHold = () => {
-    const booking = detailQuery.data?.myBooking;
-
-    if (!booking || booking.status !== 'confirmed' || new Date(booking.startTime) > new Date()) {
-      return;
-    }
-
-    navigation.navigate('BookingHold', { id: booking.id });
-  };
-
   const handleSubmitReport = (reason: ListingReportReason, note: string) => {
     reportMutation.mutate(
       { reason, note },
@@ -302,20 +284,18 @@ export const ListingDetailScreen = () => {
     Number.isFinite(listing.location?.latitude) && Number.isFinite(listing.location?.longitude);
   const roomTypeLabel =
     ROOM_TYPE_OPTIONS.find((option) => option.value === listing.roomType)?.label ?? 'Chưa cập nhật';
-  const isHolding = listing.availability === 'holding';
   const myBooking = listing.myBooking ?? null;
   const canBook = listing.availability === 'available' && !myBooking;
-  const canHold =
-    listing.availability === 'available' &&
-    myBooking?.status === 'confirmed' &&
-    new Date(myBooking.startTime) <= new Date();
   const reference = getDistanceReference(appliedFilters);
   const distanceMeters =
     reference && hasCoordinates
       ? haversineMeters(reference, listing.location)
       : (listing.distanceMeters ?? null);
   const visibleAmenities = listing.amenities.slice(0, VISIBLE_AMENITY_COUNT);
-  const placeholderGradient = getPlaceholderGradient({ id: listing.id, isHighlighted: isHolding });
+  const placeholderGradient = getPlaceholderGradient({
+    id: listing.id,
+    isHighlighted: Boolean(listing.isHighlighted),
+  });
 
   return (
     <View style={styles.root}>
@@ -394,25 +374,6 @@ export const ListingDetailScreen = () => {
                     {formatReviewCount(listing.reviewCount)}
                   </Typography>
                 ) : null}
-              </View>
-            ) : null}
-
-            {isHolding && listing.hold ? (
-              <View style={styles.holdNotice}>
-                <Clock3 size={19} color={THEME_COLORS.WARNING} />
-                <Typography
-                  variant="label"
-                  weight="REGULAR"
-                  color={THEME_COLORS.WARNING}
-                  style={styles.flexText}
-                >
-                  <Typography variant="label" weight="SEMIBOLD" color={THEME_COLORS.WARNING}>
-                    {`Phòng đang được một bạn khác giữ chỗ đến ${formatShortDate(listing.hold.expiresAt)}.`}
-                  </Typography>
-                  {
-                    ' Nếu bạn ấy không hoàn tất, phòng sẽ mở lại. Bạn vẫn nhắn tin hỏi chủ trọ được.'
-                  }
-                </Typography>
               </View>
             ) : null}
 
@@ -639,19 +600,6 @@ export const ListingDetailScreen = () => {
         <View
           style={[styles.actionBar, { paddingBottom: Math.max(insets.bottom, SPACING_TOKENS.SM) }]}
         >
-          {isHolding && listing.hold ? (
-            <View style={styles.holdStrip}>
-              <Clock3 size={16} color={THEME_COLORS.WARNING} />
-              <Typography
-                variant="caption"
-                weight="SEMIBOLD"
-                color={THEME_COLORS.WARNING}
-                style={styles.holdStripText}
-              >
-                {`Phòng được giữ chỗ đến ${formatShortDate(listing.hold.expiresAt)} · còn ${listing.hold.daysLeft} ngày`}
-              </Typography>
-            </View>
-          ) : null}
           <View style={styles.actionRow}>
             <TouchableOpacity
               style={styles.chatButton}
@@ -668,22 +616,14 @@ export const ListingDetailScreen = () => {
             </TouchableOpacity>
             <Button
               title={myBooking ? 'Xem lịch hẹn' : 'Đặt lịch xem'}
-              variant="outline"
               disabled={!canBook && !myBooking}
               onPress={() =>
                 myBooking
                   ? navigation.navigate('BookingDetail', { id: myBooking.id })
                   : navigation.navigate('BookingNew', { resourceId: listing.id })
               }
-              style={[styles.actionFlex, styles.outlineAction]}
-              textStyle={styles.outlineActionText}
-            />
-            <Button
-              title={myBooking?.status === 'holding' ? 'Đang giữ chỗ' : 'Giữ chỗ'}
-              disabled={!canHold}
-              onPress={handleHold}
-              style={[styles.actionFlex, !canHold && styles.disabledAction]}
-              textStyle={!canHold ? styles.disabledActionText : undefined}
+              style={[styles.actionFlex, !canBook && !myBooking && styles.disabledAction]}
+              textStyle={!canBook && !myBooking ? styles.disabledActionText : undefined}
             />
           </View>
         </View>
@@ -697,8 +637,7 @@ export const ListingDetailScreen = () => {
               bottom:
                 (isStudent ? ACTION_BAR_HEIGHT : 0) +
                 Math.max(insets.bottom, SPACING_TOKENS.SM) +
-                SPACING_TOKENS.MD +
-                (isHolding && listing.hold ? HOLD_STRIP_HEIGHT : 0),
+                SPACING_TOKENS.MD,
             },
           ]}
           accessibilityLiveRegion="polite"
@@ -1102,17 +1041,6 @@ const styles = StyleSheet.create({
     gap: SPACING_TOKENS.XS + SPACING_TOKENS.XXS,
     marginTop: SPACING_TOKENS.SM + SPACING_TOKENS.XXS,
   },
-  holdNotice: {
-    flexDirection: 'row',
-    gap: SPACING_TOKENS.SM + SPACING_TOKENS.XXS,
-    marginTop: SECTION_SPACING,
-    paddingHorizontal: SPACING_TOKENS.MD - SPACING_TOKENS.XXS,
-    paddingVertical: SPACING_TOKENS.MD - SPACING_TOKENS.XXS - 1,
-    borderWidth: 1,
-    borderColor: OVERLAY_COLORS.WARNING_BORDER,
-    borderRadius: BORDER_RADIUS_TOKENS.MD,
-    backgroundColor: THEME_COLORS.WARNING_LIGHT,
-  },
   section: {
     marginTop: SECTION_SPACING,
     marginHorizontal: -SPACING_TOKENS.MD,
@@ -1178,17 +1106,6 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: -4 },
     elevation: 8,
   },
-  holdStrip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    height: HOLD_STRIP_HEIGHT,
-    gap: SPACING_TOKENS.SM,
-    paddingHorizontal: SPACING_TOKENS.MD,
-    borderBottomWidth: 1,
-    borderBottomColor: OVERLAY_COLORS.WARNING_BORDER,
-    backgroundColor: THEME_COLORS.WARNING_LIGHT,
-  },
-  holdStripText: { fontSize: 12.5, lineHeight: 17 },
   limitNotice: {
     position: 'absolute',
     left: SPACING_TOKENS.MD,
@@ -1226,8 +1143,6 @@ const styles = StyleSheet.create({
     borderRadius: BORDER_RADIUS_TOKENS.MD,
   },
   actionFlex: { flex: 1, height: ACTION_BUTTON_SIZE },
-  outlineAction: { borderColor: THEME_COLORS.PRIMARY },
-  outlineActionText: { color: THEME_COLORS.PRIMARY_DARK },
   disabledAction: {
     opacity: 1,
     borderColor: THEME_COLORS.BORDER,

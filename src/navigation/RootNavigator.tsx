@@ -25,7 +25,6 @@ import { HelpCenterScreen, TermsScreen } from '@features/support';
 import {
   BookingConfirmScreen,
   BookingDetailScreen,
-  BookingHoldScreen,
   BookingNewScreen,
   BookingSuccessScreen,
   CancelBookingScreen,
@@ -92,7 +91,6 @@ export const RootNavigator = () => {
                 component={CancelBookingScreen}
                 options={{ presentation: 'modal', animation: 'slide_from_bottom' }}
               />
-              <Stack.Screen name="BookingHold" component={BookingHoldScreen} />
               <Stack.Screen name="OtpVerification" component={OtpScreen} />
               <Stack.Screen name="ResetPassword" component={ResetPasswordScreen} />
               <Stack.Screen name="Community" component={CommunityScreen} />

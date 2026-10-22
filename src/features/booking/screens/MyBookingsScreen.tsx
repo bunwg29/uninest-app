@@ -33,7 +33,7 @@ const TABS: Array<{ key: TabKey; label: string }> = [
 export const isInTab = (status: BookingStatus, tab: TabKey) => {
   if (tab === 'pending') return status === 'pending';
 
-  if (tab === 'confirmed') return status === 'confirmed' || status === 'holding';
+  if (tab === 'confirmed') return status === 'confirmed';
 
   if (tab === 'expired') return status === 'expired';
 
@@ -109,7 +109,7 @@ export const MyBookingsScreen = () => {
           style={styles.actionButton}
           textStyle={styles.neutralText}
         />
-        {booking.status !== 'holding' ? (
+        {new Date(booking.startTime).getTime() > Date.now() ? (
           <Button
             title="Huỷ yêu cầu"
             variant="outline"

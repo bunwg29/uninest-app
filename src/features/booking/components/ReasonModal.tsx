@@ -22,15 +22,8 @@ export const OTHER_REASON_LABEL = 'Lý do khác';
 
 export const REJECT_REASONS = [
   'Bận vào khung giờ đó',
-  'Phòng vừa được người khác giữ chỗ',
   'Phòng đã cho thuê',
   'Không phù hợp yêu cầu của nhà trọ',
-] as const;
-
-export const RELEASE_REASONS = [
-  'Sinh viên chưa hoàn tất thủ tục thuê',
-  'Hai bên chưa thống nhất được thoả thuận',
-  'Phòng đã cho thuê',
 ] as const;
 
 export const ReasonModal = ({

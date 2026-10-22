@@ -39,7 +39,7 @@ const getTimeline = (booking: Booking): TimelineItem[] => {
   if (booking.status === 'expired') return getExpiredTimeline(booking);
 
   const confirmed = Boolean(booking.confirmedAt);
-  const holding = booking.status === 'holding';
+  const viewed = confirmed && new Date(booking.startTime).getTime() <= Date.now();
 
   return [
     {
@@ -52,18 +52,12 @@ const getTimeline = (booking: Booking): TimelineItem[] => {
       label: 'Chủ trọ xác nhận',
       value: booking.confirmedAt ? formatTimelineStamp(booking.confirmedAt) : 'Đang chờ phản hồi',
       completed: confirmed,
-      lineCompleted: holding,
+      lineCompleted: viewed,
     },
     {
       label: 'Xem phòng trực tiếp',
       value: formatViewingSlot(booking.startTime),
-      completed: holding,
-      lineCompleted: holding,
-    },
-    {
-      label: 'Quyết định giữ chỗ',
-      value: 'Sau khi xem phòng',
-      completed: holding,
+      completed: viewed,
       lineCompleted: false,
     },
   ];

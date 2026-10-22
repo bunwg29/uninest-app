@@ -1,21 +1,18 @@
 import { OVERLAY_COLORS, THEME_COLORS } from '@theme';
 import { SEARCH_SCHOOLS, type SearchFilters, type SearchListingItem } from '../types';
 
-export type SearchCardStatus = 'available' | 'holding' | 'featured' | 'rented' | 'paused';
+export type SearchCardStatus = 'available' | 'featured' | 'rented' | 'paused';
 
 export const getCardStatus = (listing: SearchListingItem): SearchCardStatus => {
   if (listing.availability === 'rented') return 'rented';
 
   if (listing.availability === 'paused') return 'paused';
 
-  if (listing.availability === 'holding' || listing.isReserved) return 'holding';
-
   return listing.isHighlighted ? 'featured' : 'available';
 };
 
 export const STATUS_LABELS: Record<SearchCardStatus, string> = {
   available: 'Còn trống',
-  holding: 'Đang giữ chỗ',
   featured: 'Nổi bật',
   rented: 'Đã cho thuê',
   paused: 'Ngừng nhận yêu cầu',
