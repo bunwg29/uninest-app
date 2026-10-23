@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { QUERY_CLIENT, resetAllStores, setOnUnauthorizedCallback, tokenStorage } from '@core';
+import { notificationService } from '../../notifications/services/notificationService';
 import type { AuthUser, LoginPayload, RegisterPayload, UserRole, VerifyOtpPayload } from '../types';
 import { authService } from '../services';
 
@@ -23,6 +24,8 @@ interface AuthState {
 }
 
 export const useAuthStore = create<AuthState>((set, get) => {
+  let logoutInProgress = false;
+
   setOnUnauthorizedCallback(() => {
     get().logout();
   });
@@ -170,6 +173,14 @@ export const useAuthStore = create<AuthState>((set, get) => {
     },
 
     async logout() {
+      if (logoutInProgress) return;
+
+      logoutInProgress = true;
+
+      try {
+        await notificationService.unregisterCurrentDevice();
+      } catch {}
+
       try {
         await authService.logout();
       } catch {
@@ -184,6 +195,8 @@ export const useAuthStore = create<AuthState>((set, get) => {
           isAuthenticated: false,
           error: null,
         });
+
+        logoutInProgress = false;
       }
     },
 

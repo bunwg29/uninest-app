@@ -69,7 +69,7 @@ export const SettingsScreen = () => {
       label: 'Thông báo',
       icon: Bell,
       tone: SETTING_TONES.BLUE,
-      onPress: () => showComingSoon('Thông báo'),
+      onPress: () => navigation.navigate('NotificationSettings'),
     },
     {
       label: 'Đổi mật khẩu',

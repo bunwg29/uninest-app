@@ -10,14 +10,15 @@ import {
   useWindowDimensions,
   View,
 } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute, type RouteProp } from '@react-navigation/native';
+import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import axios from 'axios';
 import * as Location from 'expo-location';
 import { Map as MapIcon } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AMENITY_DISPLAY_LIST, ROOM_TYPE_OPTIONS } from '@features/listings/types/constants';
-import type { RootStackParamList } from '@navigation';
+import type { MainTabParamList, RootStackParamList } from '@navigation';
 import { useDebouncedValue, useToast } from '@hooks';
 import { OVERLAY_COLORS, SPACING_TOKENS, THEME_COLORS } from '@theme';
 import { Typography } from '@ui';
@@ -37,6 +38,8 @@ import {
   type RelaxSuggestion,
 } from '../components';
 import { useAuth } from '@features/auth';
+import { useSavedSearchActions } from '@features/notifications';
+import { buildSearchParams } from '../services/searchParams';
 import { useFavoriteIds, useRecentSearches, useSearchListings, useToggleFavorite } from '../hooks';
 import { useSearchStore } from '../store';
 import {
@@ -80,6 +83,8 @@ const isNetworkFailure = (error: unknown) => axios.isAxiosError(error) && !error
 
 export const SearchScreen = () => {
   const navigation = useNavigation<NavigationProp>();
+  const tabNavigation = useNavigation<BottomTabNavigationProp<MainTabParamList, 'Search'>>();
+  const route = useRoute<RouteProp<MainTabParamList, 'Search'>>();
   const toast = useToast();
   const insets = useSafeAreaInsets();
   const {
@@ -109,6 +114,7 @@ export const SearchScreen = () => {
   const { width } = useWindowDimensions();
   const favoriteIdsQuery = useFavoriteIds();
   const toggleFavorite = useToggleFavorite();
+  const { create: saveSearch } = useSavedSearchActions();
   const recentSearches = useRecentSearches();
   const favoriteIds = useMemo(() => new Set(favoriteIdsQuery.data ?? []), [favoriteIdsQuery.data]);
   const gridColumns = width >= 900 ? 4 : width >= 600 ? 3 : 2;
@@ -174,6 +180,15 @@ export const SearchScreen = () => {
       `${school.name} ${school.shortName}`.toLowerCase().includes(normalized)
     );
   }, [keywordInput]);
+
+  const shouldOpenFilters = route.params?.openFilters === true;
+
+  useEffect(() => {
+    if (!shouldOpenFilters) return;
+
+    openFilters();
+    tabNavigation.setParams({ openFilters: undefined });
+  }, [openFilters, shouldOpenFilters, tabNavigation]);
 
   useEffect(() => {
     if (
@@ -273,6 +288,33 @@ export const SearchScreen = () => {
 
     setFilterValidationMessage(undefined);
     applyDraftFilters();
+  };
+
+  const handleSaveFilters = async () => {
+    const validationMessage = getFilterValidationMessage(draftFilters);
+
+    if (validationMessage) {
+      setFilterValidationMessage(validationMessage);
+
+      return;
+    }
+
+    if (role !== 'student') {
+      toast.info('Chỉ sinh viên có thể lưu bộ lọc tìm phòng.');
+
+      return;
+    }
+
+    try {
+      const summary = getQuerySummary(draftFilters);
+      const name = (summary || 'Tất cả phòng trọ').slice(0, 100);
+
+      await saveSearch.mutateAsync({ name, criteria: buildSearchParams(draftFilters) });
+      toast.success('Đã lưu bộ lọc. Bạn sẽ nhận thông báo khi có phòng phù hợp.');
+      closeFilters();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Không thể lưu bộ lọc');
+    }
   };
 
   const handleCloseFilters = () => {
@@ -699,6 +741,7 @@ export const SearchScreen = () => {
           resetDraftFilters();
         }}
         onApply={handleApplyFilters}
+        onSave={() => void handleSaveFilters()}
         onClose={handleCloseFilters}
         onUseCurrentLocation={handleUseCurrentLocationFilter}
       />
