@@ -14,18 +14,13 @@ import {
   ScreenContainer,
   Typography,
 } from '@ui';
-import { LandlordBookingCard, REJECT_REASONS, RELEASE_REASONS, ReasonModal } from '../components';
-import {
-  useConfirmBooking,
-  useLandlordBookings,
-  useRejectBooking,
-  useReleaseBooking,
-} from '../hooks';
+import { LandlordBookingCard, REJECT_REASONS, ReasonModal } from '../components';
+import { useConfirmBooking, useLandlordBookings, useRejectBooking } from '../hooks';
 import type { Booking, BookingStatus } from '../types';
 
 type TabKey = 'pending' | 'confirmed' | 'rejected' | 'expired';
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
-type ReasonAction = { type: 'reject' | 'release'; booking: Booking };
+type ReasonAction = { type: 'reject'; booking: Booking };
 
 const TABS: Array<{ key: TabKey; label: string }> = [
   { key: 'pending', label: 'Chờ' },
@@ -37,7 +32,7 @@ const TABS: Array<{ key: TabKey; label: string }> = [
 const isInTab = (status: BookingStatus, tab: TabKey) => {
   if (tab === 'pending') return status === 'pending';
 
-  if (tab === 'confirmed') return status === 'confirmed' || status === 'holding';
+  if (tab === 'confirmed') return status === 'confirmed';
 
   if (tab === 'rejected') return status === 'rejected';
 
@@ -52,7 +47,6 @@ export const LandlordAppointmentsScreen = () => {
   const bookingsQuery = useLandlordBookings();
   const confirmBooking = useConfirmBooking();
   const rejectBooking = useRejectBooking();
-  const releaseBooking = useReleaseBooking();
   const allBookings = bookingsQuery.data?.items ?? [];
   const items = allBookings.filter((booking) => isInTab(booking.status, activeTab));
 
@@ -68,17 +62,9 @@ export const LandlordAppointmentsScreen = () => {
   const handleSubmitReason = async (reason: string) => {
     if (!reasonAction) return;
 
-    const { type, booking } = reasonAction;
-
     try {
-      if (type === 'reject') {
-        await rejectBooking.mutateAsync({ id: booking.id, reason });
-        toast.success('Đã từ chối yêu cầu');
-      } else {
-        await releaseBooking.mutateAsync({ id: booking.id, reason });
-        toast.success('Đã hủy giữ chỗ');
-      }
-
+      await rejectBooking.mutateAsync({ id: reasonAction.booking.id, reason });
+      toast.success('Đã từ chối yêu cầu');
       setReasonAction(null);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Không thể thực hiện thao tác');
@@ -103,18 +89,6 @@ export const LandlordAppointmentsScreen = () => {
             style={[styles.confirmAction, styles.successButton]}
           />
         </>
-      );
-    }
-
-    if (booking.status === 'holding') {
-      return (
-        <Button
-          title="Hủy giữ chỗ"
-          variant="outline"
-          onPress={() => setReasonAction({ type: 'release', booking })}
-          style={[styles.action, styles.dangerButton]}
-          textStyle={styles.dangerText}
-        />
       );
     }
 
@@ -205,16 +179,12 @@ export const LandlordAppointmentsScreen = () => {
 
       <ReasonModal
         isVisible={reasonAction !== null}
-        title={reasonAction?.type === 'reject' ? 'Vì sao bạn từ chối?' : 'Vì sao bạn huỷ giữ chỗ?'}
-        description={
-          reasonAction?.type === 'reject'
-            ? 'Sinh viên nhận được lý do này. Chọn lý do đúng giúp bạn giữ điểm uy tín.'
-            : 'Phòng sẽ trở về trạng thái còn trống và sinh viên được thông báo.'
-        }
-        reasons={reasonAction?.type === 'reject' ? REJECT_REASONS : RELEASE_REASONS}
-        confirmTone={reasonAction?.type === 'reject' ? 'primary' : 'danger'}
-        confirmTitle={reasonAction?.type === 'reject' ? 'Gửi phản hồi' : 'Hủy giữ chỗ'}
-        isLoading={rejectBooking.isPending || releaseBooking.isPending}
+        title="Vì sao bạn từ chối?"
+        description="Sinh viên nhận được lý do này. Chọn lý do đúng giúp bạn giữ điểm uy tín."
+        reasons={REJECT_REASONS}
+        confirmTone="primary"
+        confirmTitle="Gửi phản hồi"
+        isLoading={rejectBooking.isPending}
         onClose={() => setReasonAction(null)}
         onConfirm={(reason) => void handleSubmitReason(reason)}
       />

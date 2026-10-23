@@ -285,7 +285,7 @@ const CandidateCard = ({
   const isUnavailable = candidate.availability === 'rented' || candidate.availability === 'paused';
   const gradientColors = getPlaceholderGradient({
     id: candidate.id,
-    isHighlighted: candidate.availability === 'holding',
+    isHighlighted: candidate.isHighlighted,
   });
   const meta = [
     `${candidate.area} m²`,

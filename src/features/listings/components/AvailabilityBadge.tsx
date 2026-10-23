@@ -21,12 +21,6 @@ const AVAILABILITY_BADGES: Record<
     borderColor: OVERLAY_COLORS.SUCCESS_BORDER,
     textColor: THEME_COLORS.SUCCESS,
   },
-  holding: {
-    label: 'ĐANG GIỮ CHỖ',
-    backgroundColor: THEME_COLORS.WARNING_LIGHT,
-    borderColor: OVERLAY_COLORS.WARNING_BORDER,
-    textColor: THEME_COLORS.WARNING,
-  },
   rented: {
     label: 'ĐÃ CHO THUÊ',
     backgroundColor: THEME_COLORS.SURFACE_MUTED,

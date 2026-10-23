@@ -137,7 +137,7 @@ Thiết kế có màu chưa có token → **thêm token vào `src/theme/colors.t
 | `useComparison()` | `@features/comparison` | Thêm/bỏ phòng khỏi danh sách so sánh (tối đa 4) |
 | `useRecentlyViewedStore`, `useRecentListingIds` | `@features/recommendations` | Ghi/đọc phòng đã xem gần đây |
 | `useUploadImages()` | `@features/listings` (hooks) | Tải nhiều ảnh song song lên R2 có tiến độ, thử lại từng ảnh |
-| `AvailabilityBadge` | `@features/listings` | Nhãn còn trống / đang giữ chỗ / đã cho thuê |
+| `AvailabilityBadge` | `@features/listings` | Nhãn còn trống / đã cho thuê / ngừng nhận yêu cầu |
 | `SearchListingRow`, `SearchListingGridCard`, `SavedRoomRow`, `RecommendationCard` | feature tương ứng | 4 biến thể thẻ tin đã có — **làm thẻ tin mới phải dùng lại `MediaThumbnail`, `PriceText`, `SaveButton`** |
 | `TermsScreen`, `HelpCenterScreen`, `MaintenanceScreen` | `@features/support` | Màn chung (điều khoản, trợ giúp, bảo trì) |
 

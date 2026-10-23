@@ -81,7 +81,6 @@ export type RootStackParamList = {
   MyBookings: undefined;
   BookingDetail: { id: string };
   CancelBooking: { id: string };
-  BookingHold: { id: string };
   OtpVerification: {
     target: string;
     flow?: 'register' | 'forgot_password';

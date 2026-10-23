@@ -23,12 +23,6 @@ const STATUS_CONFIG: Record<BookingStatus, BadgePalette & { label: string }> = {
     border: OVERLAY_COLORS.INFO_BORDER,
   },
   confirmed: { label: 'Đã xác nhận', ...NEUTRAL_PALETTE },
-  holding: {
-    label: 'Đang giữ chỗ',
-    color: THEME_COLORS.PRIMARY_DARK,
-    background: THEME_COLORS.PRIMARY_LIGHT,
-    border: OVERLAY_COLORS.INFO_BORDER,
-  },
   expired: { label: 'Đã hết hạn', ...NEUTRAL_PALETTE },
   rejected: {
     label: 'Bị từ chối',

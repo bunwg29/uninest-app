@@ -16,7 +16,7 @@ export const HELP_TOPICS: HelpTopic[] = [
   },
   {
     id: 'deposit',
-    label: 'Đặt cọc & thanh toán',
+    label: 'Tiền cọc & an toàn',
     icon: CreditCard,
     color: THEME_COLORS.SUCCESS,
     background: THEME_COLORS.SUCCESS_LIGHT,
@@ -39,12 +39,12 @@ export const HELP_TOPICS: HelpTopic[] = [
 
 export const HELP_ARTICLES: HelpArticle[] = [
   {
-    id: 'deposit-refund',
+    id: 'deposit-offline',
     topicId: 'deposit',
     isFeatured: true,
-    question: 'Đặt cọc rồi mà đổi ý thì có lấy lại tiền không?',
+    question: 'Đặt cọc và giữ phòng trên UniNest thế nào?',
     answer:
-      'Trong 24 giờ đầu kể từ khi cọc thành công, bạn huỷ và được hoàn 100% tự động. Sau 24 giờ, việc hoàn cọc do bạn và chủ trọ tự thoả thuận — UniNest không giữ tiền và không can thiệp.',
+      'UniNest không nhận đặt cọc hay giữ phòng. Sau khi đặt lịch và đi xem phòng, bạn và chủ trọ tự thoả thuận tiền cọc, hợp đồng và ngày dọn vào trực tiếp với nhau.',
   },
   {
     id: 'landlord-no-response',
@@ -60,7 +60,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
     isFeatured: true,
     question: 'Làm sao biết tin đăng là thật?',
     answer:
-      'Ưu tiên tin có huy hiệu "Đã xác minh" — chủ trọ đã xác thực danh tính với UniNest. Hãy xem phòng trực tiếp trước khi cọc và tuyệt đối không chuyển tiền giữ chỗ ngoài ứng dụng.',
+      'Ưu tiên tin có huy hiệu "Đã xác minh" — chủ trọ đã xác thực danh tính với UniNest. Hãy xem phòng trực tiếp trước khi cọc, không chuyển tiền cho người chưa gặp và luôn yêu cầu giấy biên nhận hoặc hợp đồng.',
   },
   {
     id: 'ai-source',
@@ -114,39 +114,11 @@ export const HELP_ARTICLES: HelpArticle[] = [
       'Bộ lọc giá chỉ tính tiền phòng hằng tháng. Chi phí điện, nước, dịch vụ được ghi riêng trong chi tiết tin đăng để bạn tự cộng tổng chi phí.',
   },
   {
-    id: 'payment-methods',
-    topicId: 'deposit',
-    question: 'UniNest hỗ trợ những hình thức thanh toán nào?',
-    answer:
-      'Đặt cọc được thực hiện qua cổng thanh toán đối tác hỗ trợ thẻ ATM nội địa, ví điện tử và chuyển khoản QR. UniNest không lưu số thẻ hay thông tin tài khoản ngân hàng của bạn.',
-  },
-  {
     id: 'deposit-amount',
     topicId: 'deposit',
     question: 'Tiền cọc được tính như thế nào?',
     answer:
-      'Mức cọc do chủ trọ thiết lập trong tin đăng, thường bằng một tháng tiền phòng. Số tiền chính xác luôn hiển thị ở bước xác nhận trước khi bạn thanh toán.',
-  },
-  {
-    id: 'deposit-hold',
-    topicId: 'deposit',
-    question: 'Giữ chỗ sau khi cọc kéo dài bao lâu?',
-    answer:
-      'Phòng được giữ cho bạn tới ngày dọn vào đã thoả thuận. Trong thời gian này tin đăng được đánh dấu đã có người cọc và không nhận thêm yêu cầu mới.',
-  },
-  {
-    id: 'payment-failed',
-    topicId: 'deposit',
-    question: 'Thanh toán bị trừ tiền nhưng chưa ghi nhận cọc?',
-    answer:
-      'Giao dịch thường được cập nhật trong vài phút. Nếu sau 30 phút vẫn chưa ghi nhận, hãy gửi mã giao dịch về hotro@uninest.vn, tiền sẽ được hoàn về tài khoản nguồn nếu giao dịch thất bại.',
-  },
-  {
-    id: 'deposit-invoice',
-    topicId: 'deposit',
-    question: 'Tôi có nhận được biên nhận đặt cọc không?',
-    answer:
-      'Có. Biên nhận được lưu trong chi tiết lịch hẹn và gửi kèm email xác nhận ngay sau khi giao dịch thành công.',
+      'Mức cọc do chủ trọ ghi trong tin đăng, thường bằng một tháng tiền phòng. Bạn trả cọc trực tiếp cho chủ trọ khi hai bên đã thống nhất, nên hãy hỏi rõ điều kiện hoàn cọc trước.',
   },
   {
     id: 'forgot-password',

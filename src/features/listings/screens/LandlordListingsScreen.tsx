@@ -14,7 +14,6 @@ import {
 import {
   AlertCircle,
   ChevronRight,
-  Clock3,
   EllipsisVertical,
   ImageOff,
   Info,
@@ -156,7 +155,7 @@ export const LandlordListingsScreen = () => {
           const wasPaused =
             action === 'delete' && typeof result === 'object' && result?.deleted === false;
           const successMessage = wasPaused
-            ? 'Tin đã có lịch hẹn hoặc giữ chỗ nên chuyển sang "Ngừng nhận yêu cầu"'
+            ? 'Tin đang có lịch hẹn nên chuyển sang "Ngừng nhận yêu cầu"'
             : action === 'hide'
               ? 'Đã ẩn tin đăng'
               : action === 'republish'
@@ -436,7 +435,6 @@ const LandlordListingCard = ({
 }) => {
   const [hasImageError, setHasImageError] = useState(false);
   const { isCompact } = useResponsiveLayout();
-  const isHolding = listing.holdingStatus && listing.status === 'published';
   const imageTip = getImageTip(listing);
 
   return (
@@ -466,14 +464,10 @@ const LandlordListingCard = ({
 
         <View style={styles.cardDetails}>
           <View style={styles.badgesRow}>
-            {isHolding ? (
-              <LandlordStatusPill label="Đang giữ chỗ" tone="warning" />
-            ) : (
-              <LandlordStatusPill
-                label={LANDLORD_STATUS_LABELS[listing.status]}
-                tone={LANDLORD_STATUS_TONES[listing.status]}
-              />
-            )}
+            <LandlordStatusPill
+              label={LANDLORD_STATUS_LABELS[listing.status]}
+              tone={LANDLORD_STATUS_TONES[listing.status]}
+            />
             {listing.isFeatured ? <LandlordStatusPill label="Nổi bật" tone="featured" /> : null}
           </View>
           <Typography variant="body2" weight="BOLD" numberOfLines={2} style={styles.cardTitle}>
@@ -506,15 +500,6 @@ const LandlordListingCard = ({
           <Stat label="Liên hệ" value={listing.contactCount ?? 0} />
           <View style={styles.statDivider} />
           <Stat label="Đã lưu" value={listing.saveCount ?? 0} />
-        </View>
-      ) : null}
-
-      {isHolding && listing.holderName ? (
-        <View style={[styles.note, styles.noteWarning]}>
-          <Clock3 size={16} color={THEME_COLORS.WARNING} style={styles.noteIcon} />
-          <Typography variant="body2" colorKey="WARNING" style={styles.noteText}>
-            {getHoldingNote(listing)}
-          </Typography>
         </View>
       ) : null}
 
@@ -652,19 +637,6 @@ const ListingsSkeleton = () => (
 
 const MIN_RECOMMENDED_IMAGES = 6;
 
-function getHoldingNote(listing: LandlordListing): string {
-  const expireDate = listing.holdExpireDate ? new Date(listing.holdExpireDate) : null;
-  const expireText =
-    expireDate && !Number.isNaN(expireDate.getTime())
-      ? ` giữ chỗ tới ${String(expireDate.getDate()).padStart(2, '0')}/${String(expireDate.getMonth() + 1).padStart(2, '0')}`
-      : ' đang giữ chỗ';
-  const depositText = listing.depositAmount
-    ? ` · đã cọc ${formatListingPrice(listing.depositAmount)}`
-    : '';
-
-  return `Bạn ${listing.holderName}${expireText}${depositText}`;
-}
-
 function getImageTip(listing: LandlordListing): string | null {
   const imageCount = listing.imageUrls?.length;
 
@@ -801,10 +773,6 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     borderRadius: BORDER_RADIUS_TOKENS.MD,
     borderWidth: 1,
-  },
-  noteWarning: {
-    borderColor: OVERLAY_COLORS.WARNING_BORDER,
-    backgroundColor: THEME_COLORS.WARNING_LIGHT,
   },
   noteInfo: {
     borderColor: OVERLAY_COLORS.INFO_BORDER,

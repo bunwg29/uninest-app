@@ -17,10 +17,6 @@ export interface LandlordListing {
   contactCount: number;
   saveCount: number;
   bookingCount?: number;
-  holdingStatus: boolean;
-  holderName?: string;
-  holdExpireDate?: string;
-  depositAmount?: number;
   rejectionReason?: string;
   roomType?: string;
   maxOccupants?: number;

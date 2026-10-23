@@ -26,7 +26,7 @@ src/
     index.ts     # barrel: chỉ export thứ feature khác được dùng
 ```
 
-Feature hiện có: `auth`, `listings`, `search`, `comparison`, `booking`, `chat`, `forum`, `support`, `ai-chat`, `recommendations`. Feature của Sprint 3–4 chưa có thì tạo đúng tên sau, theo cấu trúc trên: `reviews` (đánh giá), `notifications` (thông báo), `payment` (thanh toán), `price-comparison` (so sánh giá), `premium`, `admin` (nếu làm trong app). `ai-chat`, `recommendations` đã có — **viết tiếp vào đó**.
+Feature hiện có: `auth`, `listings`, `search`, `comparison`, `booking`, `chat`, `forum`, `support`, `ai-chat`, `recommendations`. Feature của Sprint 3–4 chưa có thì tạo đúng tên sau, theo cấu trúc trên: `reviews` (đánh giá), `notifications` (thông báo), `payment` (thanh toán gói Premium ở Sprint 4), `price-comparison` (so sánh giá), `premium`, `admin` (nếu làm trong app). `ai-chat`, `recommendations` đã có — **viết tiếp vào đó**.
 
 Tạo feature mới chỉ khi nghiệp vụ không thuộc feature nào ở trên, và phải hỏi người giao việc trước.
 

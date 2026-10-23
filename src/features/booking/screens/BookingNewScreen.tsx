@@ -155,11 +155,9 @@ export const BookingNewScreen = () => {
             Phòng hiện chưa nhận lịch xem
           </Typography>
           <Typography variant="body2" colorKey="TEXT_MUTED" align="center">
-            {roomQuery.data.availability === 'holding'
-              ? 'Phòng đang được sinh viên khác giữ chỗ.'
-              : roomQuery.data.availability === 'rented'
-                ? 'Phòng đã được cho thuê.'
-                : 'Chủ trọ đã ngừng nhận yêu cầu cho phòng này.'}
+            {roomQuery.data.availability === 'rented'
+              ? 'Phòng đã được cho thuê.'
+              : 'Chủ trọ đã ngừng nhận yêu cầu cho phòng này.'}
           </Typography>
           <Button title="Quay lại" variant="outline" onPress={() => navigation.goBack()} />
         </View>
