@@ -20,6 +20,7 @@ import {
   StudentListingPreviewScreen,
 } from '@features/listings';
 import { ComparisonScreen } from '@features/comparison';
+import { PriceComparisonScreen } from '@features/price-comparison';
 import { SavedRoomsScreen } from '@features/search';
 import { HelpCenterScreen, TermsScreen } from '@features/support';
 import {
@@ -79,6 +80,7 @@ export const RootNavigator = () => {
               <Stack.Screen name="ListingDetail" component={ListingDetailScreen} />
               <Stack.Screen name="LandlordPublicProfile" component={LandlordPublicProfileScreen} />
               <Stack.Screen name="Comparison" component={ComparisonScreen} />
+              <Stack.Screen name="PriceComparison" component={PriceComparisonScreen} />
               <Stack.Screen name="SavedRooms" component={SavedRoomsScreen} />
               <Stack.Screen name="LandlordVerification" component={LandlordVerificationScreen} />
               <Stack.Screen name="BookingNew" component={BookingNewScreen} />
