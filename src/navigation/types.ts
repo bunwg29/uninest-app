@@ -45,7 +45,7 @@ export type AuthStackParamList = {
 
 export type MainTabParamList = {
   Home: undefined;
-  Search: undefined;
+  Search: { openFilters?: boolean } | undefined;
   AiChat: undefined;
   Messages: undefined;
   Profile: undefined;
@@ -94,6 +94,9 @@ export type RootStackParamList = {
   Comparison: undefined;
   PriceComparison: undefined;
   SavedRooms: undefined;
+  Notifications: undefined;
+  NotificationSettings: undefined;
+  SavedSearches: undefined;
   LandlordVerification: undefined;
   Community: { category?: ForumCategory } | undefined;
   ForumPostDetail: { postId: string };

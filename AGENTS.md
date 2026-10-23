@@ -1,6 +1,6 @@
 # UniNest Mobile App — Hướng dẫn cho AI
 
-Ứng dụng di động UniNest (Expo + React Native + TypeScript) kết nối **Sinh viên** thuê trọ với **Chủ trọ**. Backend ở repo `../uninest-be`.
+Ứng dụng di động UniNest (Expo + React Native + TypeScript) kết nối **Sinh viên** thuê trọ với **Chủ trọ**. Backend ở repo `../uninest-be`, giao diện quản trị web ở repo `../uninest-web`.
 
 **AI phải đọc file này trước khi làm bất cứ việc gì trong repo.** Sau đó đọc các file trong `agent/` theo bảng dưới.
 
