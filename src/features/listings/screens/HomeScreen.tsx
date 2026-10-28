@@ -23,6 +23,8 @@ import {
   RecommendationCard,
   useRecentListingIds,
   useRecentlyViewedStore,
+  useRecommendations,
+  type RecommendedListing,
 } from '@features/recommendations';
 import type { MainTabParamList, RootStackParamList } from '@navigation';
 import { useListingPostStore } from '../store/listingPostStore';
@@ -40,6 +42,9 @@ import { NearbyMapPreview } from '../components/home/NearbyMapPreview';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList & MainTabParamList>;
 type HomeChipId = 'near-university' | 'budget' | 'loft' | 'roommate';
+type CarouselItem =
+  | { kind: 'recommendation'; listing: RecommendedListing }
+  | { kind: 'search'; listing: SearchListingItem };
 
 const NEAR_SCHOOL = SEARCH_SCHOOLS[0];
 const CAROUSEL_LIMIT = 6;
@@ -74,7 +79,7 @@ export const HomeScreen = () => {
   const navigation = useNavigation<NavigationProp>();
   const toast = useToast();
   const { user, role } = useAuth();
-  const { isLandlord } = useRoleGuard();
+  const { isLandlord, isStudent } = useRoleGuard();
   const { openListing } = useOpenListing();
   const { width } = useWindowDimensions();
   const isCompact = width < 375;
@@ -86,11 +91,16 @@ export const HomeScreen = () => {
   const recentViewCount = useRecentListingIds().length;
   const hasHydratedHistory = useRecentlyViewedStore((state) => state.hasHydrated);
   const [selectedChipId, setSelectedChipId] = useState<HomeChipId>('near-university');
+  const recommendationsQuery = useRecommendations(isStudent);
+  const recommendations = recommendationsQuery.data;
 
-  const isColdStart = hasHydratedHistory && recentViewCount === 0;
+  const isColdStart = isStudent
+    ? Boolean(recommendations?.isFallback)
+    : hasHydratedHistory && recentViewCount === 0;
   const activeChipId: HomeChipId = isColdStart ? 'near-university' : selectedChipId;
   const filters = useMemo(() => buildHomeFilters(activeChipId), [activeChipId]);
-  const listingsQuery = useSearchListings(filters);
+  const nearbyFilters = useMemo(() => buildHomeFilters('near-university'), []);
+  const listingsQuery = useSearchListings(isStudent ? nearbyFilters : filters);
   const favoriteIdsQuery = useFavoriteIds();
   const toggleFavorite = useToggleFavorite();
   const favoriteIds = useMemo(() => new Set(favoriteIdsQuery.data ?? []), [favoriteIdsQuery.data]);
@@ -98,7 +108,15 @@ export const HomeScreen = () => {
     () => (listingsQuery.data?.pages.flatMap((page) => page.items) ?? []).slice(0, CAROUSEL_LIMIT),
     [listingsQuery.data]
   );
-  const isLoading = !hasHydratedHistory || listingsQuery.isLoading;
+  const carouselItems = useMemo<CarouselItem[]>(
+    () =>
+      isStudent
+        ? (recommendations?.items ?? []).map((listing) => ({ kind: 'recommendation', listing }))
+        : listings.map((listing) => ({ kind: 'search', listing })),
+    [isStudent, recommendations, listings]
+  );
+  const carouselQuery = isStudent ? recommendationsQuery : listingsQuery;
+  const isLoading = !hasHydratedHistory || carouselQuery.isLoading || listingsQuery.isLoading;
 
   const handleGoToProfile = () => {
     navigation.navigate('Profile' as never);
@@ -149,6 +167,13 @@ export const HomeScreen = () => {
       return;
     }
 
+    if (isStudent) {
+      applySearchPreset(buildHomeFilters(chipId as HomeChipId));
+      handleGoToSearch();
+
+      return;
+    }
+
     setSelectedChipId(chipId as HomeChipId);
   };
 
@@ -175,34 +200,61 @@ export const HomeScreen = () => {
   const userDisplayName = user?.fullName || 'Bạn';
   const locationText = user?.streetAddress || user?.fullAddress || 'Đà Nẵng, Việt Nam';
 
-  const renderListing = ({ item }: { item: SearchListingItem }) => (
-    <RecommendationCard
-      title={item.title}
-      price={item.price}
-      imageUrl={item.thumbnail}
-      areaSquareMeters={item.area}
-      capacity={item.capacity}
-      distanceMeters={item.distanceMeters}
-      campusShortName={NEAR_SCHOOL.shortName}
-      rating={item.rating}
-      reviewCount={item.reviewCount}
-      availability={item.availability}
-      isHighlighted={item.isHighlighted}
-      isSaved={favoriteIds.has(item.id)}
-      onPress={() => openListing(item.id)}
-      onToggleSaved={() => handleToggleSaved(item.id)}
-    />
-  );
+  const renderListing = ({ item }: { item: CarouselItem }) => {
+    if (item.kind === 'recommendation') {
+      const { listing } = item;
+      const cover = listing.images.find((image) => image.isCover) ?? listing.images[0];
+
+      return (
+        <RecommendationCard
+          title={listing.title}
+          price={listing.price}
+          imageUrl={cover?.url}
+          areaSquareMeters={listing.area}
+          capacity={listing.maxOccupants}
+          rating={listing.averageRating ?? undefined}
+          reviewCount={listing.reviewCount ?? undefined}
+          availability={listing.availability}
+          isHighlighted={listing.isHighlighted}
+          matchPercentage={listing.matchPercentage ?? undefined}
+          isSaved={favoriteIds.has(listing.id)}
+          onPress={() => openListing(listing.id)}
+          onToggleSaved={() => handleToggleSaved(listing.id)}
+        />
+      );
+    }
+
+    const { listing } = item;
+
+    return (
+      <RecommendationCard
+        title={listing.title}
+        price={listing.price}
+        imageUrl={listing.thumbnail}
+        areaSquareMeters={listing.area}
+        capacity={listing.capacity}
+        distanceMeters={listing.distanceMeters}
+        campusShortName={NEAR_SCHOOL.shortName}
+        rating={listing.rating}
+        reviewCount={listing.reviewCount}
+        availability={listing.availability}
+        isHighlighted={listing.isHighlighted}
+        isSaved={favoriteIds.has(listing.id)}
+        onPress={() => openListing(listing.id)}
+        onToggleSaved={() => handleToggleSaved(listing.id)}
+      />
+    );
+  };
 
   const renderCarouselContent = () => {
-    if (listingsQuery.isError) {
+    if (carouselQuery.isError) {
       return (
         <View style={styles.carouselMessage}>
           <Typography variant="body2" colorKey="TEXT_MUTED">
             Không tải được gợi ý phòng.
           </Typography>
 
-          <TouchableOpacity onPress={() => listingsQuery.refetch()} activeOpacity={0.7}>
+          <TouchableOpacity onPress={() => carouselQuery.refetch()} activeOpacity={0.7}>
             <Typography variant="body2" weight="SEMIBOLD" color={THEME_COLORS.PRIMARY_DARK}>
               Thử lại
             </Typography>
@@ -211,7 +263,7 @@ export const HomeScreen = () => {
       );
     }
 
-    if (listings.length === 0) {
+    if (carouselItems.length === 0) {
       return (
         <View style={styles.carouselMessage}>
           <Typography variant="body2" colorKey="TEXT_MUTED">
@@ -224,8 +276,8 @@ export const HomeScreen = () => {
     return (
       <FlatList
         horizontal
-        data={listings}
-        keyExtractor={(item) => item.id}
+        data={carouselItems}
+        keyExtractor={(item) => item.listing.id}
         renderItem={renderListing}
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.carouselContent}
@@ -265,7 +317,7 @@ export const HomeScreen = () => {
 
               <View style={styles.sectionGap}>
                 <SectionHeader
-                  title="Phổ biến gần ĐH Bách khoa"
+                  title={isStudent ? 'Phổ biến trong khu vực' : 'Phổ biến gần ĐH Bách khoa'}
                   actionLabel="Xem tất cả"
                   onActionPress={handleViewAll}
                 />
@@ -275,14 +327,16 @@ export const HomeScreen = () => {
             <View style={styles.firstSection}>
               <HomeChipRow
                 chips={HOME_CHIPS}
-                selectedId={activeChipId}
+                selectedId={isStudent ? '' : activeChipId}
                 onChipPress={handleChipPress}
               />
 
               <View style={styles.sectionGap}>
                 <SectionHeader
                   title="Gợi ý dành cho bạn"
-                  subtitle={`Dựa trên ${recentViewCount} phòng bạn đã xem gần đây`}
+                  subtitle={`Dựa trên ${
+                    isStudent ? (recommendations?.basedOnListingCount ?? 0) : recentViewCount
+                  } phòng bạn đã xem gần đây`}
                   showSparkle
                   actionLabel="Xem tất cả"
                   onActionPress={handleViewAll}
