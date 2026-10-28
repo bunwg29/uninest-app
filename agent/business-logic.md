@@ -229,7 +229,7 @@ confirmed, expired, cancelled, rejected → (kết thúc khi đã qua giờ xem)
 - Chủ trọ: Xác nhận, **Từ chối (bắt buộc lý do)**.
 - Sinh viên huỷ khi còn **dưới 24 giờ** trước giờ xem → **bắt buộc lý do**.
 - Lịch `confirmed` đã qua giờ xem được coi là **đã xem phòng**: giữ nguyên `confirmed`, không tự hết hạn, không còn tính là lịch còn hiệu lực (sinh viên đặt lại được phòng đó). Đây là bằng chứng cho Đánh giá.
-- **Không có giữ chỗ / đặt cọc** (đã gỡ ở Sprint 3): bỏ `holding`, `PATCH /bookings/:id/hold`, `PATCH /bookings/:id/release`, `HOLDING_DAYS`, `deposit_amount` trên booking. Migration `1700000000014-RemoveBookingHold` chuyển lịch `holding` cũ về `confirmed` và xoá bảng thanh toán nếu có.
+- **Không có giữ chỗ / đặt cọc** (đã gỡ ở Sprint 3): bỏ `holding`, `PATCH /bookings/:id/hold`, `PATCH /bookings/:id/release`, `HOLDING_DAYS`, `deposit_amount` trên booking. Migration `1700000000011-RemoveBookingHold` chuyển lịch `holding` cũ về `confirmed`, xoá index một-người-giữ-chỗ và cột `deposit_amount`.
 - Mọi lần đổi trạng thái ghi vào `booking_events` (ai, lúc nào, lý do) — làm bằng chứng cho Đánh giá Sprint 3.
 - Cron nội bộ `@nestjs/schedule` chạy **mỗi 5 phút**, cập nhật có điều kiện. **Không dùng Redis/BullMQ.**
 - Phát sự kiện `booking.created`, `booking.status_changed` (cho Thông báo Sprint 3) và đẩy socket `booking.updated`, `listing.availability_changed` để app cập nhật ngay.
@@ -308,6 +308,13 @@ confirmed, expired, cancelled, rejected → (kết thúc khi đã qua giờ xem)
 - Khoá Chủ trọ → mọi tin `active` của họ chuyển `hidden`. Chỉ Admin được khoá tài khoản người khác.
 - **Mọi** hành động duyệt/từ chối/khoá/gỡ ghi `audit_logs`: người làm, thời điểm, hành động, đối tượng, lý do. Tra cứu lại được.
 - Dữ liệu nhạy cảm (mật khẩu, token) không bao giờ trả về, kể cả API admin.
+- **Không có** quy định thời hạn/SLA duyệt tin: hàng đợi chỉ hiện thời gian chờ, không đánh dấu "quá hạn". Tin **có cảnh báo** = chủ trọ chưa xác minh hoặc đang có báo cáo chờ xử lý.
+- Admin ẩn được tin `active` → `hidden` kèm lý do (ghi `listing.hide`), hoặc gỡ tin qua xử lý báo cáo. Tin bị **quản trị viên ẩn** được gắn `moderation_hidden_at` + `moderation_reason`: Chủ trọ **không tự hiện lại** được (`PATCH /landlord/listings/:id/visibility` trả 400); Chủ trọ sửa tin → tin về `pending` để duyệt lại; Admin duyệt hoặc `PATCH /admin/listings/:id/restore` (ghi `listing.restore`) mới gỡ cờ. Chủ trọ nhận thông báo khi tin bị ẩn và khi được hiện lại. Tin bị ẩn do **khoá tài khoản** không gắn cờ này.
+- Không duyệt được tin của Chủ trọ đang bị khoá. Duyệt hàng loạt = gọi duyệt từng tin.
+- Danh sách người dùng/báo cáo trả kèm `counts` cho từng tab; nhật ký lọc được theo hành động, người thực hiện, khoảng thời gian, từ khoá.
+- Chưa có dữ liệu thật (tác vụ định kỳ, Premium, IP): web-admin hiển thị dữ liệu mẫu, tích hợp sau. Không còn mục giao dịch vì đã bỏ đặt cọc.
+
+**API:** `GET /admin/overview`, `GET /admin/listings` (lọc `status`, `flag=warning`, `provinceCode`, `sort=newest|oldest`, `keyword`; trả kèm `counts`), `GET /admin/listings/provinces`, `GET /admin/listings/:id`, `PATCH /admin/listings/:id/approve`, `PATCH /admin/listings/:id/reject`, `PATCH /admin/listings/:id/hide`, `PATCH /admin/listings/:id/restore`, `GET /admin/reports`, `GET /admin/reports/:id`, `PATCH /admin/reports/:id/resolve`, `GET /admin/users`, `GET /admin/users/:id`, `PATCH /admin/users/:id/lock`, `PATCH /admin/users/:id/unlock`, `GET /admin/audit-logs`, `POST /users/:id/reports`.
 
 **API:** `GET /admin/overview`, `GET /admin/listings`, `GET /admin/listings/:id`, `PATCH /admin/listings/:id/approve`, `PATCH /admin/listings/:id/reject`, `GET /admin/reports`, `GET /admin/reports/:id`, `PATCH /admin/reports/:id/resolve`, `GET /admin/users`, `GET /admin/users/:id`, `PATCH /admin/users/:id/lock`, `PATCH /admin/users/:id/unlock`, `GET /admin/audit-logs`, `POST /users/:id/reports`.
 
@@ -346,7 +353,7 @@ confirmed, expired, cancelled, rejected → (kết thúc khi đã qua giờ xem)
 - Thanh toán chỉ quay lại ở **Sprint 4** cho việc Chủ trọ mua gói Premium (FR-PREMIUM). Cổng thanh toán chọn khi làm Sprint 4 (ưu tiên cổng có môi trường test miễn phí và tài khoản cá nhân dùng được, ví dụ SePay hoặc payOS).
 - Khi làm lại: chỉ coi là thành công khi cổng xác nhận (webhook đã xác thực chữ ký hoặc API tra cứu), mỗi giao dịch có mã tham chiếu duy nhất, đối soát bằng cron nội bộ, không lưu thông tin thẻ.
 
-### 4.14. FR-AICHAT — Chatbot tư vấn (RAG) (Sprint 4 · Chưa làm)
+### 4.14. FR-AICHAT — Chatbot tư vấn (RAG) (Sprint 4 · TSK-S4-01 đã triển khai trên nhánh task, chờ review)
 
 **Task:** TSK-S4-01 (embedding + RAG + LLM, P1), TSK-S4-02 (giao diện, P1). **Màn hình:** AI-01 Chào, AI-02 Trả lời dần, AI-03 Thẻ phòng, AI-04 Không có kết quả, AI-05 Lỗi dịch vụ, AI-06 Lịch sử, AI-07 Bảng tiêu chí trích xuất.
 
@@ -360,7 +367,20 @@ confirmed, expired, cancelled, rejected → (kết thúc khi đã qua giờ xem)
 - Phản hồi ≤ 5 giây; ≥ 80% câu trả lời trong bộ test chuẩn có ít nhất 1 tin phù hợp thật; 100% link hợp lệ.
 - Giới hạn chi phí: dùng mô hình nhỏ, giới hạn số request, cache kết quả tái sử dụng được.
 
-**API dự kiến:** `POST /ai/chat` trả câu trả lời + danh sách `listingId`.
+**Đã chốt khi triển khai TSK-S4-01**
+- Nhà cung cấp AI: API tương thích OpenAI (`AI_BASE_URL`, mặc định OpenAI), gọi bằng `fetch` có sẵn của Node, không thêm thư viện. Mô hình mặc định `gpt-4o-mini` (trả lời) và `text-embedding-3-small` (embedding, **768 chiều**, cột `vector(768)`). Thiếu `AI_API_KEY` → cron bỏ qua, chat trả `service_error`.
+- Bảng `listing_embeddings` (listing_id PK, embedding, content_hash, model, embedded_at), index **HNSW `vector_cosine_ops`**. Cron `*/10 * * * *` (tắt bằng `AI_EMBEDDING_ENABLED=false`), khoá advisory chống chạy trùng, mỗi lượt tối đa 10 lô × 64 tin `active` chưa có embedding hoặc `updated_at > embedded_at`; nội dung không đổi (so `content_hash`) thì không gọi API. Chạy tay: `npm run ai-embedding:run`.
+- Trích xuất tiêu chí bằng **luật tiếng Việt phía server** (nhanh, không tốn request): giá (`dưới 2 triệu 5`, `1tr5`, `800k`, `từ 3 đến 5 triệu`, `khoảng 1,2 triệu` → ±20%), diện tích tối thiểu, loại phòng, tiện ích (theo tên + từ đồng nghĩa), trường (tên trường, `BKĐN`, `gần trường` = trường của sinh viên), tỉnh/thành, phường. Tiêu chí lượt mới **gộp** với tiêu chí của cuộc trò chuyện (tiện ích cộng dồn, `rẻ hơn` = giảm 15% giá tối đa). Gửi `criteria` (AI-07) thì dùng nguyên tiêu chí đó.
+- Câu hỏi không có tiêu chí và không có từ khoá tìm phòng → trả lời chung (`general`), không gợi ý phòng.
+- Truy xuất: lọc cấu trúc (giá, diện tích, loại phòng, tiện ích bắt buộc đủ, trường liên kết, phường hoặc tỉnh) **AND** sắp xếp theo khoảng cách cosine; tin chưa có embedding xếp sau. Tối đa **5 tin**, chi tiết tin lấy qua `ListingsService.getListingsByIds` nên chỉ có tin `active` thật.
+- Không có kết quả → câu trả lời cố định trung thực + tối đa **2 gợi ý nới tiêu chí** có đếm số phòng thật (nới ngân sách +25%, bỏ tiện ích, mở rộng ra toàn tỉnh, mọi loại phòng, bỏ giới hạn trường, bỏ diện tích).
+- Dịch vụ AI lỗi/hết giờ (`AI_REQUEST_TIMEOUT_MS`, mặc định 4000ms) → HTTP 200 `type: service_error`, `errorCode: AI-503`, vẫn trả `criteriaDisplay` để app điền sẵn bộ lọc tìm kiếm thường; lượt lỗi **không lưu**.
+- Giới hạn: **30 câu hỏi/giờ/sinh viên** (429 `AI_RATE_LIMITED`), nội dung ≤ 1000 ký tự, ngữ cảnh gửi LLM 6 tin gần nhất, cache embedding câu hỏi trong bộ nhớ (500 mục).
+- Lịch sử lưu ở `ai_conversations` (tiêu chí hiện tại, số tin nhắn, số phòng đã gợi ý, xoá mềm) và `ai_messages`.
+
+**API (chỉ Sinh viên):**
+- `POST /ai/chat` body `{ message, conversationId?, criteria? }` → `{ conversationId, type: results|no_results|general|service_error, errorCode, answer, criteria, criteriaDisplay { labels, university, province, ward, amenities, roomTypes }, matchedCount, totalActiveCount, listingIds, listings, suggestions[{ title, description, criteria, matchedCount }], userMessage, assistantMessage }`.
+- `GET /ai/conversations?page=&limit=`, `GET /ai/conversations/:id` (kèm `messages`, `listings` còn hiển thị), `DELETE /ai/conversations/:id`, `DELETE /ai/conversations` (xoá hết).
 
 ### 4.15. FR-AIRECOMM — Gợi ý cá nhân hoá (Sprint 4 · Chưa làm)
 
