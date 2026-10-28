@@ -21,6 +21,7 @@ import {
 } from '@features/listings';
 import { ComparisonScreen } from '@features/comparison';
 import { PriceComparisonScreen } from '@features/price-comparison';
+import { AiChatHistoryScreen } from '@features/ai-chat';
 import { SavedRoomsScreen } from '@features/search';
 import {
   NotificationsScreen,
@@ -88,6 +89,7 @@ export const RootNavigator = () => {
               <Stack.Screen name="LandlordPublicProfile" component={LandlordPublicProfileScreen} />
               <Stack.Screen name="Comparison" component={ComparisonScreen} />
               <Stack.Screen name="PriceComparison" component={PriceComparisonScreen} />
+              <Stack.Screen name="AiChatHistory" component={AiChatHistoryScreen} />
               <Stack.Screen name="SavedRooms" component={SavedRoomsScreen} />
               <Stack.Screen name="Notifications" component={NotificationsScreen} />
               <Stack.Screen name="NotificationSettings" component={NotificationSettingsScreen} />
