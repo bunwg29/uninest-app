@@ -46,7 +46,7 @@ export type AuthStackParamList = {
 export type MainTabParamList = {
   Home: undefined;
   Search: { openFilters?: boolean } | undefined;
-  AiChat: undefined;
+  AiChat: { conversationId?: string } | undefined;
   Messages: undefined;
   Profile: undefined;
   Overview?: undefined;
@@ -92,6 +92,7 @@ export type RootStackParamList = {
   LandlordPublicProfile: { landlordId: string; isPreview?: boolean };
   Comparison: undefined;
   PriceComparison: undefined;
+  AiChatHistory: undefined;
   SavedRooms: undefined;
   Notifications: undefined;
   NotificationSettings: undefined;
