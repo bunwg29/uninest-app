@@ -156,7 +156,7 @@ export const LandlordAppointmentsScreen = () => {
           refreshControl={
             <RefreshControl
               refreshing={bookingsQuery.isRefetching}
-              onRefresh={() => bookingsQuery.refetch()}
+              onRefresh={() => void bookingsQuery.refetch()}
             />
           }
         >

@@ -275,7 +275,7 @@ export const ChatRoomScreen = ({ navigation, route }: ChatRoomScreenProps) => {
             ListFooterComponent={
               room.isFetchingNextPage ? (
                 <ActivityIndicator color={THEME_COLORS.PRIMARY} style={styles.footerLoader} />
-              ) : null
+              ) : undefined
             }
             contentContainerStyle={styles.listContent}
             initialNumToRender={15}

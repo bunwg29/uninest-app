@@ -175,7 +175,7 @@ export const MyBookingsScreen = () => {
           refreshControl={
             <RefreshControl
               refreshing={bookingsQuery.isRefetching}
-              onRefresh={() => bookingsQuery.refetch()}
+              onRefresh={() => void bookingsQuery.refetch()}
             />
           }
         >

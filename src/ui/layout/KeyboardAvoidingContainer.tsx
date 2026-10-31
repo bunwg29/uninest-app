@@ -1,5 +1,13 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
-import { Keyboard, Platform, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
+import {
+  Keyboard,
+  Platform,
+  StyleSheet,
+  View,
+  type StyleProp,
+  type ViewInstance,
+  type ViewStyle,
+} from 'react-native';
 
 export interface KeyboardAvoidingContainerProps {
   children: ReactNode;
@@ -7,7 +15,7 @@ export interface KeyboardAvoidingContainerProps {
 }
 
 export const KeyboardAvoidingContainer = ({ children, style }: KeyboardAvoidingContainerProps) => {
-  const containerRef = useRef<View>(null);
+  const containerRef = useRef<ViewInstance>(null);
   const [overlap, setOverlap] = useState(0);
 
   useEffect(() => {

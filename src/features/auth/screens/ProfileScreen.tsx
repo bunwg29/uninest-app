@@ -71,7 +71,10 @@ export const ProfileScreen = () => {
       applyBottomInset={false}
       style={styles.container}
       refreshControl={
-        <RefreshControl refreshing={profileQuery.isRefetching} onRefresh={profileQuery.refetch} />
+        <RefreshControl
+          refreshing={profileQuery.isRefetching}
+          onRefresh={() => void profileQuery.refetch()}
+        />
       }
     >
       <View style={styles.headerRow}>

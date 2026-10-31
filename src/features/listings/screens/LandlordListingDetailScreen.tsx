@@ -200,7 +200,7 @@ export const LandlordListingDetailScreen = () => {
         refreshControl={
           <RefreshControl
             refreshing={detailQuery.isRefetching}
-            onRefresh={() => detailQuery.refetch()}
+            onRefresh={() => void detailQuery.refetch()}
             tintColor={THEME_COLORS.PRIMARY}
           />
         }

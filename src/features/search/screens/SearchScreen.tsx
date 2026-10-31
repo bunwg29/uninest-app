@@ -604,7 +604,7 @@ export const SearchScreen = () => {
             refreshControl={
               <RefreshControl
                 refreshing={searchQuery.isRefetching && !searchQuery.isFetchingNextPage}
-                onRefresh={() => searchQuery.refetch()}
+                onRefresh={() => void searchQuery.refetch()}
                 colors={[THEME_COLORS.PRIMARY]}
                 tintColor={THEME_COLORS.PRIMARY}
               />
@@ -614,7 +614,7 @@ export const SearchScreen = () => {
             ListFooterComponent={
               searchQuery.isFetchingNextPage ? (
                 <ActivityIndicator color={THEME_COLORS.PRIMARY} style={styles.loadMore} />
-              ) : null
+              ) : undefined
             }
           />
 

@@ -153,7 +153,7 @@ export const NotificationsScreen = () => {
 
   const footer = query.isFetchingNextPage ? (
     <ActivityIndicator style={styles.footer} color={THEME_COLORS.PRIMARY} />
-  ) : null;
+  ) : undefined;
 
   const renderBody = () => {
     if (query.isLoading) return <ListSkeleton />;
