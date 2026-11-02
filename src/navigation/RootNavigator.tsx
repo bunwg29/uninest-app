@@ -29,6 +29,7 @@ import {
   usePushRegistration,
 } from '@features/notifications';
 import { HelpCenterScreen, TermsScreen } from '@features/support';
+import { MyReviewsScreen, ReviewFormScreen, ReviewsScreen } from '@features/reviews';
 import {
   BookingConfirmScreen,
   BookingDetailScreen,
@@ -86,6 +87,13 @@ export const RootNavigator = () => {
               <Stack.Screen name="StudentListingPreview" component={StudentListingPreviewScreen} />
               <Stack.Screen name="ListingDetail" component={ListingDetailScreen} />
               <Stack.Screen name="LandlordPublicProfile" component={LandlordPublicProfileScreen} />
+              <Stack.Screen name="Reviews" component={ReviewsScreen} />
+              <Stack.Screen name="MyReviews" component={MyReviewsScreen} />
+              <Stack.Screen
+                name="ReviewForm"
+                component={ReviewFormScreen}
+                options={{ animation: 'slide_from_bottom' }}
+              />
               <Stack.Screen name="Comparison" component={ComparisonScreen} />
               <Stack.Screen name="PriceComparison" component={PriceComparisonScreen} />
               <Stack.Screen name="SavedRooms" component={SavedRoomsScreen} />

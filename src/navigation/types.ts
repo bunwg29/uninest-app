@@ -2,6 +2,7 @@ import type { NavigatorScreenParams } from '@react-navigation/native';
 import type { UserRole } from '@features/auth';
 import type { ForumCategory } from '@features/forum';
 import type { LandlordListing } from '@features/listings';
+import type { Review } from '@features/reviews';
 import type { HelpTopicId, LegalTab } from '@features/support';
 
 export type ListingPostStackParamList = {
@@ -90,6 +91,14 @@ export type RootStackParamList = {
   ResetPassword: { target: string; otpCode: string };
   ListingDetail: { id: string };
   LandlordPublicProfile: { landlordId: string; isPreview?: boolean };
+  Reviews: { listingId: string; listingTitle?: string; canManage?: boolean };
+  MyReviews: undefined;
+  ReviewForm: {
+    listingId: string;
+    listingTitle?: string;
+    bookingId?: string;
+    review?: Review;
+  };
   Comparison: undefined;
   PriceComparison: undefined;
   SavedRooms: undefined;
