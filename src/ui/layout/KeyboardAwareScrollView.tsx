@@ -6,6 +6,7 @@ import {
   TextInput,
   type NativeScrollEvent,
   type NativeSyntheticEvent,
+  type ScrollViewInstance,
   type ScrollViewProps,
 } from 'react-native';
 import { useKeyboardHeight } from '@hooks/useKeyboardHeight';
@@ -18,7 +19,7 @@ export interface KeyboardAwareScrollViewProps extends ScrollViewProps {
   shouldPadForKeyboard?: boolean;
 }
 
-export const KeyboardAwareScrollView = forwardRef<ScrollView, KeyboardAwareScrollViewProps>(
+export const KeyboardAwareScrollView = forwardRef<ScrollViewInstance, KeyboardAwareScrollViewProps>(
   (
     {
       shouldPadForKeyboard = false,
@@ -30,12 +31,12 @@ export const KeyboardAwareScrollView = forwardRef<ScrollView, KeyboardAwareScrol
     },
     forwardedRef
   ) => {
-    const scrollRef = useRef<ScrollView>(null);
+    const scrollRef = useRef<ScrollViewInstance>(null);
     const offsetY = useRef(0);
     const keyboardTop = useRef(Dimensions.get('window').height);
     const keyboardHeight = useKeyboardHeight();
 
-    useImperativeHandle(forwardedRef, () => scrollRef.current as ScrollView);
+    useImperativeHandle(forwardedRef, () => scrollRef.current as ScrollViewInstance);
 
     const scrollFocusedInputIntoView = useCallback(() => {
       const input = TextInput.State.currentlyFocusedInput();

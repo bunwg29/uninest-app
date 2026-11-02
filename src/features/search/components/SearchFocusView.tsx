@@ -1,5 +1,13 @@
 import { useEffect, useRef } from 'react';
-import { Keyboard, ScrollView, StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
+import {
+  Keyboard,
+  ScrollView,
+  StyleSheet,
+  TextInput,
+  TouchableOpacity,
+  View,
+  type TextInputInstance,
+} from 'react-native';
 import { Clock3, GraduationCap, Search, X } from 'lucide-react-native';
 import { BORDER_RADIUS_TOKENS, THEME_COLORS } from '@theme';
 import { Typography } from '@ui';
@@ -30,7 +38,7 @@ export const SearchFocusView = ({
   onClearRecent,
   onSelectSchool,
 }: SearchFocusViewProps) => {
-  const inputRef = useRef<TextInput>(null);
+  const inputRef = useRef<TextInputInstance>(null);
   const trimmedKeyword = keyword.trim();
 
   useEffect(() => {

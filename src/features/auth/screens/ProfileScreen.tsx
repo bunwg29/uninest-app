@@ -1,3 +1,4 @@
+import { useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import {
   ActivityIndicator,
@@ -6,7 +7,7 @@ import {
   TouchableOpacity,
   RefreshControl,
 } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import {
   CalendarDays,
@@ -55,6 +56,12 @@ export const ProfileScreen = () => {
   const profile = profileQuery.data;
   const isLandlord = user?.role === 'landlord';
 
+  useFocusEffect(
+    useCallback(() => {
+      if (isAuthenticated) void profileQuery.refetch();
+    }, [isAuthenticated, profileQuery.refetch])
+  );
+
   const handleLogout = async () => {
     await logout();
 
@@ -71,7 +78,10 @@ export const ProfileScreen = () => {
       applyBottomInset={false}
       style={styles.container}
       refreshControl={
-        <RefreshControl refreshing={profileQuery.isRefetching} onRefresh={profileQuery.refetch} />
+        <RefreshControl
+          refreshing={profileQuery.isRefetching}
+          onRefresh={() => void profileQuery.refetch()}
+        />
       }
     >
       <View style={styles.headerRow}>
@@ -214,7 +224,7 @@ export const ProfileScreen = () => {
                       icon: Star,
                       tone: ICON_TONES.AMBER,
                       detail: `${profile.stats.reviews}`,
-                      onPress: () => toast.info('Tính năng đánh giá đang phát triển'),
+                      onPress: () => navigation.navigate('MyReviews'),
                     },
                   ]
             }

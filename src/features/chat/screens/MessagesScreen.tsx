@@ -196,11 +196,11 @@ export const MessagesScreen = () => {
             onLongPress={setConversationToDelete}
           />
         )}
-        ListEmptyComponent={renderEmpty()}
+        ListEmptyComponent={renderEmpty() ?? undefined}
         ListFooterComponent={
           conversationsQuery.isFetchingNextPage ? (
             <ActivityIndicator color={THEME_COLORS.PRIMARY} style={styles.footerLoader} />
-          ) : null
+          ) : undefined
         }
         contentContainerStyle={conversations.length === 0 ? styles.emptyContent : undefined}
         refreshControl={
