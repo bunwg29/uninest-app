@@ -1,5 +1,13 @@
 import { useRef, useState } from 'react';
-import { Pressable, ScrollView, Share, StyleSheet, TouchableOpacity, View } from 'react-native';
+import {
+  Pressable,
+  ScrollView,
+  Share,
+  StyleSheet,
+  TouchableOpacity,
+  View,
+  type ScrollViewInstance,
+} from 'react-native';
 import { useNavigation, useRoute, type RouteProp } from '@react-navigation/native';
 import { Info, Share as ShareIcon } from 'lucide-react-native';
 import { BORDER_RADIUS_TOKENS, SPACING_TOKENS, THEME_COLORS } from '@theme';
@@ -12,7 +20,7 @@ type TermsRouteProp = RouteProp<{ Terms: { tab?: LegalTab } | undefined }, 'Term
 export const TermsScreen = () => {
   const navigation = useNavigation();
   const route = useRoute<TermsRouteProp>();
-  const scrollRef = useRef<ScrollView>(null);
+  const scrollRef = useRef<ScrollViewInstance>(null);
   const [activeTab, setActiveTab] = useState<LegalTab>(route.params?.tab ?? 'privacy');
 
   const legalDocument = LEGAL_DOCUMENTS[activeTab];

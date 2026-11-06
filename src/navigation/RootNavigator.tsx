@@ -20,6 +20,7 @@ import {
   StudentListingPreviewScreen,
 } from '@features/listings';
 import { ComparisonScreen } from '@features/comparison';
+import { PremiumPaymentScreen, PremiumStatsScreen, PremiumUpgradeScreen } from '@features/premium';
 import { PriceComparisonScreen } from '@features/price-comparison';
 import { PersonalizationDataScreen } from '@features/recommendations';
 import { SavedRoomsScreen } from '@features/search';
@@ -30,6 +31,7 @@ import {
   usePushRegistration,
 } from '@features/notifications';
 import { HelpCenterScreen, TermsScreen } from '@features/support';
+import { MyReviewsScreen, ReviewFormScreen, ReviewsScreen } from '@features/reviews';
 import {
   BookingConfirmScreen,
   BookingDetailScreen,
@@ -87,9 +89,19 @@ export const RootNavigator = () => {
               <Stack.Screen name="StudentListingPreview" component={StudentListingPreviewScreen} />
               <Stack.Screen name="ListingDetail" component={ListingDetailScreen} />
               <Stack.Screen name="LandlordPublicProfile" component={LandlordPublicProfileScreen} />
+              <Stack.Screen name="Reviews" component={ReviewsScreen} />
+              <Stack.Screen name="MyReviews" component={MyReviewsScreen} />
+              <Stack.Screen
+                name="ReviewForm"
+                component={ReviewFormScreen}
+                options={{ animation: 'slide_from_bottom' }}
+              />
               <Stack.Screen name="Comparison" component={ComparisonScreen} />
               <Stack.Screen name="PriceComparison" component={PriceComparisonScreen} />
               <Stack.Screen name="PersonalizationData" component={PersonalizationDataScreen} />
+              <Stack.Screen name="PremiumUpgrade" component={PremiumUpgradeScreen} />
+              <Stack.Screen name="PremiumPayment" component={PremiumPaymentScreen} />
+              <Stack.Screen name="PremiumStats" component={PremiumStatsScreen} />
               <Stack.Screen name="SavedRooms" component={SavedRoomsScreen} />
               <Stack.Screen name="Notifications" component={NotificationsScreen} />
               <Stack.Screen name="NotificationSettings" component={NotificationSettingsScreen} />

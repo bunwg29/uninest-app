@@ -21,6 +21,8 @@ const openNotificationTarget = (data: Record<string, unknown>) => {
     } else {
       navigationRef.navigate('ListingDetail', { id: data.listingId });
     }
+  } else if (data.screen === 'PremiumUpgrade') {
+    navigationRef.navigate('PremiumUpgrade');
   } else if (data.screen === 'ForumPostDetail' && typeof data.postId === 'string') {
     navigationRef.navigate('ForumPostDetail', { postId: data.postId });
   } else {

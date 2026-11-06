@@ -1,7 +1,8 @@
 import type { NavigatorScreenParams } from '@react-navigation/native';
 import type { UserRole } from '@features/auth';
 import type { ForumCategory } from '@features/forum';
-import type { LandlordListing } from '@features/listings';
+import type { LandlordListing, ListingViewSource } from '@features/listings';
+import type { Review } from '@features/reviews';
 import type { HelpTopicId, LegalTab } from '@features/support';
 
 export type ListingPostStackParamList = {
@@ -88,11 +89,22 @@ export type RootStackParamList = {
     returnToChangePassword?: boolean;
   };
   ResetPassword: { target: string; otpCode: string };
-  ListingDetail: { id: string };
+  ListingDetail: { id: string; source?: ListingViewSource };
   LandlordPublicProfile: { landlordId: string; isPreview?: boolean };
+  Reviews: { listingId: string; listingTitle?: string; canManage?: boolean };
+  MyReviews: undefined;
+  ReviewForm: {
+    listingId: string;
+    listingTitle?: string;
+    bookingId?: string;
+    review?: Review;
+  };
   Comparison: undefined;
   PriceComparison: undefined;
   PersonalizationData: undefined;
+  PremiumUpgrade: undefined;
+  PremiumPayment: { orderId: string };
+  PremiumStats: undefined;
   SavedRooms: undefined;
   Notifications: undefined;
   NotificationSettings: undefined;

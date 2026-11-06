@@ -139,6 +139,8 @@ Thiết kế có màu chưa có token → **thêm token vào `src/theme/colors.t
 | `useRecommendations(enabled)`, `useRecordSearchBehavior(payload, enabled)`, `RECOMMENDATIONS_QUERY_KEY` | `@features/recommendations` | Danh sách "Gợi ý dành cho bạn" (tự làm mới khi mở lại app sau 24 giờ), ghi từ khoá/bộ lọc sinh viên đã tìm |
 | `useUploadImages()` | `@features/listings` (hooks) | Tải nhiều ảnh song song lên R2 có tiến độ, thử lại từng ảnh |
 | `AvailabilityBadge` | `@features/listings` | Nhãn còn trống / đã cho thuê / ngừng nhận yêu cầu |
+| `ListingReviewsSection`, `ReviewCard`, `ReviewSummaryCard`, `StarRating` | `@features/reviews` | Hiển thị tóm tắt, danh sách, phân bố và nhập điểm đánh giá |
+| `useReviews()`, `useReviewEligibility()` | `@features/reviews` | Tải đánh giá phân trang và kiểm tra lịch sử xem phòng trước khi cho đánh giá |
 | `SearchListingRow`, `SearchListingGridCard`, `SavedRoomRow`, `RecommendationCard` | feature tương ứng | 4 biến thể thẻ tin đã có — **làm thẻ tin mới phải dùng lại `MediaThumbnail`, `PriceText`, `SaveButton`** |
 | `TermsScreen`, `HelpCenterScreen`, `MaintenanceScreen` | `@features/support` | Màn chung (điều khoản, trợ giúp, bảo trì) |
 

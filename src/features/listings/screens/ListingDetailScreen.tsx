@@ -70,6 +70,7 @@ import {
   useToggleFavorite,
 } from '@features/search';
 import { useRecentlyViewedStore } from '@features/recommendations';
+import { ListingReviewsSection } from '@features/reviews';
 import { useListingDetail, useRecordListingView, useReportListing } from '../hooks';
 import {
   AmenitiesModal,
@@ -111,7 +112,7 @@ export const ListingDetailScreen = () => {
   const { width } = useWindowDimensions();
   const listingId = route.params.id;
   const detailQuery = useListingDetail(listingId);
-  const viewMutation = useRecordListingView(listingId);
+  const viewMutation = useRecordListingView(listingId, route.params.source);
   const reportMutation = useReportListing(listingId);
   const toggleFavorite = useToggleFavorite();
   const { openChat, isOpening } = useOpenListingChat();
@@ -518,18 +519,7 @@ export const ListingDetailScreen = () => {
             </Section>
 
             <Section title="Đánh giá">
-              {listing.averageRating === null || !Number.isFinite(listing.averageRating) ? (
-                <Typography variant="body2" colorKey="TEXT_MUTED">
-                  Chưa có đánh giá cho tin đăng này.
-                </Typography>
-              ) : (
-                <View style={styles.ratingRow}>
-                  <Star size={20} color={THEME_COLORS.SECONDARY} fill={THEME_COLORS.SECONDARY} />
-                  <Typography variant="h3" weight="BOLD">
-                    {formatRating(listing.averageRating)}
-                  </Typography>
-                </View>
-              )}
+              <ListingReviewsSection listingId={listing.id} listingTitle={listing.title} />
             </Section>
 
             {isStudent ? (

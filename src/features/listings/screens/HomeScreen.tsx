@@ -218,7 +218,7 @@ export const HomeScreen = () => {
           isHighlighted={listing.isHighlighted}
           matchPercentage={listing.matchPercentage ?? undefined}
           isSaved={favoriteIds.has(listing.id)}
-          onPress={() => openListing(listing.id)}
+          onPress={() => openListing(listing.id, 'recommendation')}
           onToggleSaved={() => handleToggleSaved(listing.id)}
         />
       );
@@ -240,7 +240,7 @@ export const HomeScreen = () => {
         availability={listing.availability}
         isHighlighted={listing.isHighlighted}
         isSaved={favoriteIds.has(listing.id)}
-        onPress={() => openListing(listing.id)}
+        onPress={() => openListing(listing.id, 'home')}
         onToggleSaved={() => handleToggleSaved(listing.id)}
       />
     );

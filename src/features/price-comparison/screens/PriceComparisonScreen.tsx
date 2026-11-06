@@ -87,6 +87,7 @@ export const PriceComparisonScreen = () => {
   const selectWard = (option: PriceComparisonPickerOption) => {
     if (option.value === '__change_province__') {
       setPickerKind('province');
+
       return;
     }
 
@@ -96,7 +97,9 @@ export const PriceComparisonScreen = () => {
 
   const selectRoomType = (option: PriceComparisonPickerOption) => {
     const nextRoomType = ROOM_TYPE_OPTIONS.find((item) => item.value === option.value)?.value;
+
     if (nextRoomType) setRoomType(nextRoomType);
+
     setPickerKind(null);
   };
 

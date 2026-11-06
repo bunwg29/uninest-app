@@ -120,7 +120,9 @@ export const SavedSearchesScreen = () => {
             />
           }
           ListFooterComponent={
-            query.isFetchingNextPage ? <ActivityIndicator color={THEME_COLORS.PRIMARY} /> : null
+            query.isFetchingNextPage ? (
+              <ActivityIndicator color={THEME_COLORS.PRIMARY} />
+            ) : undefined
           }
           contentContainerStyle={items.length ? styles.list : styles.emptyList}
         />

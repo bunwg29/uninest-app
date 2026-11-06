@@ -5,6 +5,7 @@ import type {
   CreateListingPayload,
   ListingDetail,
   ListingResponse,
+  ListingViewSource,
   PresignedUploadRequest,
   PresignedUploadResponse,
   RecordListingViewResponse,
@@ -27,8 +28,11 @@ export const listingService = {
     return unwrapApiData<ListingDetail[]>(response.data);
   },
 
-  async recordListingView(id: string): Promise<RecordListingViewResponse> {
-    const response = await apiClient.patch(`/listings/${id}/view`);
+  async recordListingView(
+    id: string,
+    source: ListingViewSource = 'other'
+  ): Promise<RecordListingViewResponse> {
+    const response = await apiClient.patch(`/listings/${id}/view`, { source });
 
     return unwrapApiData<RecordListingViewResponse>(response.data);
   },

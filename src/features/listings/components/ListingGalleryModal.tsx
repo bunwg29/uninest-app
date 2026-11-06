@@ -9,6 +9,7 @@ import {
   View,
   type NativeScrollEvent,
   type NativeSyntheticEvent,
+  type ScrollViewInstance,
 } from 'react-native';
 import { Heart, Share, X } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -42,8 +43,8 @@ export const ListingGalleryModal = ({
 }: ListingGalleryModalProps) => {
   const { width } = useWindowDimensions();
   const insets = useSafeAreaInsets();
-  const pagerRef = useRef<ScrollView>(null);
-  const thumbnailsRef = useRef<ScrollView>(null);
+  const pagerRef = useRef<ScrollViewInstance>(null);
+  const thumbnailsRef = useRef<ScrollViewInstance>(null);
   const [activeIndex, setActiveIndex] = useState(initialIndex);
 
   useEffect(() => {

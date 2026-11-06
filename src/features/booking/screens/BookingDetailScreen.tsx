@@ -9,6 +9,7 @@ import { useAuth } from '@features/auth/hooks';
 import { useOpenListingChat } from '@features/chat';
 import { useOpenListing } from '@features/listings/hooks/useOpenListing';
 import { useLandlordListingMutation } from '@features/listings/hooks/useLandlordListings';
+import { useReviewEligibility } from '@features/reviews';
 import { useToast } from '@hooks';
 import { BORDER_RADIUS_TOKENS, SPACING_TOKENS, THEME_COLORS } from '@theme';
 import { Button, HeaderBar, Modal, ScreenContainer, Typography } from '@ui';
@@ -47,6 +48,17 @@ export const BookingDetailScreen = () => {
   const [isRentDialogOpen, setIsRentDialogOpen] = useState(false);
   const listingMutation = useLandlordListingMutation();
   const queryClient = useQueryClient();
+  const isCompletedViewing =
+    !isLandlord &&
+    booking?.status === 'confirmed' &&
+    new Date(booking.endTime).getTime() <= Date.now();
+  const reviewEligibilityQuery = useReviewEligibility(
+    booking?.listing.id ?? '',
+    Boolean(isCompletedViewing)
+  );
+  const eligibleReviewBookingId = reviewEligibilityQuery.data?.eligible
+    ? reviewEligibilityQuery.data.bookingId
+    : null;
 
   const handleMarkRented = () => {
     if (!booking || listingMutation.isPending) return;
@@ -254,7 +266,21 @@ export const BookingDetailScreen = () => {
               />
             </BookingFooter>
           ) : null}
-          {!isLandlord && !isClosedStatus(booking.status) ? (
+          {isCompletedViewing && eligibleReviewBookingId ? (
+            <BookingFooter>
+              <FooterButton
+                title="Đánh giá phòng"
+                onPress={() =>
+                  navigation.navigate('ReviewForm', {
+                    listingId: booking.listing.id,
+                    listingTitle: booking.listing.title,
+                    bookingId: eligibleReviewBookingId,
+                  })
+                }
+              />
+            </BookingFooter>
+          ) : null}
+          {!isLandlord && !isClosedStatus(booking.status) && !isCompletedViewing ? (
             <BookingFooter>
               <View style={styles.bottomRow}>
                 <FooterButton

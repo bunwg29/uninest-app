@@ -405,7 +405,7 @@ export const SearchScreen = () => {
   };
 
   const handleOpenListing = (listing: SearchListingItem) => {
-    navigation.navigate('ListingDetail', { id: listing.id });
+    navigation.navigate('ListingDetail', { id: listing.id, source: 'search' });
   };
 
   const handleSearchMapArea = () => {
@@ -619,7 +619,7 @@ export const SearchScreen = () => {
             refreshControl={
               <RefreshControl
                 refreshing={searchQuery.isRefetching && !searchQuery.isFetchingNextPage}
-                onRefresh={() => searchQuery.refetch()}
+                onRefresh={() => void searchQuery.refetch()}
                 colors={[THEME_COLORS.PRIMARY]}
                 tintColor={THEME_COLORS.PRIMARY}
               />
@@ -629,7 +629,7 @@ export const SearchScreen = () => {
             ListFooterComponent={
               searchQuery.isFetchingNextPage ? (
                 <ActivityIndicator color={THEME_COLORS.PRIMARY} style={styles.loadMore} />
-              ) : null
+              ) : undefined
             }
           />
 
@@ -663,7 +663,9 @@ export const SearchScreen = () => {
         myLocation={myLocation}
         recenterToken={recenterToken}
         onSelectListing={setSelectedListingId}
-        onOpenListing={(listingId) => navigation.navigate('ListingDetail', { id: listingId })}
+        onOpenListing={(listingId) =>
+          navigation.navigate('ListingDetail', { id: listingId, source: 'map' })
+        }
         onPressMap={() => setSelectedListingId(null)}
         onRegionChange={setMapCenter}
       />
