@@ -20,6 +20,7 @@ import {
   StudentListingPreviewScreen,
 } from '@features/listings';
 import { ComparisonScreen } from '@features/comparison';
+import { PremiumPaymentScreen, PremiumStatsScreen, PremiumUpgradeScreen } from '@features/premium';
 import { PriceComparisonScreen } from '@features/price-comparison';
 import { SavedRoomsScreen } from '@features/search';
 import {
@@ -96,6 +97,9 @@ export const RootNavigator = () => {
               />
               <Stack.Screen name="Comparison" component={ComparisonScreen} />
               <Stack.Screen name="PriceComparison" component={PriceComparisonScreen} />
+              <Stack.Screen name="PremiumUpgrade" component={PremiumUpgradeScreen} />
+              <Stack.Screen name="PremiumPayment" component={PremiumPaymentScreen} />
+              <Stack.Screen name="PremiumStats" component={PremiumStatsScreen} />
               <Stack.Screen name="SavedRooms" component={SavedRoomsScreen} />
               <Stack.Screen name="Notifications" component={NotificationsScreen} />
               <Stack.Screen name="NotificationSettings" component={NotificationSettingsScreen} />
