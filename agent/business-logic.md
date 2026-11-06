@@ -229,7 +229,7 @@ confirmed, expired, cancelled, rejected → (kết thúc khi đã qua giờ xem)
 - Chủ trọ: Xác nhận, **Từ chối (bắt buộc lý do)**.
 - Sinh viên huỷ khi còn **dưới 24 giờ** trước giờ xem → **bắt buộc lý do**.
 - Lịch `confirmed` đã qua giờ xem được coi là **đã xem phòng**: giữ nguyên `confirmed`, không tự hết hạn, không còn tính là lịch còn hiệu lực (sinh viên đặt lại được phòng đó). Đây là bằng chứng cho Đánh giá.
-- **Không có giữ chỗ / đặt cọc** (đã gỡ ở Sprint 3): bỏ `holding`, `PATCH /bookings/:id/hold`, `PATCH /bookings/:id/release`, `HOLDING_DAYS`, `deposit_amount` trên booking. Migration `1700000000014-RemoveBookingHold` chuyển lịch `holding` cũ về `confirmed` và xoá bảng thanh toán nếu có.
+- **Không có giữ chỗ / đặt cọc** (đã gỡ ở Sprint 3): bỏ `holding`, `PATCH /bookings/:id/hold`, `PATCH /bookings/:id/release`, `HOLDING_DAYS`, `deposit_amount` trên booking. Migration `1700000000011-RemoveBookingHold` chuyển lịch `holding` cũ về `confirmed`, xoá index một-người-giữ-chỗ và cột `deposit_amount`.
 - Mọi lần đổi trạng thái ghi vào `booking_events` (ai, lúc nào, lý do) — làm bằng chứng cho Đánh giá Sprint 3.
 - Cron nội bộ `@nestjs/schedule` chạy **mỗi 5 phút**, cập nhật có điều kiện. **Không dùng Redis/BullMQ.**
 - Phát sự kiện `booking.created`, `booking.status_changed` (cho Thông báo Sprint 3) và đẩy socket `booking.updated`, `listing.availability_changed` để app cập nhật ngay.
@@ -281,7 +281,7 @@ confirmed, expired, cancelled, rejected → (kết thúc khi đã qua giờ xem)
 
 **API:** `GET /forum/metadata`, `POST /forum/moderation/check`, `GET|POST /forum/posts`, `GET /forum/posts/me`, `GET|PATCH|DELETE /forum/posts/:id`, `POST|DELETE /forum/posts/:id/like`, `POST /forum/posts/:id/reports`, `GET|POST /forum/posts/:id/comments`, `GET /forum/comments/:id/replies`, `PATCH|DELETE /forum/comments/:id`, `POST /forum/comments/:id/reports`. Admin: `/admin/forum/*`.
 
-### 4.9. FR-REVIEW — Đánh giá & xếp hạng (Sprint 3 · Chưa làm)
+### 4.9. FR-REVIEW — Đánh giá & xếp hạng (Sprint 3 · Đã triển khai)
 
 **Task:** TSK-S3-01 (API, P1), TSK-S3-02 (giao diện, P1). **Màn hình:** B-15 Form đánh giá, D-05 Danh sách đánh giá, D-06 Hồ sơ Chủ trọ.
 
@@ -296,6 +296,8 @@ confirmed, expired, cancelled, rejected → (kết thúc khi đã qua giờ xem)
 
 **Gợi ý kỹ thuật:** bảng `reviews` (booking_id FK, điểm từng tiêu chí, comment, edited_until), service tính lại `avg_rating` trên listing; dùng module `reviews` đã có khung.
 
+**API:** `GET|POST /listings/:listingId/reviews`, `GET /listings/:listingId/reviews/eligibility`, `GET /reviews/me`, `PATCH /reviews/:id`, `POST /reviews/:id/reply`, `POST /reviews/:id/reports`.
+
 ### 4.10. FR-ADMIN — Kiểm duyệt & quản trị (Sprint 3 · Đã triển khai trên nhánh task, chờ review)
 
 **Task:** TSK-S3-03 (API, P0), TSK-S3-04 (giao diện quản trị, P0 — khuyến nghị web-admin riêng).
@@ -308,6 +310,13 @@ confirmed, expired, cancelled, rejected → (kết thúc khi đã qua giờ xem)
 - Khoá Chủ trọ → mọi tin `active` của họ chuyển `hidden`. Chỉ Admin được khoá tài khoản người khác.
 - **Mọi** hành động duyệt/từ chối/khoá/gỡ ghi `audit_logs`: người làm, thời điểm, hành động, đối tượng, lý do. Tra cứu lại được.
 - Dữ liệu nhạy cảm (mật khẩu, token) không bao giờ trả về, kể cả API admin.
+- **Không có** quy định thời hạn/SLA duyệt tin: hàng đợi chỉ hiện thời gian chờ, không đánh dấu "quá hạn". Tin **có cảnh báo** = chủ trọ chưa xác minh hoặc đang có báo cáo chờ xử lý.
+- Admin ẩn được tin `active` → `hidden` kèm lý do (ghi `listing.hide`), hoặc gỡ tin qua xử lý báo cáo. Tin bị **quản trị viên ẩn** được gắn `moderation_hidden_at` + `moderation_reason`: Chủ trọ **không tự hiện lại** được (`PATCH /landlord/listings/:id/visibility` trả 400); Chủ trọ sửa tin → tin về `pending` để duyệt lại; Admin duyệt hoặc `PATCH /admin/listings/:id/restore` (ghi `listing.restore`) mới gỡ cờ. Chủ trọ nhận thông báo khi tin bị ẩn và khi được hiện lại. Tin bị ẩn do **khoá tài khoản** không gắn cờ này.
+- Không duyệt được tin của Chủ trọ đang bị khoá. Duyệt hàng loạt = gọi duyệt từng tin.
+- Danh sách người dùng/báo cáo trả kèm `counts` cho từng tab; nhật ký lọc được theo hành động, người thực hiện, khoảng thời gian, từ khoá.
+- Chưa có dữ liệu thật (tác vụ định kỳ, Premium, IP): web-admin hiển thị dữ liệu mẫu, tích hợp sau. Không còn mục giao dịch vì đã bỏ đặt cọc.
+
+**API:** `GET /admin/overview`, `GET /admin/listings` (lọc `status`, `flag=warning`, `provinceCode`, `sort=newest|oldest`, `keyword`; trả kèm `counts`), `GET /admin/listings/provinces`, `GET /admin/listings/:id`, `PATCH /admin/listings/:id/approve`, `PATCH /admin/listings/:id/reject`, `PATCH /admin/listings/:id/hide`, `PATCH /admin/listings/:id/restore`, `GET /admin/reports`, `GET /admin/reports/:id`, `PATCH /admin/reports/:id/resolve`, `GET /admin/users`, `GET /admin/users/:id`, `PATCH /admin/users/:id/lock`, `PATCH /admin/users/:id/unlock`, `GET /admin/audit-logs`, `POST /users/:id/reports`.
 
 **API:** `GET /admin/overview`, `GET /admin/listings`, `GET /admin/listings/:id`, `PATCH /admin/listings/:id/approve`, `PATCH /admin/listings/:id/reject`, `GET /admin/reports`, `GET /admin/reports/:id`, `PATCH /admin/reports/:id/resolve`, `GET /admin/users`, `GET /admin/users/:id`, `PATCH /admin/users/:id/lock`, `PATCH /admin/users/:id/unlock`, `GET /admin/audit-logs`, `POST /users/:id/reports`.
 
