@@ -1,5 +1,5 @@
-import { useCallback, useState } from 'react';
-import { View, StyleSheet, ScrollView, TouchableOpacity, Switch } from 'react-native';
+import { useCallback } from 'react';
+import { View, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { THEME_COLORS, SPACING_TOKENS, BORDER_RADIUS_TOKENS, OVERLAY_COLORS } from '@theme';
@@ -16,8 +16,7 @@ type SlotKey = keyof ViewingSlot;
 
 export const ViewingScheduleScreen = () => {
   const navigation = useNavigation<NavigationProp>();
-  const { viewingSchedule, setViewingSchedule, step1, editingListingId } = useListingPostStore();
-  const [isOnlineHoldEnabled, setIsOnlineHoldEnabled] = useState(true);
+  const { viewingSchedule, setViewingSchedule, editingListingId } = useListingPostStore();
 
   const handleToggleSlot = useCallback(
     (day: DayKey, slot: SlotKey) => {
@@ -100,40 +99,6 @@ export const ViewingScheduleScreen = () => {
         <Typography variant="caption" colorKey="TEXT_MUTED" style={styles.scheduleHint}>
           Sáng 8–11h · Chiều 14–17h · Tối 18:30–20:30
         </Typography>
-
-        <View style={styles.holdRow}>
-          <View style={styles.holdCopy}>
-            <Typography variant="body1" weight="BOLD">
-              Cho phép giữ chỗ online
-            </Typography>
-            <Typography variant="caption" colorKey="TEXT_MUTED">
-              Sinh viên cọc qua UniNest để khoá phòng
-            </Typography>
-          </View>
-          <Switch
-            value={isOnlineHoldEnabled}
-            onValueChange={setIsOnlineHoldEnabled}
-            trackColor={{ false: THEME_COLORS.BORDER, true: THEME_COLORS.PRIMARY }}
-            thumbColor={THEME_COLORS.WHITE}
-            accessibilityLabel="Cho phép giữ chỗ online"
-          />
-        </View>
-
-        {isOnlineHoldEnabled ? (
-          <View style={styles.depositField}>
-            <Typography variant="label" weight="BOLD">
-              Số tiền cọc
-            </Typography>
-            <View style={styles.depositValue}>
-              <Typography variant="body1">
-                {Number(step1.deposit || 2500000).toLocaleString('vi-VN')}
-              </Typography>
-              <Typography variant="body2" colorKey="TEXT_PLACEHOLDER">
-                đ
-              </Typography>
-            </View>
-          </View>
-        ) : null}
       </ScrollView>
 
       <View style={styles.bottomBar}>
@@ -181,20 +146,6 @@ const styles = StyleSheet.create({
     backgroundColor: THEME_COLORS.PRIMARY_LIGHT,
   },
   scheduleHint: { marginTop: -4 },
-  holdRow: { flexDirection: 'row', alignItems: 'center', marginTop: 8 },
-  holdCopy: { flex: 1, gap: 2 },
-  depositField: { gap: 8 },
-  depositValue: {
-    height: 52,
-    paddingHorizontal: SPACING_TOKENS.MD,
-    borderWidth: 1,
-    borderColor: OVERLAY_COLORS.FIELD_BORDER,
-    borderRadius: BORDER_RADIUS_TOKENS.MD,
-    backgroundColor: THEME_COLORS.SURFACE,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
   bottomBar: {
     padding: SPACING_TOKENS.MD,
     paddingBottom: SPACING_TOKENS.LG,

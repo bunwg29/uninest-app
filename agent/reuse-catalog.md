@@ -78,7 +78,7 @@ Thiết kế có màu chưa có token → **thêm token vào `src/theme/colors.t
 | Component | Dùng khi |
 | --- | --- |
 | `ScreenContainer` | **Gốc của mọi màn hình** — tự xử lý safe area, bàn phím, độ rộng tối đa. Prop: `scrollable`, `padding`, `refreshControl`, `applyTopInset`, `applyBottomInset`, `keyboardAvoiding` |
-| `HeaderBar` | Thanh tiêu đề màn hình có nút quay lại — `title`, `subtitle`, `onBack`, `rightAction`, `alignTitle`, `hasBottomBorder` |
+| `HeaderBar` | Thanh tiêu đề màn hình có nút quay lại — `title`, `subtitle`, `onBack`, `rightAction`, `rightActionWidth` (khi nút phải là chữ dài hơn 44px), `alignTitle`, `hasBottomBorder` |
 | `KeyboardAwareScrollView`, `KeyboardAvoidingContainer` | Form dài có bàn phím (thường đã có sẵn trong `ScreenContainer`) |
 
 ### Boundaries
@@ -131,12 +131,15 @@ Thiết kế có màu chưa có token → **thêm token vào `src/theme/colors.t
 | `useOpenListingChat().openChat(listingId)` | `@features/chat` | Mở/tạo hội thoại từ bất kỳ đâu |
 | `chatSocket` | `@features/chat` (services) | Kết nối Socket.IO duy nhất của app — **không tạo socket thứ hai** |
 | `useChatSummary()` | `@features/chat` | Số tin chưa đọc cho badge |
+| `useUnreadNotificationCount()` | `@features/notifications` | Số thông báo chưa đọc cho chuông ở màn Sinh viên/Chủ trọ |
 | `useFavoriteIds()`, `useToggleFavorite()`, `FAVORITE_IDS_QUERY_KEY` | `@features/search` | Lưu/bỏ lưu phòng ở bất kỳ màn nào |
 | `useSearchStore`, `SEARCH_SCHOOLS` | `@features/search` | Áp bộ lọc từ màn khác (vd danh mục ở Trang chủ) |
 | `useComparison()` | `@features/comparison` | Thêm/bỏ phòng khỏi danh sách so sánh (tối đa 4) |
 | `useRecentlyViewedStore`, `useRecentListingIds` | `@features/recommendations` | Ghi/đọc phòng đã xem gần đây |
 | `useUploadImages()` | `@features/listings` (hooks) | Tải nhiều ảnh song song lên R2 có tiến độ, thử lại từng ảnh |
-| `AvailabilityBadge` | `@features/listings` | Nhãn còn trống / đang giữ chỗ / đã cho thuê |
+| `AvailabilityBadge` | `@features/listings` | Nhãn còn trống / đã cho thuê / ngừng nhận yêu cầu |
+| `ListingReviewsSection`, `ReviewCard`, `ReviewSummaryCard`, `StarRating` | `@features/reviews` | Hiển thị tóm tắt, danh sách, phân bố và nhập điểm đánh giá |
+| `useReviews()`, `useReviewEligibility()` | `@features/reviews` | Tải đánh giá phân trang và kiểm tra lịch sử xem phòng trước khi cho đánh giá |
 | `SearchListingRow`, `SearchListingGridCard`, `SavedRoomRow`, `RecommendationCard` | feature tương ứng | 4 biến thể thẻ tin đã có — **làm thẻ tin mới phải dùng lại `MediaThumbnail`, `PriceText`, `SaveButton`** |
 | `TermsScreen`, `HelpCenterScreen`, `MaintenanceScreen` | `@features/support` | Màn chung (điều khoản, trợ giúp, bảo trì) |
 

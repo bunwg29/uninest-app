@@ -19,6 +19,7 @@ interface SearchFilterSheetProps {
   onChange: (filters: Partial<SearchFilters>) => void;
   onReset: () => void;
   onApply: () => void;
+  onSave?: () => void;
   onClose: () => void;
   onUseCurrentLocation: () => Promise<{ latitude: number; longitude: number } | null>;
 }
@@ -63,6 +64,7 @@ export const SearchFilterSheet = ({
   onChange,
   onReset,
   onApply,
+  onSave,
   onClose,
   onUseCurrentLocation,
 }: SearchFilterSheetProps) => {
@@ -294,6 +296,9 @@ export const SearchFilterSheet = ({
             style={styles.applyButton}
           />
         </View>
+        {onSave ? (
+          <Button title="Lưu bộ lọc để nhận tin mới" variant="ghost" onPress={onSave} />
+        ) : null}
 
         <SearchSchoolSheet
           isVisible={isSchoolSheetVisible}

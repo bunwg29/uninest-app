@@ -3,7 +3,7 @@ export type SearchSortBy =
 
 export type SearchViewMode = 'list' | 'grid' | 'map';
 
-export type ListingAvailability = 'available' | 'holding' | 'rented' | 'paused';
+export type ListingAvailability = 'available' | 'rented' | 'paused';
 
 export type PublicListingStatus = 'active' | 'pending' | 'rejected' | 'hidden' | 'deleted';
 
@@ -51,14 +51,12 @@ export interface SearchListingItem {
   location?: SearchListingLocation;
   distanceMeters?: number | null;
   isHighlighted: boolean;
-  isReserved: boolean;
   rating?: number;
   reviewCount?: number;
   capacity?: number;
   description?: string;
   status: PublicListingStatus;
   availability: ListingAvailability;
-  holdExpiresAt?: string | null;
   createdAt: string;
 }
 

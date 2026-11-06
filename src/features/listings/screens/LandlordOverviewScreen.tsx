@@ -15,6 +15,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useAuth } from '@features/auth';
 import { useLandlordBookings } from '@features/booking/hooks';
 import { useChatSummary } from '@features/chat';
+import { useUnreadNotificationCount } from '@features/notifications';
 import { useToast } from '@hooks';
 import type { LandlordTabParamList, RootStackParamList } from '@navigation';
 import { BORDER_RADIUS_TOKENS, OVERLAY_COLORS, SPACING_TOKENS, THEME_COLORS } from '@theme';
@@ -139,6 +140,7 @@ export const LandlordOverviewScreen = () => {
   const publishedQuery = useLandlordListings('published');
   const bookingsQuery = useLandlordBookings();
   const chatSummaryQuery = useChatSummary();
+  const notificationsQuery = useUnreadNotificationCount();
   const statsQuery = useLandlordStats(period);
 
   const publishedListings = useMemo(
@@ -163,12 +165,14 @@ export const LandlordOverviewScreen = () => {
   const unreadMessages = chatSummaryQuery.data?.unreadMessages ?? 0;
   const taskCount = (pendingBookings.length > 0 ? 1 : 0) + (unreadMessages > 0 ? 1 : 0);
   const notificationCount = pendingBookings.length + unreadMessages;
+  const unreadNotificationCount = notificationsQuery.data ?? 0;
 
   const handleRefresh = () => {
     void Promise.all([
       publishedQuery.refetch(),
       bookingsQuery.refetch(),
       chatSummaryQuery.refetch(),
+      notificationsQuery.refetch(),
       statsQuery.refetch(),
     ]);
   };
@@ -236,7 +240,7 @@ export const LandlordOverviewScreen = () => {
 
         <TouchableOpacity
           style={styles.bellButton}
-          onPress={() => navigation.navigate('Messages')}
+          onPress={() => rootNavigation.navigate('Notifications')}
           activeOpacity={0.7}
           accessibilityRole="button"
           accessibilityLabel="Thông báo"
@@ -244,7 +248,7 @@ export const LandlordOverviewScreen = () => {
         >
           <Bell size={20} color={THEME_COLORS.TEXT_PRIMARY} />
 
-          {notificationCount > 0 ? (
+          {unreadNotificationCount > 0 ? (
             <View style={styles.bellBadge}>
               <Typography
                 variant="tiny"
@@ -252,7 +256,7 @@ export const LandlordOverviewScreen = () => {
                 color={THEME_COLORS.WHITE}
                 style={styles.badgeText}
               >
-                {notificationCount > 9 ? '9+' : notificationCount}
+                {unreadNotificationCount > 9 ? '9+' : unreadNotificationCount}
               </Typography>
             </View>
           ) : null}

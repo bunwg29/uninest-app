@@ -18,6 +18,7 @@ import {
   type SearchListingItem,
 } from '@features/search';
 import { useComparison } from '@features/comparison';
+import { useUnreadNotificationCount } from '@features/notifications';
 import {
   RecommendationCard,
   useRecentListingIds,
@@ -78,6 +79,7 @@ export const HomeScreen = () => {
   const { width } = useWindowDimensions();
   const isCompact = width < 375;
   const { count: comparisonCount } = useComparison();
+  const { data: unreadNotificationCount = 0 } = useUnreadNotificationCount();
   const applySearchPreset = useSearchStore((state) => state.applyPreset);
   const openSearchFilters = useSearchStore((state) => state.openFilters);
   const setSearchViewMode = useSearchStore((state) => state.setViewMode);
@@ -249,10 +251,10 @@ export const HomeScreen = () => {
             locationText={locationText}
             subtitle={isColdStart ? 'Bắt đầu tìm phòng đầu tiên nhé' : undefined}
             comparisonCount={comparisonCount}
-            hasUnreadNotifications={!isColdStart}
+            hasUnreadNotifications={unreadNotificationCount > 0}
             onProfilePress={handleGoToProfile}
             onComparisonPress={handleGoToComparison}
-            onNotificationsPress={handleGoToProfile}
+            onNotificationsPress={() => navigation.navigate('Notifications')}
             onSearchPress={handleGoToSearch}
             onFilterPress={handleGoToFilters}
           />

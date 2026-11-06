@@ -1,6 +1,5 @@
 export {};
-export type BookingStatus =
-  'pending' | 'confirmed' | 'holding' | 'expired' | 'cancelled' | 'rejected';
+export type BookingStatus = 'pending' | 'confirmed' | 'expired' | 'cancelled' | 'rejected';
 
 export interface BookingResource {
   id: string;
@@ -50,7 +49,6 @@ export interface Booking {
   status: BookingStatus;
   expiresAt: string | null;
   cancelReason: string | null;
-  depositAmount: number | null;
   confirmedAt: string | null;
   expiredAt: string | null;
   cancelledAt: string | null;

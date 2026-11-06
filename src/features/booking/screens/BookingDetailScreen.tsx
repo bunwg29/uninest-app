@@ -9,6 +9,7 @@ import { useAuth } from '@features/auth/hooks';
 import { useOpenListingChat } from '@features/chat';
 import { useOpenListing } from '@features/listings/hooks/useOpenListing';
 import { useLandlordListingMutation } from '@features/listings/hooks/useLandlordListings';
+import { useReviewEligibility } from '@features/reviews';
 import { useToast } from '@hooks';
 import { BORDER_RADIUS_TOKENS, SPACING_TOKENS, THEME_COLORS } from '@theme';
 import { Button, HeaderBar, Modal, ScreenContainer, Typography } from '@ui';
@@ -18,18 +19,11 @@ import {
   CancelBookingModal,
   LandlordBookingDetailView,
   REJECT_REASONS,
-  RELEASE_REASONS,
   ReasonModal,
   StudentBookingDetailView,
   getBookingSummary,
 } from '../components';
-import {
-  useBookingDetail,
-  useCancelBooking,
-  useConfirmBooking,
-  useRejectBooking,
-  useReleaseBooking,
-} from '../hooks';
+import { useBookingDetail, useCancelBooking, useConfirmBooking, useRejectBooking } from '../hooks';
 import type { Booking, BookingStatus } from '../types';
 import { getHoursUntil } from '../utils';
 
@@ -49,12 +43,22 @@ export const BookingDetailScreen = () => {
   const isLandlord = role === 'landlord';
   const confirmBooking = useConfirmBooking();
   const rejectBooking = useRejectBooking();
-  const releaseBooking = useReleaseBooking();
-  const [reasonAction, setReasonAction] = useState<'reject' | 'release' | null>(null);
+  const [isRejectOpen, setIsRejectOpen] = useState(false);
   const [isCancelDialogOpen, setIsCancelDialogOpen] = useState(false);
   const [isRentDialogOpen, setIsRentDialogOpen] = useState(false);
   const listingMutation = useLandlordListingMutation();
   const queryClient = useQueryClient();
+  const isCompletedViewing =
+    !isLandlord &&
+    booking?.status === 'confirmed' &&
+    new Date(booking.endTime).getTime() <= Date.now();
+  const reviewEligibilityQuery = useReviewEligibility(
+    booking?.listing.id ?? '',
+    Boolean(isCompletedViewing)
+  );
+  const eligibleReviewBookingId = reviewEligibilityQuery.data?.eligible
+    ? reviewEligibilityQuery.data.bookingId
+    : null;
 
   const handleMarkRented = () => {
     if (!booking || listingMutation.isPending) return;
@@ -86,19 +90,13 @@ export const BookingDetailScreen = () => {
     }
   };
 
-  const handleSubmitReason = async (reason: string) => {
-    if (!booking || !reasonAction) return;
+  const handleReject = async (reason: string) => {
+    if (!booking) return;
 
     try {
-      if (reasonAction === 'reject') {
-        await rejectBooking.mutateAsync({ id: booking.id, reason });
-        toast.success('Đã từ chối yêu cầu');
-      } else {
-        await releaseBooking.mutateAsync({ id: booking.id, reason });
-        toast.success('Đã hủy giữ chỗ');
-      }
-
-      setReasonAction(null);
+      await rejectBooking.mutateAsync({ id: booking.id, reason });
+      toast.success('Đã từ chối yêu cầu');
+      setIsRejectOpen(false);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Không thể thực hiện thao tác');
     }
@@ -147,7 +145,6 @@ export const BookingDetailScreen = () => {
       booking={booking}
       onOpenListing={() => void openListing(booking.listing.id)}
       onOpenChat={() => void openChat(booking.listing.id, booking.student?.id)}
-      onRelease={() => setReasonAction('release')}
     />
   );
 
@@ -232,7 +229,7 @@ export const BookingDetailScreen = () => {
                 <FooterButton
                   title="Từ chối"
                   tone="danger"
-                  onPress={() => setReasonAction('reject')}
+                  onPress={() => setIsRejectOpen(true)}
                   style={styles.rejectButton}
                 />
                 <FooterButton
@@ -245,7 +242,7 @@ export const BookingDetailScreen = () => {
               </View>
             </BookingFooter>
           ) : null}
-          {isLandlord && booking.status === 'holding' ? (
+          {isLandlord && booking.status === 'confirmed' && getHoursUntil(booking.startTime) <= 0 ? (
             <BookingFooter>
               <FooterButton
                 title="Đánh dấu đã cho thuê"
@@ -269,14 +266,22 @@ export const BookingDetailScreen = () => {
               />
             </BookingFooter>
           ) : null}
-          {!isLandlord && !isClosedStatus(booking.status) ? (
+          {isCompletedViewing && eligibleReviewBookingId ? (
             <BookingFooter>
-              {booking.status === 'confirmed' && getHoursUntil(booking.startTime) <= 0 ? (
-                <FooterButton
-                  title="Giữ chỗ phòng này"
-                  onPress={() => navigation.navigate('BookingHold', { id: booking.id })}
-                />
-              ) : null}
+              <FooterButton
+                title="Đánh giá phòng"
+                onPress={() =>
+                  navigation.navigate('ReviewForm', {
+                    listingId: booking.listing.id,
+                    listingTitle: booking.listing.title,
+                    bookingId: eligibleReviewBookingId,
+                  })
+                }
+              />
+            </BookingFooter>
+          ) : null}
+          {!isLandlord && !isClosedStatus(booking.status) && !isCompletedViewing ? (
+            <BookingFooter>
               <View style={styles.bottomRow}>
                 <FooterButton
                   title="Thêm vào lịch"
@@ -312,19 +317,15 @@ export const BookingDetailScreen = () => {
         onConfirm={handleMarkRented}
       />
       <ReasonModal
-        isVisible={reasonAction !== null}
-        title={reasonAction === 'reject' ? 'Vì sao bạn từ chối?' : 'Vì sao bạn huỷ giữ chỗ?'}
-        description={
-          reasonAction === 'reject'
-            ? 'Sinh viên nhận được lý do này. Chọn lý do đúng giúp bạn giữ điểm uy tín.'
-            : 'Phòng sẽ trở về trạng thái còn trống và sinh viên được thông báo.'
-        }
-        reasons={reasonAction === 'reject' ? REJECT_REASONS : RELEASE_REASONS}
-        confirmTone={reasonAction === 'reject' ? 'primary' : 'danger'}
-        confirmTitle={reasonAction === 'reject' ? 'Gửi phản hồi' : 'Hủy giữ chỗ'}
-        isLoading={rejectBooking.isPending || releaseBooking.isPending}
-        onClose={() => setReasonAction(null)}
-        onConfirm={(reason) => void handleSubmitReason(reason)}
+        isVisible={isRejectOpen}
+        title="Vì sao bạn từ chối?"
+        description="Sinh viên nhận được lý do này. Chọn lý do đúng giúp bạn giữ điểm uy tín."
+        reasons={REJECT_REASONS}
+        confirmTone="primary"
+        confirmTitle="Gửi phản hồi"
+        isLoading={rejectBooking.isPending}
+        onClose={() => setIsRejectOpen(false)}
+        onConfirm={(reason) => void handleReject(reason)}
       />
     </ScreenContainer>
   );
@@ -333,13 +334,12 @@ export const BookingDetailScreen = () => {
 const BANNER_LABELS: Record<BookingStatus, string> = {
   pending: 'Đang chờ Chủ trọ xác nhận',
   confirmed: 'Cả 2 bên đã xác nhận',
-  holding: 'Bạn đang giữ chỗ phòng này',
   expired: 'Yêu cầu đã hết hạn',
   cancelled: 'Đã hủy',
   rejected: 'Chủ trọ đã từ chối',
 };
 
-const isPositiveStatus = (status: BookingStatus) => status === 'confirmed' || status === 'holding';
+const isPositiveStatus = (status: BookingStatus) => status === 'confirmed';
 
 const isClosedStatus = (status: BookingStatus) =>
   status === 'cancelled' || status === 'expired' || status === 'rejected';
@@ -347,7 +347,7 @@ const isClosedStatus = (status: BookingStatus) =>
 const getHeaderTitle = (booking: Booking | undefined, isLandlord: boolean) => {
   if (!isLandlord || !booking) return 'Chi tiết lịch hẹn';
 
-  return booking.status === 'holding' ? 'Giữ chỗ đang hoạt động' : `Yêu cầu #${booking.code}`;
+  return `Yêu cầu #${booking.code}`;
 };
 
 const styles = StyleSheet.create({

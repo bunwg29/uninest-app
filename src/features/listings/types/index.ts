@@ -65,16 +65,11 @@ export interface ListingDetailLandlord {
   isVerified: boolean;
 }
 
-export type ListingAvailability = 'available' | 'holding' | 'rented' | 'paused';
-
-export interface ListingHold {
-  expiresAt: string;
-  daysLeft: number;
-}
+export type ListingAvailability = 'available' | 'rented' | 'paused';
 
 export interface ListingMyBooking {
   id: string;
-  status: 'pending' | 'confirmed' | 'holding';
+  status: 'pending' | 'confirmed';
   startTime: string;
   expiresAt: string | null;
 }
@@ -107,7 +102,6 @@ export interface ListingDetail {
   isHighlighted?: boolean;
   viewCount: number | null;
   availability: ListingAvailability;
-  hold: ListingHold | null;
   isFavorite: boolean;
   myBooking?: ListingMyBooking | null;
   createdAt: string;

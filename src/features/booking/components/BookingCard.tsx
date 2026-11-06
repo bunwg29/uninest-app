@@ -23,8 +23,7 @@ export const BookingCard = ({
   onPress,
   onExpire,
 }: BookingCardProps) => {
-  const shouldShowCountdown =
-    booking.expiresAt !== null && (booking.status === 'pending' || booking.status === 'holding');
+  const shouldShowCountdown = booking.expiresAt !== null && booking.status === 'pending';
   const isSettled = booking.status === 'expired' || booking.status === 'cancelled';
 
   return (

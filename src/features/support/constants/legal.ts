@@ -22,11 +22,11 @@ export const LEGAL_DOCUMENTS: Record<LegalTab, LegalDocument> = {
       },
       {
         title: '3. Chia sẻ với bên thứ ba',
-        body: 'Chúng tôi không bán dữ liệu cá nhân. Số điện thoại chỉ hiển thị cho chủ trọ sau khi bạn chủ động nhắn tin hoặc gửi yêu cầu xem phòng. Bản đồ, gửi OTP, thông báo đẩy và cổng thanh toán do đối tác cung cấp và chỉ nhận dữ liệu tối thiểu cần thiết.',
+        body: 'Chúng tôi không bán dữ liệu cá nhân. Số điện thoại chỉ hiển thị cho chủ trọ sau khi bạn chủ động nhắn tin hoặc gửi yêu cầu xem phòng. Bản đồ, gửi OTP và thông báo đẩy do đối tác cung cấp và chỉ nhận dữ liệu tối thiểu cần thiết.',
       },
       {
         title: '4. Thanh toán',
-        body: 'Mọi giao dịch đặt cọc được xử lý qua cổng thanh toán đối tác trong môi trường sandbox. UniNest không lưu trữ số thẻ hay thông tin tài khoản ngân hàng của bạn.',
+        body: 'UniNest không thu tiền cọc hay tiền phòng. Khi chủ trọ mua gói Premium, giao dịch được xử lý qua cổng thanh toán đối tác và UniNest không lưu trữ số thẻ hay thông tin tài khoản ngân hàng.',
       },
       {
         title: '5. Lưu trữ và thời hạn',
@@ -63,11 +63,11 @@ export const LEGAL_DOCUMENTS: Record<LegalTab, LegalDocument> = {
       },
       {
         title: '3. Quy định đăng tin',
-        body: 'Tin đăng phải mô tả đúng phòng thực tế: giá thuê, diện tích, chi phí điện nước, ảnh và vị trí. Nghiêm cấm đăng tin trùng lặp, tin ảo, ảnh lấy từ nguồn khác hoặc thu phí giữ chỗ ngoài ứng dụng.',
+        body: 'Tin đăng phải mô tả đúng phòng thực tế: giá thuê, diện tích, chi phí điện nước, ảnh và vị trí. Nghiêm cấm đăng tin trùng lặp, tin ảo, ảnh lấy từ nguồn khác hoặc thu tiền cọc trước khi cho sinh viên xem phòng.',
       },
       {
         title: '4. Đặt lịch và đặt cọc',
-        body: 'Trong 24 giờ đầu kể từ khi đặt cọc thành công, sinh viên được huỷ và hoàn 100% tự động. Sau 24 giờ, việc hoàn cọc do hai bên tự thoả thuận theo hợp đồng thuê phòng.',
+        body: 'UniNest chỉ hỗ trợ đặt lịch xem phòng. Tiền cọc, hợp đồng và việc hoàn cọc do sinh viên và chủ trọ tự thoả thuận trực tiếp; UniNest không giữ tiền và không là bên trong hợp đồng thuê.',
       },
       {
         title: '5. Hành vi bị cấm',

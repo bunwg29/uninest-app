@@ -1,3 +1,4 @@
+import { useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import {
   ActivityIndicator,
@@ -6,7 +7,7 @@ import {
   TouchableOpacity,
   RefreshControl,
 } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import {
   CalendarDays,
@@ -22,6 +23,7 @@ import {
   ShieldCheck,
   Star,
   Home,
+  BarChart3,
 } from 'lucide-react-native';
 import { THEME_COLORS, SPACING_TOKENS, BORDER_RADIUS_TOKENS, OVERLAY_COLORS } from '@theme';
 import { Avatar, Button, ScreenContainer, Typography } from '@ui';
@@ -54,6 +56,12 @@ export const ProfileScreen = () => {
   const profile = profileQuery.data;
   const isLandlord = user?.role === 'landlord';
 
+  useFocusEffect(
+    useCallback(() => {
+      if (isAuthenticated) void profileQuery.refetch();
+    }, [isAuthenticated, profileQuery.refetch])
+  );
+
   const handleLogout = async () => {
     await logout();
 
@@ -70,7 +78,10 @@ export const ProfileScreen = () => {
       applyBottomInset={false}
       style={styles.container}
       refreshControl={
-        <RefreshControl refreshing={profileQuery.isRefetching} onRefresh={profileQuery.refetch} />
+        <RefreshControl
+          refreshing={profileQuery.isRefetching}
+          onRefresh={() => void profileQuery.refetch()}
+        />
       }
     >
       <View style={styles.headerRow}>
@@ -197,6 +208,12 @@ export const ProfileScreen = () => {
                       onPress: () => navigation.navigate('Comparison'),
                     },
                     {
+                      label: 'So sánh giá khu vực',
+                      icon: BarChart3,
+                      tone: ICON_TONES.GREEN,
+                      onPress: () => navigation.navigate('PriceComparison'),
+                    },
+                    {
                       label: 'Lịch sử giao dịch',
                       icon: CreditCard,
                       tone: ICON_TONES.GREEN,
@@ -207,7 +224,7 @@ export const ProfileScreen = () => {
                       icon: Star,
                       tone: ICON_TONES.AMBER,
                       detail: `${profile.stats.reviews}`,
-                      onPress: () => toast.info('Tính năng đánh giá đang phát triển'),
+                      onPress: () => navigation.navigate('MyReviews'),
                     },
                   ]
             }

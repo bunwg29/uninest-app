@@ -7,7 +7,7 @@ export const RECOMMENDATION_CARD_WIDTH = 280;
 
 const IMAGE_HEIGHT = 160;
 
-export type RecommendationAvailability = 'available' | 'holding' | 'rented' | 'paused';
+export type RecommendationAvailability = 'available' | 'rented' | 'paused';
 
 export interface RecommendationCardProps {
   title: string;
@@ -40,12 +40,6 @@ const AVAILABILITY_STYLES: Record<RecommendationAvailability, AvailabilityStyle>
     backgroundColor: THEME_COLORS.SUCCESS_LIGHT,
     borderColor: OVERLAY_COLORS.SUCCESS_BORDER,
     textColor: THEME_COLORS.SUCCESS,
-  },
-  holding: {
-    label: 'Đang giữ chỗ',
-    backgroundColor: THEME_COLORS.WARNING_LIGHT,
-    borderColor: OVERLAY_COLORS.WARNING_BORDER,
-    textColor: THEME_COLORS.WARNING,
   },
   rented: {
     label: 'Đã cho thuê',

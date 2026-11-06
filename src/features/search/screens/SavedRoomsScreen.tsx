@@ -58,7 +58,7 @@ export const SavedRoomsScreen = () => {
         refreshControl={
           <RefreshControl
             refreshing={favoritesQuery.isRefetching && !favoritesQuery.isFetchingNextPage}
-            onRefresh={() => favoritesQuery.refetch()}
+            onRefresh={() => void favoritesQuery.refetch()}
             tintColor={THEME_COLORS.PRIMARY}
           />
         }
@@ -71,7 +71,7 @@ export const SavedRoomsScreen = () => {
         ListFooterComponent={
           favoritesQuery.isFetchingNextPage ? (
             <ActivityIndicator color={THEME_COLORS.PRIMARY} style={styles.loadMore} />
-          ) : null
+          ) : undefined
         }
         ItemSeparatorComponent={ListSeparator}
         renderItem={({ item }) => (

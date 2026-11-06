@@ -23,7 +23,7 @@ export const useBookingDetail = (id: string) =>
     refetchInterval: (query) => {
       const status = query.state.data?.status;
 
-      return status === 'pending' || status === 'holding' ? 30_000 : false;
+      return status === 'pending' ? 30_000 : false;
     },
   });
 
@@ -60,19 +60,6 @@ export const useCancelBooking = () => {
   });
 };
 
-export const useHoldBooking = () => {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: (id: string) => bookingService.hold(id),
-    onSuccess: (booking) => {
-      queryClient.setQueryData(BOOKING_KEYS.detail(booking.id), booking);
-      queryClient.invalidateQueries({ queryKey: BOOKING_KEYS.all });
-      queryClient.invalidateQueries({ queryKey: ['listing-detail', booking.listing.id] });
-    },
-  });
-};
-
 export const useLandlordBookings = () =>
   useQuery({
     queryKey: [...BOOKING_KEYS.all, 'landlord'],
@@ -99,9 +86,4 @@ export const useConfirmBooking = () =>
 export const useRejectBooking = () =>
   useLandlordAction(({ id, reason }: { id: string; reason: string }) =>
     bookingService.reject(id, reason)
-  );
-
-export const useReleaseBooking = () =>
-  useLandlordAction(({ id, reason }: { id: string; reason: string }) =>
-    bookingService.release(id, reason)
   );

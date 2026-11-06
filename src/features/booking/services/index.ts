@@ -58,16 +58,4 @@ export const bookingService = {
 
     return unwrapApiData<Booking>(response.data);
   },
-
-  async release(id: string, reason: string): Promise<Booking> {
-    const response = await apiClient.patch(`/bookings/${id}/release`, { reason });
-
-    return unwrapApiData<Booking>(response.data);
-  },
-
-  async hold(id: string): Promise<Booking> {
-    const response = await apiClient.patch(`/bookings/${id}/hold`);
-
-    return unwrapApiData<Booking>(response.data);
-  },
 };

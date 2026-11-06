@@ -67,4 +67,6 @@ export const OVERLAY_COLORS = {
   AMBER_NOTICE_BORDER: 'rgba(245, 166, 35, 0.5)',
   ACCENT_PURPLE: '#7C3AED',
   PRIMARY_HALO: 'rgba(29, 83, 204, 0.18)',
+  SWITCH_LOCKED_TRACK: '#A7C4F5',
+  SWITCH_THUMB_SHADOW: 'rgba(23, 27, 34, 0.25)',
 } as const;

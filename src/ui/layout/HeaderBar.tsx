@@ -9,6 +9,7 @@ export interface HeaderBarProps {
   subtitle?: string;
   onBack?: () => void;
   rightAction?: ReactNode;
+  rightActionWidth?: number;
   alignTitle?: 'center' | 'left';
   hasBottomBorder?: boolean;
   style?: StyleProp<ViewStyle>;
@@ -19,6 +20,7 @@ export const HeaderBar = ({
   subtitle,
   onBack,
   rightAction,
+  rightActionWidth,
   alignTitle = 'center',
   hasBottomBorder = true,
   style,
@@ -52,7 +54,9 @@ export const HeaderBar = ({
         ) : null}
       </View>
 
-      <View style={styles.rightSlot}>{rightAction || null}</View>
+      <View style={[styles.rightSlot, rightActionWidth ? { width: rightActionWidth } : null]}>
+        {rightAction || null}
+      </View>
     </View>
   );
 };

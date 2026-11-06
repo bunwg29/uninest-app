@@ -15,11 +15,6 @@ const PILL_COLORS: Record<SearchCardStatus, { background: string; border?: strin
       border: OVERLAY_COLORS.SUCCESS_BORDER,
       text: THEME_COLORS.SUCCESS,
     },
-    holding: {
-      background: THEME_COLORS.WARNING_LIGHT,
-      border: OVERLAY_COLORS.WARNING_BORDER,
-      text: THEME_COLORS.WARNING,
-    },
     featured: { background: THEME_COLORS.SECONDARY, text: THEME_COLORS.TEXT_PRIMARY },
     rented: { background: THEME_COLORS.SURFACE_MUTED, text: THEME_COLORS.TEXT_MUTED },
     paused: { background: THEME_COLORS.SURFACE_MUTED, text: THEME_COLORS.TEXT_MUTED },

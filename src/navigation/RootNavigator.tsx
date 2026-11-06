@@ -20,12 +20,19 @@ import {
   StudentListingPreviewScreen,
 } from '@features/listings';
 import { ComparisonScreen } from '@features/comparison';
+import { PriceComparisonScreen } from '@features/price-comparison';
 import { SavedRoomsScreen } from '@features/search';
+import {
+  NotificationsScreen,
+  NotificationSettingsScreen,
+  SavedSearchesScreen,
+  usePushRegistration,
+} from '@features/notifications';
 import { HelpCenterScreen, TermsScreen } from '@features/support';
+import { MyReviewsScreen, ReviewFormScreen, ReviewsScreen } from '@features/reviews';
 import {
   BookingConfirmScreen,
   BookingDetailScreen,
-  BookingHoldScreen,
   BookingNewScreen,
   BookingSuccessScreen,
   CancelBookingScreen,
@@ -43,6 +50,7 @@ export const RootNavigator = () => {
   const [isSplashDone, setIsSplashDone] = useState(false);
 
   useChatRealtime(isAuthenticated ? (user?.id ?? null) : null);
+  usePushRegistration(isAuthenticated ? (user?.id ?? null) : null);
 
   const showSplash = !isInitialized || !isSplashDone;
 
@@ -79,8 +87,19 @@ export const RootNavigator = () => {
               <Stack.Screen name="StudentListingPreview" component={StudentListingPreviewScreen} />
               <Stack.Screen name="ListingDetail" component={ListingDetailScreen} />
               <Stack.Screen name="LandlordPublicProfile" component={LandlordPublicProfileScreen} />
+              <Stack.Screen name="Reviews" component={ReviewsScreen} />
+              <Stack.Screen name="MyReviews" component={MyReviewsScreen} />
+              <Stack.Screen
+                name="ReviewForm"
+                component={ReviewFormScreen}
+                options={{ animation: 'slide_from_bottom' }}
+              />
               <Stack.Screen name="Comparison" component={ComparisonScreen} />
+              <Stack.Screen name="PriceComparison" component={PriceComparisonScreen} />
               <Stack.Screen name="SavedRooms" component={SavedRoomsScreen} />
+              <Stack.Screen name="Notifications" component={NotificationsScreen} />
+              <Stack.Screen name="NotificationSettings" component={NotificationSettingsScreen} />
+              <Stack.Screen name="SavedSearches" component={SavedSearchesScreen} />
               <Stack.Screen name="LandlordVerification" component={LandlordVerificationScreen} />
               <Stack.Screen name="BookingNew" component={BookingNewScreen} />
               <Stack.Screen name="BookingConfirm" component={BookingConfirmScreen} />
@@ -92,7 +111,6 @@ export const RootNavigator = () => {
                 component={CancelBookingScreen}
                 options={{ presentation: 'modal', animation: 'slide_from_bottom' }}
               />
-              <Stack.Screen name="BookingHold" component={BookingHoldScreen} />
               <Stack.Screen name="OtpVerification" component={OtpScreen} />
               <Stack.Screen name="ResetPassword" component={ResetPasswordScreen} />
               <Stack.Screen name="Community" component={CommunityScreen} />
