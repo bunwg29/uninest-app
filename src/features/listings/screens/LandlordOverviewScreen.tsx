@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { RefreshControl, StyleSheet, TouchableOpacity, View } from 'react-native';
 import {
   Bell,
@@ -16,6 +16,7 @@ import { useAuth } from '@features/auth';
 import { useLandlordBookings } from '@features/booking/hooks';
 import { useChatSummary } from '@features/chat';
 import { useUnreadNotificationCount } from '@features/notifications';
+import { usePremiumStatus } from '@features/premium';
 import { useToast } from '@hooks';
 import type { LandlordTabParamList, RootStackParamList } from '@navigation';
 import { BORDER_RADIUS_TOKENS, OVERLAY_COLORS, SPACING_TOKENS, THEME_COLORS } from '@theme';
@@ -142,18 +143,15 @@ export const LandlordOverviewScreen = () => {
   const chatSummaryQuery = useChatSummary();
   const notificationsQuery = useUnreadNotificationCount();
   const statsQuery = useLandlordStats(period);
+  const premiumStatusQuery = usePremiumStatus();
 
-  const publishedListings = useMemo(
-    () => publishedQuery.data?.pages.flatMap((page) => page.items) ?? [],
-    [publishedQuery.data]
-  );
   const counters = publishedQuery.data?.pages[0]?.counters;
   const totalListings = counters ? Object.values(counters).reduce((sum, item) => sum + item, 0) : 0;
   const stats = statsQuery.data;
   const periodOption =
     LANDLORD_STATS_PERIOD_OPTIONS.find((option) => option.value === period) ??
     LANDLORD_STATS_PERIOD_OPTIONS[0];
-  const hasFeatured = publishedListings.some((item) => item.isFeatured);
+  const premiumStatus = premiumStatusQuery.data;
 
   const pendingBookings = (bookingsQuery.data?.items ?? []).filter(
     (booking) => booking.status === 'pending'
@@ -174,6 +172,7 @@ export const LandlordOverviewScreen = () => {
       chatSummaryQuery.refetch(),
       notificationsQuery.refetch(),
       statsQuery.refetch(),
+      premiumStatusQuery.refetch(),
     ]);
   };
 
@@ -193,8 +192,6 @@ export const LandlordOverviewScreen = () => {
       setIsLogoutVisible(false);
     }
   };
-
-  const handleComingSoon = () => toast.info('Tính năng đang được hoàn thiện');
 
   return (
     <ScreenContainer
@@ -264,34 +261,34 @@ export const LandlordOverviewScreen = () => {
       </View>
 
       <View style={styles.body}>
-        {hasFeatured ? (
-          <View style={styles.premiumBanner} testID="landlord-overview-premium-banner">
-            <View style={styles.premiumIcon}>
-              <Star size={22} color={THEME_COLORS.TEXT_PRIMARY} fill={THEME_COLORS.TEXT_PRIMARY} />
-            </View>
-
-            <View style={styles.premiumBody}>
-              <Typography variant="body2" weight="BOLD">
-                Gói Nổi bật đang hoạt động
-              </Typography>
-              <Typography variant="caption" weight="MEDIUM" colorKey="WARNING">
-                Gia hạn để tin tiếp tục lên đầu kết quả
-              </Typography>
-            </View>
-
-            <TouchableOpacity
-              style={styles.renewButton}
-              onPress={handleComingSoon}
-              activeOpacity={0.85}
-              accessibilityRole="button"
-              accessibilityLabel="Gia hạn"
-            >
-              <Typography variant="body2" weight="BOLD">
-                Gia hạn
-              </Typography>
-            </TouchableOpacity>
+        <View style={styles.premiumBanner} testID="landlord-overview-premium-banner">
+          <View style={styles.premiumIcon}>
+            <Star size={22} color={THEME_COLORS.TEXT_PRIMARY} fill={THEME_COLORS.TEXT_PRIMARY} />
           </View>
-        ) : null}
+
+          <View style={styles.premiumBody}>
+            <Typography variant="body2" weight="BOLD">
+              {premiumStatus?.isPremium ? 'Gói Premium đang hoạt động' : 'Nâng cấp Premium'}
+            </Typography>
+            <Typography variant="caption" weight="MEDIUM" colorKey="WARNING">
+              {premiumStatus?.isPremium && premiumStatus.expiresAt
+                ? `Hết hạn ${new Date(premiumStatus.expiresAt).toLocaleDateString('vi-VN')}`
+                : 'Tin lên đầu kết quả phù hợp và xem thống kê nâng cao'}
+            </Typography>
+          </View>
+
+          <TouchableOpacity
+            style={styles.renewButton}
+            onPress={() => rootNavigation.navigate('PremiumUpgrade')}
+            activeOpacity={0.85}
+            accessibilityRole="button"
+            accessibilityLabel={premiumStatus?.isPremium ? 'Gia hạn Premium' : 'Nâng cấp Premium'}
+          >
+            <Typography variant="body2" weight="BOLD">
+              {premiumStatus?.isPremium ? 'Gia hạn' : 'Nâng cấp'}
+            </Typography>
+          </TouchableOpacity>
+        </View>
 
         <View style={styles.sectionHeader}>
           <Typography variant="h3" weight="BOLD">

@@ -77,7 +77,9 @@ export const SavedRoomsScreen = () => {
         renderItem={({ item }) => (
           <SavedRoomRow
             listing={item}
-            onPress={() => navigation.navigate('ListingDetail', { id: item.id })}
+            onPress={() =>
+              navigation.navigate('ListingDetail', { id: item.id, source: 'favorites' })
+            }
             onRemove={() => toggleFavorite.mutate({ listingId: item.id, isSaved: true })}
           />
         )}

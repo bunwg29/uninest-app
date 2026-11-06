@@ -112,7 +112,7 @@ export const ListingDetailScreen = () => {
   const { width } = useWindowDimensions();
   const listingId = route.params.id;
   const detailQuery = useListingDetail(listingId);
-  const viewMutation = useRecordListingView(listingId);
+  const viewMutation = useRecordListingView(listingId, route.params.source);
   const reportMutation = useReportListing(listingId);
   const toggleFavorite = useToggleFavorite();
   const { openChat, isOpening } = useOpenListingChat();
