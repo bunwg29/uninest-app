@@ -310,11 +310,11 @@ export const CommunityScreen = () => {
           />
         )}
         contentContainerStyle={[styles.listContent, !posts.length && styles.emptyContent]}
-        ListEmptyComponent={renderEmpty}
+        ListEmptyComponent={renderEmpty() ?? undefined}
         ListFooterComponent={
           feedQuery.isFetchingNextPage ? (
             <ActivityIndicator style={styles.footerLoader} color={THEME_COLORS.PRIMARY} />
-          ) : null
+          ) : undefined
         }
         onEndReached={handleLoadMore}
         onEndReachedThreshold={0.5}

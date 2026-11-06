@@ -189,7 +189,7 @@ export const HomeScreen = () => {
       availability={item.availability}
       isHighlighted={item.isHighlighted}
       isSaved={favoriteIds.has(item.id)}
-      onPress={() => openListing(item.id)}
+      onPress={() => openListing(item.id, 'home')}
       onToggleSaved={() => handleToggleSaved(item.id)}
     />
   );

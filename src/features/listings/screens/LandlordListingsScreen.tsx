@@ -307,7 +307,7 @@ export const LandlordListingsScreen = () => {
           ListFooterComponent={
             listingsQuery.isFetchingNextPage ? (
               <ActivityIndicator color={THEME_COLORS.PRIMARY} style={styles.footerLoader} />
-            ) : null
+            ) : undefined
           }
         />
       )}

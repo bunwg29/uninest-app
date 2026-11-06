@@ -8,6 +8,7 @@ import {
   TextInput,
   TouchableOpacity,
   View,
+  type TextInputInstance,
 } from 'react-native';
 import { useNavigation, useRoute, type RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -67,7 +68,7 @@ export const ForumPostDetailScreen = () => {
   const insets = useSafeAreaInsets();
   const toast = useToast();
   const { user } = useAuth();
-  const inputRef = useRef<TextInput>(null);
+  const inputRef = useRef<TextInputInstance>(null);
   const [commentText, setCommentText] = useState('');
   const [replyTarget, setReplyTarget] = useState<ForumComment | null>(null);
   const [actionSheet, setActionSheet] = useState<ForumActionItem[] | null>(null);
@@ -380,7 +381,7 @@ export const ForumPostDetailScreen = () => {
             onOpenMenu={handleOpenCommentMenu}
           />
         )}
-        ListHeaderComponent={renderPostHeader()}
+        ListHeaderComponent={renderPostHeader() ?? undefined}
         ListEmptyComponent={
           commentsQuery.isLoading ? (
             <ActivityIndicator style={styles.loader} color={THEME_COLORS.PRIMARY} />
@@ -398,7 +399,7 @@ export const ForumPostDetailScreen = () => {
         ListFooterComponent={
           commentsQuery.isFetchingNextPage ? (
             <ActivityIndicator style={styles.loader} color={THEME_COLORS.PRIMARY} />
-          ) : null
+          ) : undefined
         }
         onEndReached={() => {
           if (commentsQuery.hasNextPage && !commentsQuery.isFetchingNextPage) {

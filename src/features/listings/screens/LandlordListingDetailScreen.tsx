@@ -18,6 +18,7 @@ import {
   Eye,
   ImageOff,
   Pencil,
+  Star,
   TrendingUp,
   X,
   XCircle,
@@ -136,6 +137,14 @@ export const LandlordListingDetailScreen = () => {
     navigation.navigate('StudentListingPreview', { listing: currentListing });
   };
 
+  const handleReviews = () => {
+    navigation.navigate('Reviews', {
+      listingId: currentListing.id,
+      listingTitle: currentListing.title,
+      canManage: true,
+    });
+  };
+
   const handleMenuAction = (action: () => void) => {
     setIsMenuVisible(false);
     action();
@@ -200,7 +209,7 @@ export const LandlordListingDetailScreen = () => {
         refreshControl={
           <RefreshControl
             refreshing={detailQuery.isRefetching}
-            onRefresh={() => detailQuery.refetch()}
+            onRefresh={() => void detailQuery.refetch()}
             tintColor={THEME_COLORS.PRIMARY}
           />
         }
@@ -333,6 +342,7 @@ export const LandlordListingDetailScreen = () => {
             onEdit={handleEdit}
             onEditSchedule={handleEditSchedule}
             onStudentPreview={handleStudentPreview}
+            onReviews={handleReviews}
           />
         )}
       </ScrollView>
@@ -484,11 +494,13 @@ const PublishedDetails = ({
   onEdit,
   onEditSchedule,
   onStudentPreview,
+  onReviews,
 }: {
   listing: LandlordListing;
   onEdit: () => void;
   onEditSchedule: () => void;
   onStudentPreview: () => void;
+  onReviews: () => void;
 }) => {
   const slotCount = countViewingSlots(listing.viewingSchedule);
 
@@ -574,6 +586,8 @@ const PublishedDetails = ({
           tone="success"
           onPress={onStudentPreview}
         />
+        <View style={styles.divider} />
+        <QuickAction icon={Star} title="Đánh giá từ sinh viên" onPress={onReviews} />
       </View>
     </>
   );
