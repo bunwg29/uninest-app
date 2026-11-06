@@ -101,7 +101,6 @@ export type RootStackParamList = {
   };
   Comparison: undefined;
   PriceComparison: undefined;
-  PersonalizationData: undefined;
   PremiumUpgrade: undefined;
   PremiumPayment: { orderId: string };
   PremiumStats: undefined;
@@ -109,6 +108,7 @@ export type RootStackParamList = {
   Notifications: undefined;
   NotificationSettings: undefined;
   SavedSearches: undefined;
+  PersonalizationData: undefined;
   LandlordVerification: undefined;
   Community: { category?: ForumCategory } | undefined;
   ForumPostDetail: { postId: string };

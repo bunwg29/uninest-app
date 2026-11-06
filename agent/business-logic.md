@@ -384,7 +384,7 @@ confirmed, expired, cancelled, rejected → (kết thúc khi đã qua giờ xem)
 - `POST /ai/chat` body `{ message, conversationId?, criteria? }` → `{ conversationId, type: results|no_results|general|service_error, errorCode, answer, criteria, criteriaDisplay { labels, university, province, ward, amenities, roomTypes }, matchedCount, totalActiveCount, listingIds, listings, suggestions[{ title, description, criteria, matchedCount }], userMessage, assistantMessage }`.
 - `GET /ai/conversations?page=&limit=`, `GET /ai/conversations/:id` (kèm `messages`, `listings` còn hiển thị), `DELETE /ai/conversations/:id`, `DELETE /ai/conversations` (xoá hết).
 
-### 4.15. FR-AIRECOMM — Gợi ý cá nhân hoá (Sprint 4 · TSK-S4-03 đã triển khai trên nhánh task, chờ review)
+### 4.15. FR-AIRECOMM — Gợi ý cá nhân hoá (Sprint 4 · Chưa làm)
 
 **Task:** TSK-S4-03 (theo dõi hành vi + engine, P2), TSK-S4-04 (khu vực "Gợi ý dành cho bạn", P2). **Màn hình:** H-01, H-03, SH-05.
 
@@ -397,7 +397,7 @@ confirmed, expired, cancelled, rejected → (kết thúc khi đã qua giờ xem)
 - Với tài khoản ≥ 10 lượt xem/lưu: ≥ 50% tin gợi ý thuộc đúng khu vực/khoảng giá quan tâm nhiều nhất.
 - Hiện tại trang chủ đã có "Đã xem gần đây" lưu trên máy — giữ nguyên, khu vực gợi ý là phần riêng.
 
-**Đã chốt khi triển khai TSK-S4-03**
+**Đã chốt khi triển khai TSK-S4-03** (TSK-S4-03, TSK-S4-04 đã triển khai trên nhánh task, chờ review)
 - `user_behaviors` (user_id, event_type `view` | `favorite` | `search`, listing_id hoặc keyword + filters, created_at). Lượt xem ghi khi sinh viên mở chi tiết và lượt xem được cộng (cùng giới hạn 30 phút); lưu/bỏ lưu ghi qua sự kiện `listing.favorited` / `listing.unfavorited` (bỏ lưu thì xoá hành vi lưu). Tìm kiếm do app gửi `POST /users/me/behaviors/search` (vì `/listings/search` công khai). Migration chép sẵn lượt xem và phòng đã lưu cũ của sinh viên.
 - Cửa sổ hành vi **90 ngày**, trọng số xem 1 / lưu 3. Từ **3 lượt xem/lưu** trở lên mới cá nhân hoá; ít hơn → fallback tin phổ biến nhất (lượt xem, rồi mới nhất) trong tỉnh của sinh viên, thiếu thì lấy toàn quốc.
 - Vector hành vi = trung bình có trọng số embedding (`listing_embeddings`, `vector(768)` của TSK-S4-01) các tin đã xem/lưu, lưu ở `user_recommendation_profiles` cùng khu vực (tỉnh/phường xuất hiện nhiều nhất) và khoảng giá quan tâm (tứ phân vị 25–75%, nới ±15%; chưa có thì lấy giá từ bộ lọc đã tìm gần nhất).
