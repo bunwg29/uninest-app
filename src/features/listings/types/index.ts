@@ -109,6 +109,9 @@ export interface ListingDetail {
   distanceMeters?: number;
 }
 
+export type ListingViewSource =
+  'search' | 'home' | 'map' | 'favorites' | 'recommendation' | 'other';
+
 export interface RecordListingViewResponse {
   viewCount: number | null;
   incremented: boolean;

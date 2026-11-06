@@ -390,7 +390,7 @@ export const SearchScreen = () => {
   };
 
   const handleOpenListing = (listing: SearchListingItem) => {
-    navigation.navigate('ListingDetail', { id: listing.id });
+    navigation.navigate('ListingDetail', { id: listing.id, source: 'search' });
   };
 
   const handleSearchMapArea = () => {
@@ -648,7 +648,9 @@ export const SearchScreen = () => {
         myLocation={myLocation}
         recenterToken={recenterToken}
         onSelectListing={setSelectedListingId}
-        onOpenListing={(listingId) => navigation.navigate('ListingDetail', { id: listingId })}
+        onOpenListing={(listingId) =>
+          navigation.navigate('ListingDetail', { id: listingId, source: 'map' })
+        }
         onPressMap={() => setSelectedListingId(null)}
         onRegionChange={setMapCenter}
       />

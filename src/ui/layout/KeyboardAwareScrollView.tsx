@@ -2,6 +2,7 @@ import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef } from 
 import {
   Dimensions,
   Keyboard,
+  Platform,
   ScrollView,
   TextInput,
   type NativeScrollEvent,
@@ -39,6 +40,8 @@ export const KeyboardAwareScrollView = forwardRef<ScrollViewInstance, KeyboardAw
     useImperativeHandle(forwardedRef, () => scrollRef.current as ScrollViewInstance);
 
     const scrollFocusedInputIntoView = useCallback(() => {
+      if (Platform.OS === 'web') return;
+
       const input = TextInput.State.currentlyFocusedInput();
 
       if (!input || !scrollRef.current) return;
