@@ -47,7 +47,7 @@ export type AuthStackParamList = {
 export type MainTabParamList = {
   Home: undefined;
   Search: { openFilters?: boolean } | undefined;
-  AiChat: undefined;
+  AiChat: { conversationId?: string } | undefined;
   Messages: undefined;
   Profile: undefined;
   Overview?: undefined;
@@ -101,6 +101,7 @@ export type RootStackParamList = {
   };
   Comparison: undefined;
   PriceComparison: undefined;
+  AiChatHistory: undefined;
   PremiumUpgrade: undefined;
   PremiumPayment: { orderId: string };
   PremiumStats: undefined;

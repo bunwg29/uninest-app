@@ -22,6 +22,7 @@ import {
 import { ComparisonScreen } from '@features/comparison';
 import { PremiumPaymentScreen, PremiumStatsScreen, PremiumUpgradeScreen } from '@features/premium';
 import { PriceComparisonScreen } from '@features/price-comparison';
+import { AiChatHistoryScreen } from '@features/ai-chat';
 import { SavedRoomsScreen } from '@features/search';
 import {
   NotificationsScreen,
@@ -98,6 +99,7 @@ export const RootNavigator = () => {
               />
               <Stack.Screen name="Comparison" component={ComparisonScreen} />
               <Stack.Screen name="PriceComparison" component={PriceComparisonScreen} />
+              <Stack.Screen name="AiChatHistory" component={AiChatHistoryScreen} />
               <Stack.Screen name="PremiumUpgrade" component={PremiumUpgradeScreen} />
               <Stack.Screen name="PremiumPayment" component={PremiumPaymentScreen} />
               <Stack.Screen name="PremiumStats" component={PremiumStatsScreen} />
