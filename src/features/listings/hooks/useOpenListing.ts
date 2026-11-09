@@ -5,6 +5,7 @@ import { useAuth } from '@features/auth/hooks';
 import { useToast } from '@hooks';
 import type { RootStackParamList } from '@navigation/types';
 import { landlordListingsService } from '../services';
+import type { ListingViewSource } from '../types';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -14,9 +15,9 @@ export const useOpenListing = () => {
   const toast = useToast();
   const [isOpening, setIsOpening] = useState(false);
 
-  const openListing = async (listingId: string) => {
+  const openListing = async (listingId: string, source?: ListingViewSource) => {
     if (role !== 'landlord') {
-      navigation.navigate('ListingDetail', { id: listingId });
+      navigation.navigate('ListingDetail', { id: listingId, source });
 
       return;
     }

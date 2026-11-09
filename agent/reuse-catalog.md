@@ -136,6 +136,7 @@ Thiết kế có màu chưa có token → **thêm token vào `src/theme/colors.t
 | `useSearchStore`, `SEARCH_SCHOOLS` | `@features/search` | Áp bộ lọc từ màn khác (vd danh mục ở Trang chủ) |
 | `useComparison()` | `@features/comparison` | Thêm/bỏ phòng khỏi danh sách so sánh (tối đa 4) |
 | `useRecentlyViewedStore`, `useRecentListingIds` | `@features/recommendations` | Ghi/đọc phòng đã xem gần đây |
+| `useRecommendations(enabled)`, `useRecordSearchBehavior(payload, enabled)`, `RECOMMENDATIONS_QUERY_KEY` | `@features/recommendations` | Danh sách "Gợi ý dành cho bạn" (tự làm mới khi mở lại app sau 24 giờ), ghi từ khoá/bộ lọc sinh viên đã tìm |
 | `useUploadImages()` | `@features/listings` (hooks) | Tải nhiều ảnh song song lên R2 có tiến độ, thử lại từng ảnh |
 | `AvailabilityBadge` | `@features/listings` | Nhãn còn trống / đã cho thuê / ngừng nhận yêu cầu |
 | `ListingReviewsSection`, `ReviewCard`, `ReviewSummaryCard`, `StarRating` | `@features/reviews` | Hiển thị tóm tắt, danh sách, phân bố và nhập điểm đánh giá |

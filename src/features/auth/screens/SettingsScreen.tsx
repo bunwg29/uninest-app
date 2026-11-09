@@ -15,6 +15,7 @@ import { THEME_COLORS, SPACING_TOKENS, BORDER_RADIUS_TOKENS } from '@theme';
 import { ScreenContainer, Typography, BackButton } from '@ui';
 import { useToast } from '@hooks';
 import type { RootStackParamList } from '@navigation';
+import { useRoleGuard } from '../hooks';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'Settings'>;
 type IconComponent = typeof Sun;
@@ -42,6 +43,7 @@ interface SettingItem {
 export const SettingsScreen = () => {
   const navigation = useNavigation<NavigationProp>();
   const toast = useToast();
+  const { isStudent } = useRoleGuard();
 
   const showComingSoon = (label: string) => {
     toast.info(`${label} đang được phát triển`);
@@ -81,7 +83,10 @@ export const SettingsScreen = () => {
       label: 'Quyền riêng tư & dữ liệu',
       icon: Shield,
       tone: SETTING_TONES.SLATE,
-      onPress: () => navigation.navigate('Terms', { tab: 'privacy' }),
+      onPress: () =>
+        isStudent
+          ? navigation.navigate('PersonalizationData')
+          : navigation.navigate('Terms', { tab: 'privacy' }),
     },
   ];
 

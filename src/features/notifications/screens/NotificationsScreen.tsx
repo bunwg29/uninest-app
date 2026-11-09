@@ -117,6 +117,8 @@ export const NotificationsScreen = () => {
         } else if (payload.screen === 'ListingDetail' && payload.listingId) {
           if (isLandlord) navigation.navigate('Main', { screen: 'Listings' });
           else navigation.navigate('ListingDetail', { id: payload.listingId });
+        } else if (payload.screen === 'PremiumUpgrade') {
+          navigation.navigate('PremiumUpgrade');
         } else if (payload.screen === 'ForumPostDetail' && payload.postId) {
           navigation.navigate('ForumPostDetail', { postId: payload.postId });
         }

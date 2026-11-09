@@ -39,6 +39,7 @@ import {
 } from '../components';
 import { useAuth } from '@features/auth';
 import { useSavedSearchActions } from '@features/notifications';
+import { useRecordSearchBehavior } from '@features/recommendations';
 import { buildSearchParams } from '../services/searchParams';
 import { useFavoriteIds, useRecentSearches, useSearchListings, useToggleFavorite } from '../hooks';
 import { useSearchStore } from '../store';
@@ -127,6 +128,20 @@ export const SearchScreen = () => {
   const [recenterToken, setRecenterToken] = useState(0);
   const [isLocationDenied, setIsLocationDenied] = useState(false);
   const debouncedDraftFilters = useDebouncedValue(draftFilters, FILTER_COUNT_DEBOUNCE_MS);
+
+  const searchBehaviorPayload = useMemo(
+    () => ({
+      keyword: appliedFilters.keyword.trim() || undefined,
+      minPrice: appliedFilters.minPrice,
+      maxPrice: appliedFilters.maxPrice,
+      roomTypes: appliedFilters.roomTypes,
+      amenities: appliedFilters.amenities,
+      universityCodes: appliedFilters.universities.map((university) => university.code),
+    }),
+    [appliedFilters]
+  );
+
+  useRecordSearchBehavior(searchBehaviorPayload, role === 'student');
 
   const searchQuery = useSearchListings(appliedFilters);
   const draftCountQuery = useSearchListings(debouncedDraftFilters, { enabled: isFilterVisible });
@@ -390,7 +405,7 @@ export const SearchScreen = () => {
   };
 
   const handleOpenListing = (listing: SearchListingItem) => {
-    navigation.navigate('ListingDetail', { id: listing.id });
+    navigation.navigate('ListingDetail', { id: listing.id, source: 'search' });
   };
 
   const handleSearchMapArea = () => {
@@ -648,7 +663,9 @@ export const SearchScreen = () => {
         myLocation={myLocation}
         recenterToken={recenterToken}
         onSelectListing={setSelectedListingId}
-        onOpenListing={(listingId) => navigation.navigate('ListingDetail', { id: listingId })}
+        onOpenListing={(listingId) =>
+          navigation.navigate('ListingDetail', { id: listingId, source: 'map' })
+        }
         onPressMap={() => setSelectedListingId(null)}
         onRegionChange={setMapCenter}
       />

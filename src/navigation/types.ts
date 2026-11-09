@@ -1,7 +1,7 @@
 import type { NavigatorScreenParams } from '@react-navigation/native';
 import type { UserRole } from '@features/auth';
 import type { ForumCategory } from '@features/forum';
-import type { LandlordListing } from '@features/listings';
+import type { LandlordListing, ListingViewSource } from '@features/listings';
 import type { Review } from '@features/reviews';
 import type { HelpTopicId, LegalTab } from '@features/support';
 
@@ -47,7 +47,7 @@ export type AuthStackParamList = {
 export type MainTabParamList = {
   Home: undefined;
   Search: { openFilters?: boolean } | undefined;
-  AiChat: undefined;
+  AiChat: { conversationId?: string } | undefined;
   Messages: undefined;
   Profile: undefined;
   Overview?: undefined;
@@ -89,7 +89,7 @@ export type RootStackParamList = {
     returnToChangePassword?: boolean;
   };
   ResetPassword: { target: string; otpCode: string };
-  ListingDetail: { id: string };
+  ListingDetail: { id: string; source?: ListingViewSource };
   LandlordPublicProfile: { landlordId: string; isPreview?: boolean };
   Reviews: { listingId: string; listingTitle?: string; canManage?: boolean };
   MyReviews: undefined;
@@ -101,10 +101,15 @@ export type RootStackParamList = {
   };
   Comparison: undefined;
   PriceComparison: undefined;
+  AiChatHistory: undefined;
+  PremiumUpgrade: undefined;
+  PremiumPayment: { orderId: string };
+  PremiumStats: undefined;
   SavedRooms: undefined;
   Notifications: undefined;
   NotificationSettings: undefined;
   SavedSearches: undefined;
+  PersonalizationData: undefined;
   LandlordVerification: undefined;
   Community: { category?: ForumCategory } | undefined;
   ForumPostDetail: { postId: string };
