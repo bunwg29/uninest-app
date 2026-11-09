@@ -31,6 +31,7 @@ import {
 } from '@features/notifications';
 import { HelpCenterScreen, TermsScreen } from '@features/support';
 import { MyReviewsScreen, ReviewFormScreen, ReviewsScreen } from '@features/reviews';
+import { PersonalizationDataScreen } from '@features/recommendations';
 import {
   BookingConfirmScreen,
   BookingDetailScreen,
@@ -104,6 +105,7 @@ export const RootNavigator = () => {
               <Stack.Screen name="Notifications" component={NotificationsScreen} />
               <Stack.Screen name="NotificationSettings" component={NotificationSettingsScreen} />
               <Stack.Screen name="SavedSearches" component={SavedSearchesScreen} />
+              <Stack.Screen name="PersonalizationData" component={PersonalizationDataScreen} />
               <Stack.Screen name="LandlordVerification" component={LandlordVerificationScreen} />
               <Stack.Screen name="BookingNew" component={BookingNewScreen} />
               <Stack.Screen name="BookingConfirm" component={BookingConfirmScreen} />

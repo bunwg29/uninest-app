@@ -108,6 +108,7 @@ export type RootStackParamList = {
   Notifications: undefined;
   NotificationSettings: undefined;
   SavedSearches: undefined;
+  PersonalizationData: undefined;
   LandlordVerification: undefined;
   Community: { category?: ForumCategory } | undefined;
   ForumPostDetail: { postId: string };
