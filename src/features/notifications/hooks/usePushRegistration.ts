@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { AppState, Platform } from 'react-native';
 import * as Device from 'expo-device';
 import { useQueryClient } from '@tanstack/react-query';
+import { isExpoGo } from '@core';
 import { useToast } from '@hooks';
 import { navigationRef } from '@navigation/navigationRef';
 import { useAuthStore } from '@features/auth';
@@ -35,7 +36,7 @@ export const usePushRegistration = (userId: string | null) => {
   const toast = useToast();
 
   useEffect(() => {
-    if (!userId || Platform.OS === 'web' || !Device.isDevice) return;
+    if (!userId || Platform.OS === 'web' || !Device.isDevice || isExpoGo) return;
 
     let active = true;
     let hasShownError = false;
