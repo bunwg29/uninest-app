@@ -19,7 +19,7 @@ const ConversationListItemComponent = ({
   onPress,
   onLongPress,
 }: ConversationListItemProps) => {
-  const { counterpart, listing, lastMessage, unreadCount } = conversation;
+  const { counterpart, lastMessage, unreadCount } = conversation;
   const isUnread = unreadCount > 0;
   const isMine = lastMessage?.senderId === currentUserId;
   const isImageOnly =
@@ -49,16 +49,6 @@ const ConversationListItemComponent = ({
           style={styles.name}
         >
           {counterpart.fullName}
-        </Typography>
-
-        <Typography
-          variant="caption"
-          weight="MEDIUM"
-          color={isUnread ? THEME_COLORS.PRIMARY_DARK : THEME_COLORS.TEXT_PLACEHOLDER}
-          numberOfLines={1}
-          style={styles.listingTitle}
-        >
-          {listing.title}
         </Typography>
 
         <View style={styles.previewRow}>
@@ -130,9 +120,6 @@ const styles = StyleSheet.create({
   },
   name: {
     lineHeight: 22,
-  },
-  listingTitle: {
-    letterSpacing: 0.2,
   },
   previewRow: {
     flexDirection: 'row',

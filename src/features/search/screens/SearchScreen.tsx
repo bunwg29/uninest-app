@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
@@ -506,24 +506,33 @@ export const SearchScreen = () => {
     return items.slice(0, 4);
   }, [appliedFilters, applyPreset, hasLocation, setRadius]);
 
-  const renderListing = ({ item }: { item: SearchListingItem }) =>
-    viewMode === 'grid' ? (
-      <SearchListingGridCard
+  const latestHandlers = useRef({ open: handleOpenListing, toggleSaved: handleToggleSaved });
+
+  latestHandlers.current = { open: handleOpenListing, toggleSaved: handleToggleSaved };
+
+  const openListingStable = useCallback(
+    (listing: SearchListingItem) => latestHandlers.current.open(listing),
+    []
+  );
+  const toggleSavedStable = useCallback(
+    (listingId: string) => latestHandlers.current.toggleSaved(listingId),
+    []
+  );
+  const isGridMode = viewMode === 'grid';
+
+  const renderListing = useCallback(
+    ({ item }: { item: SearchListingItem }) => (
+      <SearchResultCell
         listing={item}
+        isGrid={isGridMode}
         isSaved={favoriteIds.has(item.id)}
         distanceSuffix={distanceSuffix}
-        onPress={() => handleOpenListing(item)}
-        onToggleSaved={() => handleToggleSaved(item.id)}
+        onOpen={openListingStable}
+        onToggleSaved={toggleSavedStable}
       />
-    ) : (
-      <SearchListingRow
-        listing={item}
-        isSaved={favoriteIds.has(item.id)}
-        distanceSuffix={distanceSuffix}
-        onPress={() => handleOpenListing(item)}
-        onToggleSaved={() => handleToggleSaved(item.id)}
-      />
-    );
+    ),
+    [distanceSuffix, favoriteIds, isGridMode, openListingStable, toggleSavedStable]
+  );
 
   const renderHeader = () => (
     <SearchHeader
@@ -611,6 +620,10 @@ export const SearchScreen = () => {
             data={listings}
             keyExtractor={(item) => item.id}
             renderItem={renderListing}
+            initialNumToRender={8}
+            maxToRenderPerBatch={8}
+            windowSize={7}
+            updateCellsBatchingPeriod={50}
             contentContainerStyle={styles.listContent}
             ItemSeparatorComponent={ListSeparator}
             showsVerticalScrollIndicator={false}
@@ -785,6 +798,42 @@ export const SearchScreen = () => {
 };
 
 const ListSeparator = () => <View style={styles.separator} />;
+
+interface SearchResultCellProps {
+  listing: SearchListingItem;
+  isGrid: boolean;
+  isSaved: boolean;
+  distanceSuffix?: string;
+  onOpen: (listing: SearchListingItem) => void;
+  onToggleSaved: (listingId: string) => void;
+}
+
+const SearchResultCell = memo(
+  ({ listing, isGrid, isSaved, distanceSuffix, onOpen, onToggleSaved }: SearchResultCellProps) => {
+    const handleOpen = () => onOpen(listing);
+    const handleToggleSaved = () => onToggleSaved(listing.id);
+
+    return isGrid ? (
+      <SearchListingGridCard
+        listing={listing}
+        isSaved={isSaved}
+        distanceSuffix={distanceSuffix}
+        onPress={handleOpen}
+        onToggleSaved={handleToggleSaved}
+      />
+    ) : (
+      <SearchListingRow
+        listing={listing}
+        isSaved={isSaved}
+        distanceSuffix={distanceSuffix}
+        onPress={handleOpen}
+        onToggleSaved={handleToggleSaved}
+      />
+    );
+  }
+);
+
+SearchResultCell.displayName = 'SearchResultCell';
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: THEME_COLORS.BACKGROUND },

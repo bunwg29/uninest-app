@@ -50,7 +50,7 @@ interface ViewerState {
 }
 
 export const ChatRoomScreen = ({ navigation, route }: ChatRoomScreenProps) => {
-  const { conversationId } = route.params;
+  const { conversationId, listingId: contextListingId } = route.params;
   const toast = useToast();
   const insets = useSafeAreaInsets();
   const { user } = useAuth();
@@ -59,7 +59,7 @@ export const ChatRoomScreen = ({ navigation, route }: ChatRoomScreenProps) => {
 
   const isOnline = useNetworkStatus();
   const conversationQuery = useConversation(conversationId);
-  const room = useChatRoom(conversationId, currentUserId);
+  const room = useChatRoom(conversationId, currentUserId, contextListingId);
   const { openListing } = useOpenListing();
   const recallMutation = useRecallMessage(conversationId);
   const deleteMutation = useDeleteConversation();
@@ -74,6 +74,7 @@ export const ChatRoomScreen = ({ navigation, route }: ChatRoomScreenProps) => {
   const [isDeleteVisible, setIsDeleteVisible] = useState(false);
 
   const conversation = conversationQuery.data;
+  const pinnedListing = conversation?.listing ?? null;
 
   useEffect(() => {
     if (Platform.OS !== 'ios') {
@@ -188,6 +189,7 @@ export const ChatRoomScreen = ({ navigation, route }: ChatRoomScreenProps) => {
   const renderMessage = ({ item, index }: { item: DisplayMessage; index: number }) => {
     const newerMessage = room.messages[index - 1];
     const olderMessage = room.messages[index + 1];
+    const cardListing = item.listing;
 
     const shouldShowTime =
       !newerMessage ||
@@ -201,6 +203,14 @@ export const ChatRoomScreen = ({ navigation, route }: ChatRoomScreenProps) => {
     return (
       <View>
         {shouldShowDate ? <DateSeparator label={formatDayLabel(item.createdAt)} /> : null}
+
+        {cardListing ? (
+          <ListingPinBar
+            listing={cardListing}
+            isCard
+            onPress={() => void openListing(cardListing.id)}
+          />
+        ) : null}
 
         <MessageBubble
           message={item}
@@ -255,11 +265,8 @@ export const ChatRoomScreen = ({ navigation, route }: ChatRoomScreenProps) => {
 
       {!isOnline ? <OfflineBanner /> : null}
 
-      {conversation ? (
-        <ListingPinBar
-          listing={conversation.listing}
-          onPress={() => void openListing(conversation.listing.id)}
-        />
+      {pinnedListing ? (
+        <ListingPinBar listing={pinnedListing} onPress={() => void openListing(pinnedListing.id)} />
       ) : null}
 
       <View style={[styles.body, { paddingBottom: keyboardHeight }]}>

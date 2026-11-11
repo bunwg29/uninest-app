@@ -27,6 +27,7 @@ const toSentDisplayMessage = (message: ChatMessage, userId: string): DisplayMess
   isRecalled: message.isRecalled,
   readAt: message.readAt,
   createdAt: message.createdAt,
+  listing: message.listing,
   deliveryState: 'sent',
 });
 
@@ -42,11 +43,12 @@ const toPendingDisplayMessage = (item: OutboxMessage): DisplayMessage => ({
   isRecalled: false,
   readAt: null,
   createdAt: item.createdAt,
+  listing: null,
   deliveryState: item.status,
   errorMessage: item.errorMessage,
 });
 
-export const useChatRoom = (conversationId: string, userId: string) => {
+export const useChatRoom = (conversationId: string, userId: string, listingId?: string) => {
   const queryClient = useQueryClient();
   const isFocused = useIsFocused();
   const messagesQuery = useMessages(conversationId);
@@ -106,7 +108,7 @@ export const useChatRoom = (conversationId: string, userId: string) => {
     void markRead.then(() => invalidateChatLists(queryClient)).catch(() => undefined);
   }, [latestUnreadIncomingId, isFocused, conversationId, userId, queryClient]);
 
-  const sendMessage = useSendMessage(conversationId, userId);
+  const sendMessage = useSendMessage(conversationId, userId, listingId);
 
   const retryMessage = useCallback(
     (clientMessageId: string) => {

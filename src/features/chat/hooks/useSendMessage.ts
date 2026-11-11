@@ -2,7 +2,7 @@ import { useCallback } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { enqueueOutboxMessage, flushOutbox } from '../services';
 
-export const useSendMessage = (conversationId: string, userId: string) => {
+export const useSendMessage = (conversationId: string, userId: string, listingId?: string) => {
   const queryClient = useQueryClient();
 
   return useCallback(
@@ -15,6 +15,7 @@ export const useSendMessage = (conversationId: string, userId: string) => {
 
       enqueueOutboxMessage({
         conversationId,
+        listingId,
         senderId: userId,
         content: trimmed || null,
         imageUris,
@@ -22,6 +23,6 @@ export const useSendMessage = (conversationId: string, userId: string) => {
 
       void flushOutbox(queryClient, userId);
     },
-    [conversationId, userId, queryClient]
+    [conversationId, listingId, userId, queryClient]
   );
 };
