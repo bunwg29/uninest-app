@@ -15,18 +15,19 @@ import type { ChatListingSummary } from '../types';
 export interface ListingPinBarProps {
   listing: ChatListingSummary;
   onPress?: () => void;
+  isCard?: boolean;
 }
 
-export const ListingPinBar = ({ listing, onPress }: ListingPinBarProps) => (
+export const ListingPinBar = ({ listing, onPress, isCard = false }: ListingPinBarProps) => (
   <TouchableOpacity
-    style={styles.container}
+    style={[styles.container, isCard && styles.card]}
     onPress={onPress}
     disabled={!onPress}
     activeOpacity={0.85}
     accessibilityRole={onPress ? 'button' : undefined}
     accessibilityLabel={onPress ? `Xem chi tiết phòng ${listing.title}` : undefined}
   >
-    <Pin size={16} color={THEME_COLORS.TEXT_PLACEHOLDER} />
+    {isCard ? null : <Pin size={16} color={THEME_COLORS.TEXT_PLACEHOLDER} />}
 
     {listing.coverImageUrl ? (
       <Image source={{ uri: listing.coverImageUrl }} style={styles.thumbnail} />
@@ -78,6 +79,13 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: THEME_COLORS.BORDER,
     gap: SPACING_TOKENS.SM + 2,
+  },
+  card: {
+    marginHorizontal: SPACING_TOKENS.MD,
+    marginVertical: SPACING_TOKENS.SM,
+    borderWidth: 1,
+    borderColor: THEME_COLORS.BORDER,
+    borderRadius: BORDER_RADIUS_TOKENS.MD,
   },
   thumbnail: {
     width: 40,

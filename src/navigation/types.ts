@@ -72,7 +72,7 @@ export type RootStackParamList = {
   ProfileEdit: undefined;
   ChangePassword: undefined;
   Settings: undefined;
-  ChatRoom: { conversationId: string };
+  ChatRoom: { conversationId: string; listingId?: string };
   ChatImagePreview: { conversationId: string; counterpartName: string; imageUris: string[] };
   LandlordListingDetail: { listing: LandlordListing };
   StudentListingPreview: { listing: LandlordListing };

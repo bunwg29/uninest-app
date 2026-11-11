@@ -17,6 +17,7 @@ export interface ChatMessage {
   isRecalled: boolean;
   readAt: string | null;
   createdAt: string;
+  listing: ChatListingSummary | null;
 }
 
 export interface ChatCounterpart {
@@ -47,7 +48,7 @@ export interface ChatLastMessage {
 
 export interface Conversation {
   id: string;
-  listing: ChatListingSummary;
+  listing: ChatListingSummary | null;
   counterpart: ChatCounterpart;
   lastMessage: ChatLastMessage | null;
   unreadCount: number;
@@ -83,9 +84,16 @@ export interface MarkReadResult {
   updatedCount: number;
 }
 
+export interface StartConversationParams {
+  listingId?: string;
+  landlordId?: string;
+  studentId?: string;
+}
+
 export interface SendMessagePayload {
   conversationId: string;
   clientMessageId: string;
+  listingId?: string;
   content?: string;
   imageKeys?: string[];
 }
@@ -93,6 +101,7 @@ export interface SendMessagePayload {
 export interface OutboxMessage {
   clientMessageId: string;
   conversationId: string;
+  listingId?: string;
   senderId: string;
   content: string | null;
   imageUris: string[];
@@ -114,6 +123,7 @@ export interface DisplayMessage {
   isRecalled: boolean;
   readAt: string | null;
   createdAt: string;
+  listing: ChatListingSummary | null;
   deliveryState: DeliveryState;
   errorMessage?: string;
 }
