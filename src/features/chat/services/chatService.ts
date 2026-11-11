@@ -9,6 +9,7 @@ import type {
   MarkReadResult,
   MessagesPage,
   SendMessagePayload,
+  StartConversationParams,
 } from '../types';
 import { CHAT_LIMITS } from '../types';
 
@@ -24,8 +25,8 @@ const resolveImageContentType = (uri: string): string => {
 };
 
 export const chatService = {
-  async startConversation(listingId: string, studentId?: string): Promise<Conversation> {
-    const response = await apiClient.post('/conversations', { listingId, studentId });
+  async startConversation(params: StartConversationParams): Promise<Conversation> {
+    const response = await apiClient.post('/conversations', params);
 
     return unwrapApiData<Conversation>(response.data);
   },

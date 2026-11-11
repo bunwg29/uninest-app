@@ -57,7 +57,7 @@ export const LandlordPublicProfileScreen = () => {
   const { params } = useRoute<ScreenRoute>();
   const toast = useToast();
   const { user } = useAuth();
-  const { openChat, isOpening } = useOpenListingChat();
+  const { openLandlordChat, isOpening } = useOpenListingChat();
   const profileQuery = useLandlordPublicProfile(params.landlordId);
   const filters = useMemo(
     () => ({ ...DEFAULT_SEARCH_FILTERS, ownerId: params.landlordId, sortBy: 'newest' as const }),
@@ -77,15 +77,7 @@ export const LandlordPublicProfileScreen = () => {
   const canContact = !isPreview && !isSelf;
 
   const handleMessage = () => {
-    const firstListing = listings[0];
-
-    if (!firstListing) {
-      toast.error('Chủ trọ chưa có phòng nào để bắt đầu trò chuyện');
-
-      return;
-    }
-
-    void openChat(firstListing.id);
+    void openLandlordChat(params.landlordId);
   };
 
   const handleCall = () => {

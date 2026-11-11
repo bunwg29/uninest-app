@@ -84,6 +84,7 @@ const deliver = async (queryClient: QueryClient, item: OutboxMessage): Promise<D
     const message = await sendPayload({
       conversationId: item.conversationId,
       clientMessageId: item.clientMessageId,
+      listingId: item.listingId,
       content: item.content ?? undefined,
       imageKeys: imageKeys.length > 0 ? imageKeys : undefined,
     });
@@ -108,6 +109,7 @@ const deliver = async (queryClient: QueryClient, item: OutboxMessage): Promise<D
 
 export const enqueueOutboxMessage = (params: {
   conversationId: string;
+  listingId?: string;
   senderId: string;
   content: string | null;
   imageUris?: string[];
@@ -115,6 +117,7 @@ export const enqueueOutboxMessage = (params: {
   const message: OutboxMessage = {
     clientMessageId: generateClientMessageId(),
     conversationId: params.conversationId,
+    listingId: params.listingId,
     senderId: params.senderId,
     content: params.content,
     imageUris: params.imageUris ?? [],

@@ -7,7 +7,12 @@ import {
   type InfiniteData,
 } from '@tanstack/react-query';
 import { chatService, invalidateChatLists, upsertMessageInCache } from '../services';
-import type { ConversationFilter, ConversationsPage, MessagesPage } from '../types';
+import type {
+  ConversationFilter,
+  ConversationsPage,
+  MessagesPage,
+  StartConversationParams,
+} from '../types';
 import { CHAT_QUERY_KEYS } from '../types';
 
 const SUMMARY_STALE_TIME_MS = 30 * 1000;
@@ -75,8 +80,7 @@ export const useStartConversation = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ listingId, studentId }: { listingId: string; studentId?: string }) =>
-      chatService.startConversation(listingId, studentId),
+    mutationFn: (params: StartConversationParams) => chatService.startConversation(params),
     onSuccess: (conversation) => {
       queryClient.setQueryData(CHAT_QUERY_KEYS.conversation(conversation.id), conversation);
     },
